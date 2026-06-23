@@ -1,0 +1,484 @@
+%YAML 1.2
+---
+# Carve syntax for Sublime Text 3/4.
+# Authored from the maintained TextMate grammar (scope text.carve):
+#   vscode-carve/syntaxes/carve.tmLanguage.json
+# Scope names mirror that grammar so existing color schemes light it up.
+#
+# NOTE: In-editor rendering and the syntax_test_carve.crv assertions need
+# manual verification inside Sublime Text (not installable in the build env).
+name: Carve
+file_extensions:
+  - crv
+  - carve
+scope: text.carve
+
+variables:
+  ws: '[ \t]'
+
+contexts:
+  main:
+    - include: frontmatter
+    - include: comments
+    - include: headings
+    - include: code-blocks
+    - include: raw-blocks
+    - include: math-blocks
+    - include: divs
+    - include: tables
+    - include: block-quotes
+    - include: lists
+    - include: definitions
+    - include: links
+    - include: images
+    - include: footnotes
+    - include: attributes
+    - include: raw-inline
+    - include: inline-code
+    - include: trailing-comment
+    - include: math
+    - include: autolink
+    - include: extension-inline
+    - include: critic-markup
+    - include: emphasis
+    - include: mentions-tags
+    - include: smart-typography
+
+  # ----- inline-only group (reused inside tables, etc.) -----
+  inline:
+    - include: raw-inline
+    - include: inline-code
+    - include: math
+    - include: autolink
+    - include: extension-inline
+    - include: critic-markup
+    - include: links
+    - include: images
+    - include: footnotes
+    - include: attributes
+    - include: emphasis
+    - include: mentions-tags
+    - include: smart-typography
+
+  # ----- Frontmatter -----
+  frontmatter:
+    - match: '\A(---)\s*([A-Za-z0-9_-]+)?\s*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      push:
+        - meta_scope: meta.frontmatter.carve
+        - match: '^(---)\s*$'
+          captures:
+            1: punctuation.definition.frontmatter.end.carve
+          pop: true
+        - match: '.+'
+          scope: string.unquoted.frontmatter.carve
+
+  # ----- Comments -----
+  comments:
+    - match: '^\s*%%%\s*$'
+      push:
+        - meta_scope: comment.block.carve
+        - match: '^\s*%%%\s*$'
+          pop: true
+    - match: '^\s*%%(?!%).*$'
+      scope: comment.line.percent.carve
+
+  trailing-comment:
+    - match: '(?<=[ \t])%%.*$'
+      scope: comment.line.percent.carve
+
+  trailing-comment-cell:
+    - match: '(?<=[ \t])%%[^|]*'
+      scope: comment.line.percent.carve
+
+  # ----- Headings -----
+  headings:
+    - match: '^(#{1,6})(\s+)(.+)$'
+      scope: markup.heading.carve
+      captures:
+        1: punctuation.definition.heading.carve
+        3: entity.name.section.carve
+
+  # ----- Fenced code blocks (with optional language + #201 "header"/[label]) -----
+  code-blocks:
+    - match: '^(`{3,}|~{3,})\s*([^`~\s]+)?(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.embedded.carve
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+
+  # ----- Raw blocks (%%% FORMAT ... %%%) -----
+  raw-blocks:
+    - match: '^(%{3,})\s*([^\s]+)?\s*$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+      push:
+        - meta_scope: markup.raw.block.carve
+        - match: '^(%{3,})\s*$'
+          captures:
+            1: punctuation.definition.raw.end.carve
+          pop: true
+
+  # ----- Display math block ( ```math ... ``` ) -----
+  math-blocks:
+    - match: '^(`{3,}|~{3,})\s*(math)\s*$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.math.carve
+      push:
+        - meta_scope: markup.other.math.block.carve
+        - meta_content_scope: markup.other.math.content.carve
+        - match: '^(`{3,}|~{3,})\s*$'
+          captures:
+            1: punctuation.definition.raw.end.carve
+          pop: true
+
+  # ----- Divs (::: type "title" [label]) -----
+  divs:
+    - match: '^\s*(:::+)\s*([^\s{]+)?'
+      captures:
+        1: punctuation.definition.div.carve
+        2: entity.name.type.div.carve
+      push:
+        - meta_scope: markup.other.div.carve
+        - match: '"[^"]*"'
+          scope: string.quoted.double.div-title.carve
+        - match: '\[[^\]]*\]'
+          scope: constant.other.reference.div-label.carve
+        - match: '$'
+          pop: true
+        - include: attributes
+
+  # ----- Tables -----
+  tables:
+    - match: '^(?=\s*\|)'
+      push:
+        - meta_scope: markup.table.row.carve
+        - match: '\|='
+          scope: keyword.operator.table.header.carve
+        - match: '(?<=\|)\s*(\^)\s*(?=\|)'
+          captures:
+            1: keyword.operator.table.rowspan.carve
+        - match: '(?<=\|)\s*(<)\s*(?=\|)'
+          captures:
+            1: keyword.operator.table.colspan.carve
+        - match: '\|-{2,}\|'
+          scope: punctuation.separator.table.delimiter.carve
+        - match: '\|'
+          scope: punctuation.separator.table.carve
+        - include: trailing-comment-cell
+        - include: inline-code
+        - include: extension-inline
+        - include: critic-markup
+        - include: emphasis
+        - include: links
+        - include: images
+        - include: autolink
+        - include: attributes
+        - match: '$'
+          pop: true
+    - match: '^(\+)(.*)$'
+      scope: markup.table.continuation.carve
+      captures:
+        1: keyword.operator.table.continuation.carve
+    - match: '^\s*(\^)\s+(.+)$'
+      scope: markup.table.caption.carve
+      captures:
+        1: punctuation.definition.caption.carve
+        2: string.unquoted.caption.carve
+
+  # ----- Block quotes -----
+  block-quotes:
+    - match: '^\s*(>+)\s?'
+      captures:
+        1: punctuation.definition.quote.carve
+      push:
+        - meta_scope: markup.quote.carve
+        - match: '$'
+          pop: true
+        - include: trailing-comment
+        - include: inline
+
+  # ----- Lists + tasks + definition lists -----
+  lists:
+    - match: '^(\s*)(\+)(\s*)$'
+      captures:
+        2: punctuation.definition.list.continuation.carve
+      scope: markup.list.continuation.carve
+    - match: '^(\s*)([-*])\s+(\[[ xX]\]\s+)?'
+      scope: markup.list.unnumbered.carve
+      captures:
+        2: punctuation.definition.list.begin.carve
+        3: constant.language.task-list.carve
+    - match: '^(\s*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdmIVXLCDM]+[.)])\s+'
+      scope: markup.list.numbered.carve
+      captures:
+        2: punctuation.definition.list.begin.carve
+    - match: '^(\s*)(:)\s+'
+      scope: markup.list.definition.carve
+      captures:
+        2: punctuation.definition.list.begin.carve
+
+  # ----- Reference + abbreviation definitions -----
+  definitions:
+    - match: '^\s*(\[[^\]]+\]:)\s+(\S+)'
+      scope: meta.link.reference.definition.carve
+      captures:
+        1: constant.other.reference.link.carve
+        2: markup.underline.link.carve
+    - match: '^\s*(\*)(\[)([A-Z][A-Z0-9]*)(\])(:)\s+(.*)$'
+      scope: meta.abbreviation.definition.carve
+      captures:
+        1: punctuation.definition.abbreviation.carve
+        2: punctuation.definition.abbreviation.carve
+        3: entity.name.abbreviation.carve
+        4: punctuation.definition.abbreviation.carve
+        5: punctuation.separator.carve
+        6: string.unquoted.abbreviation.carve
+
+  # ----- Links / references / spans -----
+  links:
+    - match: '(\[)([^\]]+)(\])(\()([^\s)]+)(?:\s+"([^"]+)")?(\))'
+      scope: meta.link.inline.carve
+      captures:
+        1: punctuation.definition.link.begin.carve
+        2: string.other.link.title.carve
+        3: punctuation.definition.link.end.carve
+        4: punctuation.definition.metadata.begin.carve
+        5: markup.underline.link.carve
+        6: string.quoted.double.link-title.carve
+        7: punctuation.definition.metadata.end.carve
+    - match: '(\[)([^\]]+)(\])(\[)([^\]]*)(\])'
+      scope: meta.link.reference.carve
+      captures:
+        2: string.other.link.title.carve
+        5: constant.other.reference.link.carve
+    - match: '(\[)([^\^\]][^\]]*)(\])(?=\{)'
+      scope: meta.span.inline.carve
+      captures:
+        1: punctuation.definition.span.begin.carve
+        2: string.other.span.carve
+        3: punctuation.definition.span.end.carve
+
+  # ----- Images -----
+  images:
+    - match: '(!\[)([^\]]*)(\]\()([^\s)]+)(?:\s+"([^"]+)")?(\))'
+      scope: meta.image.inline.carve
+      captures:
+        1: punctuation.definition.image.begin.carve
+        2: string.other.image.alt.carve
+        4: markup.underline.link.image.carve
+        5: string.quoted.double.image-title.carve
+
+  # ----- Footnotes -----
+  footnotes:
+    - match: '(\[)(\^)([^\]]+)(\])'
+      scope: constant.other.reference.footnote.carve
+      captures:
+        1: punctuation.definition.footnote.carve
+        2: punctuation.definition.footnote.carve
+        3: constant.other.footnote.carve
+        4: punctuation.definition.footnote.carve
+
+  # ----- Block / inline attributes {...} -----
+  attributes:
+    - match: '\{'
+      scope: punctuation.definition.attributes.begin.carve
+      push:
+        - meta_scope: meta.attributes.carve
+        - match: '\}'
+          scope: punctuation.definition.attributes.end.carve
+          pop: true
+        - match: '#[A-Za-z_][A-Za-z0-9_-]*'
+          scope: entity.other.attribute-name.id.carve
+        - match: '\.[A-Za-z_][A-Za-z0-9_-]*'
+          scope: entity.other.attribute-name.class.carve
+        - match: '[A-Za-z_:][A-Za-z0-9_:-]*(?==)'
+          scope: entity.other.attribute-name.carve
+        - match: '"[^"]*"'
+          scope: string.quoted.double.attribute.carve
+        - match: "'[^']*'"
+          scope: string.quoted.single.attribute.carve
+
+  # ----- Raw inline passthrough ( `code`{=format} ) -----
+  raw-inline:
+    - match: '(`+)([^`]|[^`][\s\S]*?[^`])(\1)(\{=)([A-Za-z_][\w-]*)(\})'
+      scope: markup.raw.inline.passthrough.carve
+      captures:
+        1: punctuation.definition.raw.carve
+        2: markup.raw.inline.content.carve
+        3: punctuation.definition.raw.carve
+        4: punctuation.definition.raw.format.begin.carve
+        5: entity.name.type.format.carve
+        6: punctuation.definition.raw.format.end.carve
+
+  # ----- Inline code -----
+  inline-code:
+    - match: '(`+)([^`]|[^`][\s\S]*?[^`])(\1)'
+      scope: markup.raw.inline.carve
+      captures:
+        1: punctuation.definition.raw.carve
+        2: markup.raw.inline.content.carve
+        3: punctuation.definition.raw.carve
+
+  # ----- Inline math ( $`..` and $$`..` ) -----
+  math:
+    - match: '(\$\$)(`+)'
+      captures:
+        1: punctuation.definition.math.carve
+        2: punctuation.definition.raw.carve
+      push:
+        - meta_scope: markup.other.math.display.carve
+        - meta_content_scope: markup.other.math.content.carve
+        - match: '(`+)'
+          scope: punctuation.definition.raw.carve
+          pop: true
+    - match: '(\$)(`+)'
+      captures:
+        1: punctuation.definition.math.carve
+        2: punctuation.definition.raw.carve
+      push:
+        - meta_scope: markup.other.math.inline.carve
+        - meta_content_scope: markup.other.math.content.carve
+        - match: '(`+)'
+          scope: punctuation.definition.raw.carve
+          pop: true
+
+  # ----- Autolinks -----
+  autolink:
+    - match: '(<)([a-zA-Z][a-zA-Z0-9+.\-]*:[^>\s]+)(>)'
+      scope: meta.link.autolink.carve
+      captures:
+        1: punctuation.definition.link.carve
+        2: markup.underline.link.carve
+        3: punctuation.definition.link.carve
+    - match: '(<)([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})(>)'
+      scope: meta.link.autolink.email.carve
+      captures:
+        1: punctuation.definition.link.carve
+        2: markup.underline.link.carve
+        3: punctuation.definition.link.carve
+
+  # ----- Inline extensions ( :name[content]{attrs} ) -----
+  extension-inline:
+    - match: '(:)([a-zA-Z][\w-]*)(\[)([^\]]*)(\])(\{[^}]*\})?'
+      scope: meta.extension.inline.carve
+      captures:
+        1: punctuation.definition.extension.carve
+        2: entity.name.function.extension.carve
+        3: punctuation.definition.extension.carve
+        4: string.unquoted.extension.carve
+        5: punctuation.definition.extension.carve
+        6: meta.attributes.carve
+
+  # ----- Critic markup -----
+  critic-markup:
+    - match: '(\{\+)([^}]*)(\+\})'
+      scope: markup.inserted.critic.carve
+      captures:
+        1: punctuation.definition.critic.carve
+        2: markup.inserted.carve
+        3: punctuation.definition.critic.carve
+    - match: '(\{-)([^}]*)(- \}|\-\})'
+      scope: markup.deleted.critic.carve
+      captures:
+        1: punctuation.definition.critic.carve
+        2: markup.deleted.carve
+        3: punctuation.definition.critic.carve
+    - match: '(\{~)([^~]*)(~>)([^~]*)(~\})'
+      scope: markup.changed.critic.carve
+      captures:
+        1: punctuation.definition.critic.carve
+        2: markup.deleted.carve
+        3: punctuation.definition.critic.carve
+        4: markup.inserted.carve
+        5: punctuation.definition.critic.carve
+    - match: '(\{#)([^}]*)(#\})'
+      scope: comment.block.critic.carve
+      captures:
+        1: punctuation.definition.critic.carve
+        2: comment.block.content.carve
+        3: punctuation.definition.critic.carve
+
+  # ----- Emphasis / inline mnemonics -----
+  emphasis:
+    - match: '(/\*)(?=\S)([^*]+)(\*/)'
+      scope: markup.bold.italic.carve
+      captures:
+        1: punctuation.definition.bold-italic.carve
+        2: markup.bold.italic.carve
+        3: punctuation.definition.bold-italic.carve
+    - match: '(\*)(?=\S)([^*\n]+?)(?<=\S)(\*)'
+      scope: markup.bold.carve
+      captures:
+        1: punctuation.definition.bold.carve
+        2: markup.bold.carve
+        3: punctuation.definition.bold.carve
+    - match: '(?<![\w/])(/)(?=\S)([^/\n]+?)(?<=\S)(/)(?![\w/])'
+      scope: markup.italic.carve
+      captures:
+        1: punctuation.definition.italic.carve
+        2: markup.italic.carve
+        3: punctuation.definition.italic.carve
+    - match: '(?<![\w_])(_)(?=\S)([^_\n]+?)(?<=\S)(_)(?![\w_])'
+      scope: markup.underline.text.carve
+      captures:
+        1: punctuation.definition.underline.carve
+        2: markup.underline.text.carve
+        3: punctuation.definition.underline.carve
+    - match: '(~)(?=\S)([^~\n]+?)(?<=\S)(~)'
+      scope: markup.strikethrough.carve
+      captures:
+        1: punctuation.definition.strike.carve
+        2: markup.strikethrough.carve
+        3: punctuation.definition.strike.carve
+    - match: '(==)([^=\n]+?)(==)'
+      scope: markup.highlight.carve
+      captures:
+        1: punctuation.definition.highlight.carve
+        2: markup.highlight.carve
+        3: punctuation.definition.highlight.carve
+    - match: '(\^)(?=\S)([^\s^\n]+?)(\^)'
+      scope: markup.superscript.carve
+      captures:
+        1: punctuation.definition.superscript.carve
+        2: markup.superscript.carve
+        3: punctuation.definition.superscript.carve
+    - match: '(,,)(?=\S)([^,\n]+?)(,,)'
+      scope: markup.subscript.carve
+      captures:
+        1: punctuation.definition.subscript.carve
+        2: markup.subscript.carve
+        3: punctuation.definition.subscript.carve
+
+  # ----- Mentions / tags / emoji -----
+  mentions-tags:
+    - match: '(?<![\w.])(@)([A-Za-z0-9_][A-Za-z0-9_-]*)'
+      scope: constant.other.symbol.mention.carve
+      captures:
+        1: punctuation.definition.mention.carve
+        2: variable.other.mention.carve
+    - match: '(?<!\w)(#)([A-Za-z0-9_][A-Za-z0-9_-]*)'
+      scope: constant.other.symbol.tag.carve
+      captures:
+        1: punctuation.definition.tag.carve
+        2: variable.other.tag.carve
+    - match: ':[A-Za-z0-9_+-]+:'
+      scope: constant.character.emoji.carve
+
+  # ----- Smart typography / escapes -----
+  smart-typography:
+    - match: '\\[\\`*_{}\[\]()#+\-.!~^/<>@%|=,]'
+      scope: constant.character.escape.carve
+    - match: '\.\.\.|---|--|<->|<-|->|=>|!=|<=|>=|\+-|\(c\)|\(r\)|\(tm\)'
+      scope: constant.character.typography.carve
+    - match: '"'
+      scope: punctuation.definition.smartquote.carve

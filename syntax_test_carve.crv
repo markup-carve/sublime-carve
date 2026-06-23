@@ -1,0 +1,83 @@
+# SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+# Heading level 1
+# <- punctuation.definition.heading.carve
+#^^^^^^^^^^^^^^^^^ markup.heading.carve
+
+### Heading level 3
+# <- markup.heading.carve
+
+This is *bold* and /italic/ text.
+#       ^ punctuation.definition.bold.carve
+#        ^^^^ markup.bold.carve
+#                 ^ punctuation.definition.italic.carve
+
+Use _underline_ plus ~strike~ here.
+#   ^ punctuation.definition.underline.carve
+#                ^ punctuation.definition.strike.carve
+
+A ==highlight== and ^sup^ and ,,sub,, done.
+# ^^ punctuation.definition.highlight.carve
+#                   ^ punctuation.definition.superscript.carve
+#                             ^^ punctuation.definition.subscript.carve
+
+Inline `code span` works.
+#       ^ punctuation.definition.raw.carve
+#        ^^^^^^^^^ markup.raw.inline.content.carve
+
+A link [text](https://example.com) here.
+#      ^ punctuation.definition.link.begin.carve
+#            ^^^^^^^^^^^^^^^^^^^^^^ markup.underline.link.carve
+
+An autolink <https://example.com> here.
+#           ^ punctuation.definition.link.carve
+#            ^^^^^^^^^^^^^^^^^^^^^ markup.underline.link.carve
+
+An image ![alt](pic.png) here.
+#        ^^ punctuation.definition.image.begin.carve
+
+- list item one
+# <- punctuation.definition.list.begin.carve
+
+- [x] a completed task
+#^ punctuation.definition.list.begin.carve
+#  ^^^^ constant.language.task-list.carve
+
+1. numbered item
+# <- punctuation.definition.list.begin.carve
+
+> a block quote line
+# <- punctuation.definition.quote.carve
+
+%% a trailing-style line comment
+# <- comment.line.percent.carve
+
+::: note
+# <- punctuation.definition.div.carve
+#   ^^^^ entity.name.type.div.carve
+
+Block attrs {#id .class key="val"} applied.
+#            ^^^ entity.other.attribute-name.id.carve
+#                ^^^^^^ entity.other.attribute-name.class.carve
+
+A footnote ref[^note] here.
+#             ^ punctuation.definition.footnote.carve
+
+Inline math $`x^2`$ done.
+#           ^ punctuation.definition.math.carve
+
+A mention @alice and tag #topic here.
+#         ^ punctuation.definition.mention.carve
+#                        ^ punctuation.definition.tag.carve
+
+Critic {+inserted+} markup.
+#      ^^ punctuation.definition.critic.carve
+
+An escaped \* star.
+#          ^^ constant.character.escape.carve
+
+| a | b |
+# <- punctuation.separator.table.carve
+
+|=h1|=h2|
+#^ keyword.operator.table.header.carve

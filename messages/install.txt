@@ -1,0 +1,25 @@
+Carve for Sublime Text
+======================
+
+Thanks for installing the Carve syntax package.
+
+Files with the .crv or .carve extension now get Carve syntax highlighting.
+
+What you get:
+  - Headings, inline mnemonics (/italic/ *bold* _underline_ ~strike~
+    =highlight= ^sup^ ,,sub,, `code`)
+  - Links, autolinks, images, references, cross-references
+  - Lists, task lists, definition lists
+  - Block quotes, fenced code (with language + "header"/[label]),
+    raw =FORMAT fences
+  - Divs (:::), admonition types, block attributes {...}
+  - Tables (| |= ^ < and GFM |---| delimiter rows)
+  - Footnotes, math ($`..` $$`..` and ```math fences)
+  - Frontmatter (--- / ---toml / ---json), mentions/tags, critic markup
+  - %% line comments
+
+To run the bundled syntax tests:
+  Open syntax_test_carve.crv and choose Tools > Build With... >
+  "Syntax Tests" (Sublime Text 4), or run the default build.
+
+Carve is a lightweight prose-oriented markup language.
