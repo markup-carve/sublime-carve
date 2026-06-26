@@ -81,3 +81,17 @@ An escaped \* star.
 
 |=h1|=h2|
 #^ keyword.operator.table.header.carve
+
+See [@smith2023] for details.
+#   ^^ punctuation.definition.citation.begin.carve
+#    ^^^^^^^^^^^ constant.other.symbol.mention.carve
+
+Proved in [+@jones2020, p. 5].
+#         ^^ punctuation.definition.citation.begin.carve
+#          ^^^^^^^^^^^ constant.other.symbol.mention.carve
+
+    x = 1  <1>
+#          ^^^ constant.numeric.callout.carve
+
+1. Result is 42. <2>
+#                ^^^ constant.numeric.callout.carve

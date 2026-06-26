@@ -29,6 +29,7 @@ contexts:
     - include: block-quotes
     - include: lists
     - include: definitions
+    - include: citations
     - include: links
     - include: images
     - include: footnotes
@@ -42,6 +43,7 @@ contexts:
     - include: critic-markup
     - include: emphasis
     - include: mentions-tags
+    - include: code-callouts
     - include: smart-typography
 
   # ----- inline-only group (reused inside tables, etc.) -----
@@ -52,12 +54,14 @@ contexts:
     - include: autolink
     - include: extension-inline
     - include: critic-markup
+    - include: citations
     - include: links
     - include: images
     - include: footnotes
     - include: attributes
     - include: emphasis
     - include: mentions-tags
+    - include: code-callouts
     - include: smart-typography
 
   # ----- Frontmatter -----
@@ -458,6 +462,28 @@ contexts:
         1: punctuation.definition.subscript.carve
         2: markup.subscript.carve
         3: punctuation.definition.subscript.carve
+
+  # ----- Citations: [@key, loc; -@key2] with no (url)/[ref]/{attr} tail -----
+  #
+  # A citation group is a bracket whose first non-whitespace content after an
+  # optional '+' is or contains an '@key'. The whole bracket has no tail.
+  # Key charset: [A-Za-z0-9_][A-Za-z0-9_:.#$%&+?<>~/-]*
+  citations:
+    - match: '(\[\+?)(?=[^\]]*@[A-Za-z0-9_][A-Za-z0-9_:.#$%&+?<>\~\/\-]*)([^\]]*?)(@[A-Za-z0-9_][A-Za-z0-9_:.#$%&+?<>\~\/\-]*)([^\]]*)(\])(?![\(\[\{])'
+      scope: meta.citation.carve
+      captures:
+        1: punctuation.definition.citation.begin.carve
+        2: string.other.citation.prefix.carve
+        3: constant.other.symbol.mention.carve
+        4: string.other.citation.locator.carve
+        5: punctuation.definition.citation.end.carve
+
+  # ----- CodeCallout markers: <N> (digits only) -----
+  code-callouts:
+    - match: '<(\d+)>'
+      scope: meta.code-callout.carve
+      captures:
+        0: constant.numeric.callout.carve
 
   # ----- Mentions / tags / emoji -----
   mentions-tags:
