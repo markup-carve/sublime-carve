@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    name: Validate Sublime syntax YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Validate .sublime-syntax files parse as YAML
+        run: |
+          python - <<'PY'
+          import glob
+          import sys
+          import yaml
+
+          files = sorted(glob.glob("*.sublime-syntax"))
+          if not files:
+              sys.exit("No .sublime-syntax files found")
+
+          for path in files:
+              with open(path, encoding="utf-8") as handle:
+                  yaml.safe_load(handle)
+              print(f"OK: {path}")
+          PY
+
+      - name: Validate sidecar JSON/settings files parse
+        run: |
+          python - <<'PY'
+          import glob
+          import json
+          import sys
+
+          for path in sorted(glob.glob("*.json") + glob.glob("messages/*.json")):
+              with open(path, encoding="utf-8") as handle:
+                  json.load(handle)
+              print(f"OK: {path}")
+          PY
