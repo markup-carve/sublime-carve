@@ -6,6 +6,23 @@ on:
   pull_request:
 
 jobs:
+  syntax_tests:
+    name: Syntax Tests (${{ matrix.build }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        include:
+          - build: stable
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: SublimeText/syntax-test-action@v2
+        with:
+          build: ${{ matrix.build }}
+          package_name: Carve
+          dummy_syntaxes: source.embedded.carve
+
   validate:
     name: Validate Sublime syntax YAML
     runs-on: ubuntu-latest

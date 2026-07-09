@@ -2,7 +2,7 @@
 
 # Heading level 1
 # <- punctuation.definition.heading.carve
-#^^^^^^^^^^^^^^^^^ markup.heading.carve
+#^^^^^^^^^^^^^^^^ markup.heading.carve
 
 ### Heading level 3
 # <- markup.heading.carve
@@ -10,11 +10,11 @@
 This is *bold* and /italic/ text.
 #       ^ punctuation.definition.bold.carve
 #        ^^^^ markup.bold.carve
-#                 ^ punctuation.definition.italic.carve
+#                  ^ punctuation.definition.italic.carve
 
 Use _underline_ plus ~strike~ here.
 #   ^ punctuation.definition.underline.carve
-#                ^ punctuation.definition.strike.carve
+#                    ^ punctuation.definition.strike.carve
 
 A ==highlight== and ^sup^ and ,,sub,, done.
 # ^^ punctuation.definition.highlight.carve
@@ -22,16 +22,16 @@ A ==highlight== and ^sup^ and ,,sub,, done.
 #                             ^^ punctuation.definition.subscript.carve
 
 Inline `code span` works.
-#       ^ punctuation.definition.raw.carve
-#        ^^^^^^^^^ markup.raw.inline.content.carve
+#      ^ punctuation.definition.raw.carve
+#       ^^^^^^^^^ markup.raw.inline.content.carve
 
 A link [text](https://example.com) here.
 #      ^ punctuation.definition.link.begin.carve
-#            ^^^^^^^^^^^^^^^^^^^^^^ markup.underline.link.carve
+#             ^^^^^^^^^^^^^^^^^^^ markup.underline.link.carve
 
 An autolink <https://example.com> here.
 #           ^ punctuation.definition.link.carve
-#            ^^^^^^^^^^^^^^^^^^^^^ markup.underline.link.carve
+#            ^^^^^^^^^^^^^^^^^^^ markup.underline.link.carve
 
 An image ![alt](pic.png) here.
 #        ^^ punctuation.definition.image.begin.carve
@@ -40,8 +40,8 @@ An image ![alt](pic.png) here.
 # <- punctuation.definition.list.begin.carve
 
 - [x] a completed task
-#^ punctuation.definition.list.begin.carve
-#  ^^^^ constant.language.task-list.carve
+# <- punctuation.definition.list.begin.carve
+#  ^^^ constant.language.task-list.carve
 
 1. numbered item
 # <- punctuation.definition.list.begin.carve
@@ -83,12 +83,12 @@ An escaped \* star.
 #^ keyword.operator.table.header.carve
 
 See [@smith2023] for details.
-#   ^^ punctuation.definition.citation.begin.carve
-#    ^^^^^^^^^^^ constant.other.symbol.mention.carve
+#   ^ punctuation.definition.citation.begin.carve
+#    ^^^^^^^^^^ constant.other.symbol.mention.carve
 
 Proved in [+@jones2020, p. 5].
 #         ^^ punctuation.definition.citation.begin.carve
-#          ^^^^^^^^^^^ constant.other.symbol.mention.carve
+#           ^^^^^^^^^^ constant.other.symbol.mention.carve
 
     x = 1  <1>
 #          ^^^ constant.numeric.callout.carve
