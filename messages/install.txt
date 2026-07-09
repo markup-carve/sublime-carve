@@ -3,7 +3,7 @@ Carve for Sublime Text
 
 Thanks for installing the Carve syntax package.
 
-Files with the .crv or .carve extension now get Carve syntax highlighting.
+Files with the .crv extension now get Carve syntax highlighting.
 
 What you get:
   - Headings, inline mnemonics (/italic/ *bold* _underline_ ~strike~

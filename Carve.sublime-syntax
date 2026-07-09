@@ -10,7 +10,6 @@
 name: Carve
 file_extensions:
   - crv
-  - carve
 scope: text.carve
 
 variables:

@@ -1,9 +1,9 @@
 # Carve for Sublime Text
 
-Syntax highlighting for the [Carve](https://en.wikipedia.org/wiki/Lightweight_markup_language)
+Syntax highlighting for the [Carve](https://github.com/markup-carve/carve)
 markup language in Sublime Text 3 and 4.
 
-Files with a `.crv` or `.carve` extension are highlighted automatically.
+Files with a `.crv` extension are highlighted automatically.
 
 This package is authored from the maintained Carve TextMate grammar
 (scope `text.carve`) so its scope names line up with existing color schemes.
