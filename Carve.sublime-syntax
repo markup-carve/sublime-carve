@@ -34,6 +34,7 @@ contexts:
     - include: footnotes
     - include: critic-markup
     - include: sup-sub
+    - include: forced-emphasis
     - include: attributes
     - include: raw-inline
     - include: inline-code
@@ -59,6 +60,7 @@ contexts:
     - include: images
     - include: footnotes
     - include: sup-sub
+    - include: forced-emphasis
     - include: attributes
     - include: emphasis
     - include: mentions-tags
@@ -160,6 +162,7 @@ contexts:
           scope: constant.other.reference.div-label.carve
         - match: '$'
           pop: true
+        - include: forced-emphasis
         - include: attributes
 
   # ----- Tables -----
@@ -188,6 +191,7 @@ contexts:
         - include: images
         - include: autolink
         - include: sup-sub
+        - include: forced-emphasis
         - include: attributes
         - match: '$'
           pop: true
@@ -293,6 +297,32 @@ contexts:
         2: punctuation.definition.footnote.carve
         3: constant.other.footnote.carve
         4: punctuation.definition.footnote.carve
+
+  forced-emphasis:
+    - match: '(\{\*)(?=\S)([^\n]*?)(\*\})'
+      scope: markup.bold.carve
+      captures:
+        1: punctuation.definition.bold.carve
+        2: markup.bold.carve
+        3: punctuation.definition.bold.carve
+    - match: '(\{/)(?=\S)([^\n]*?)(/\})'
+      scope: markup.italic.carve
+      captures:
+        1: punctuation.definition.italic.carve
+        2: markup.italic.carve
+        3: punctuation.definition.italic.carve
+    - match: '(\{_)(?=\S)([^\n]*?)(_\})'
+      scope: markup.underline.carve
+      captures:
+        1: punctuation.definition.underline.carve
+        2: markup.underline.carve
+        3: punctuation.definition.underline.carve
+    - match: '(\{~)(?=\S)((?:(?!~>)[^\n])*?)(~\})'
+      scope: markup.strikethrough.carve
+      captures:
+        1: punctuation.definition.strike.carve
+        2: markup.strikethrough.carve
+        3: punctuation.definition.strike.carve
 
   # ----- Block / inline attributes {...} -----
   attributes:

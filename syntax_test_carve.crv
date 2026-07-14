@@ -99,3 +99,12 @@ Proved in [+@jones2020, p. 5].
 
 1. Result is 42. <2>
 #                ^^^ constant.numeric.callout.carve
+
+
+Forced my{_path_}name and {/a/b/} and x{~gone~}y here.
+#        ^^ punctuation.definition.underline.carve
+#          ^^^^ markup.underline.carve
+#                         ^^ punctuation.definition.italic.carve
+#                           ^^^ markup.italic.carve
+#                                      ^^ punctuation.definition.strike.carve
+#                                        ^^^^ markup.strikethrough.carve
