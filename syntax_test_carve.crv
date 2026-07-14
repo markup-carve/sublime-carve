@@ -108,3 +108,9 @@ Forced my{_path_}name and {/a/b/} and x{~gone~}y here.
 #                           ^^^ markup.italic.carve
 #                                      ^^ punctuation.definition.strike.carve
 #                                        ^^^^ markup.strikethrough.carve
+
+Marked =text= and braced {=text=} here.
+#      ^ punctuation.definition.highlight.carve
+#       ^^^^ markup.highlight.carve
+#                        ^^ punctuation.definition.highlight.carve
+#                          ^^^^ markup.highlight.carve
