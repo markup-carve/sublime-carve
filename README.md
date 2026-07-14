@@ -12,7 +12,7 @@ This package is authored from the maintained Carve TextMate grammar
 
 - Headings (`#` ... `######`)
 - Inline mnemonics: `/italic/`, `*bold*`, `_underline_`, `~strike~`,
-  `=highlight=` (single `=`), `^sup^`, `,,sub,,`, `` `code` ``
+  `=highlight=` (single `=`), `{^sup^}`, `{,sub,}`, `` `code` ``
 - Links, autolinks (`<https://...>`, `<a@b.com>`), images, reference and
   cross-reference links, inline spans
 - Lists, task lists (`- [ ]` / `- [x]`), ordered lists, definition lists (`:`)

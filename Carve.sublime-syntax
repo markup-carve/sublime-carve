@@ -33,6 +33,7 @@ contexts:
     - include: images
     - include: footnotes
     - include: critic-markup
+    - include: sup-sub
     - include: attributes
     - include: raw-inline
     - include: inline-code
@@ -57,6 +58,7 @@ contexts:
     - include: links
     - include: images
     - include: footnotes
+    - include: sup-sub
     - include: attributes
     - include: emphasis
     - include: mentions-tags
@@ -185,6 +187,7 @@ contexts:
         - include: links
         - include: images
         - include: autolink
+        - include: sup-sub
         - include: attributes
         - match: '$'
           pop: true
@@ -449,13 +452,17 @@ contexts:
         1: punctuation.definition.highlight.carve
         2: markup.highlight.carve
         3: punctuation.definition.highlight.carve
-    - match: '(\^)(?=\S)([^\s^\n]+?)(\^)'
+
+  # ----- Superscript / subscript (braced forms only: {^sup^} / {,sub,}) -----
+  # Bare ^sup^ / ,sub, no longer exist in Carve; a lone ^ or , is literal text.
+  sup-sub:
+    - match: '(\{\^)(?=\S)([^^\n]+?)(\^\})'
       scope: markup.superscript.carve
       captures:
         1: punctuation.definition.superscript.carve
         2: markup.superscript.carve
         3: punctuation.definition.superscript.carve
-    - match: '(,,)(?=\S)([^,\n]+?)(,,)'
+    - match: '(\{,)(?=\S)([^,\n]+?)(,\})'
       scope: markup.subscript.carve
       captures:
         1: punctuation.definition.subscript.carve

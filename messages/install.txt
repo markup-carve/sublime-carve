@@ -7,7 +7,7 @@ Files with the .crv extension now get Carve syntax highlighting.
 
 What you get:
   - Headings, inline mnemonics (/italic/ *bold* _underline_ ~strike~
-    =highlight= ^sup^ ,,sub,, `code`)
+    =highlight= {^sup^} {,sub,} `code`)
   - Links, autolinks, images, references, cross-references
   - Lists, task lists, definition lists
   - Block quotes, fenced code (with language + "header"/[label]),

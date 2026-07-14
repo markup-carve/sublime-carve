@@ -16,10 +16,14 @@ Use _underline_ plus ~strike~ here.
 #   ^ punctuation.definition.underline.carve
 #                    ^ punctuation.definition.strike.carve
 
-A ==highlight== and ^sup^ and ,,sub,, done.
+A ==highlight== and {^sup^} and {,sub,} done.
 # ^^ punctuation.definition.highlight.carve
-#                   ^ punctuation.definition.superscript.carve
-#                             ^^ punctuation.definition.subscript.carve
+#                   ^^ punctuation.definition.superscript.carve
+#                     ^^^ markup.superscript.carve
+#                        ^^ punctuation.definition.superscript.carve
+#                               ^^ punctuation.definition.subscript.carve
+#                                 ^^^ markup.subscript.carve
+#                                    ^^ punctuation.definition.subscript.carve
 
 Inline `code span` works.
 #      ^ punctuation.definition.raw.carve
