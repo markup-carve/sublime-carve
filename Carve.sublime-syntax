@@ -34,6 +34,7 @@ contexts:
     - include: footnotes
     - include: critic-markup
     - include: sup-sub
+    - include: highlight
     - include: forced-emphasis
     - include: attributes
     - include: raw-inline
@@ -60,6 +61,7 @@ contexts:
     - include: images
     - include: footnotes
     - include: sup-sub
+    - include: highlight
     - include: forced-emphasis
     - include: attributes
     - include: emphasis
@@ -162,6 +164,7 @@ contexts:
           scope: constant.other.reference.div-label.carve
         - match: '$'
           pop: true
+        - include: highlight
         - include: forced-emphasis
         - include: attributes
 
@@ -191,6 +194,7 @@ contexts:
         - include: images
         - include: autolink
         - include: sup-sub
+        - include: highlight
         - include: forced-emphasis
         - include: attributes
         - match: '$'
@@ -297,6 +301,20 @@ contexts:
         2: punctuation.definition.footnote.carve
         3: constant.other.footnote.carve
         4: punctuation.definition.footnote.carve
+
+  highlight:
+    - match: '(\{=)(?=\S)([^\n]*?)(=\})'
+      scope: markup.highlight.carve
+      captures:
+        1: punctuation.definition.highlight.carve
+        2: markup.highlight.carve
+        3: punctuation.definition.highlight.carve
+    - match: '(?<![\w=])(=)(?=\S)([^=\n]+?)(?<=\S)(=)(?![\w=])'
+      scope: markup.highlight.carve
+      captures:
+        1: punctuation.definition.highlight.carve
+        2: markup.highlight.carve
+        3: punctuation.definition.highlight.carve
 
   forced-emphasis:
     - match: '(\{\*)(?=\S)([^\n]*?)(\*\})'
