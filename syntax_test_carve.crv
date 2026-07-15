@@ -86,6 +86,21 @@ An escaped \* star.
 |=h1|=h2|
 #^ keyword.operator.table.header.carve
 
+|:--|--:|
+# <- punctuation.separator.table.carve
+#^ keyword.operator.table.alignment.carve
+# ^^ punctuation.separator.table.delimiter.carve
+#   ^ punctuation.separator.table.carve
+#    ^^ punctuation.separator.table.delimiter.carve
+#      ^ keyword.operator.table.alignment.carve
+#       ^ punctuation.separator.table.carve
+
+:: Term one
+# <- punctuation.definition.list.begin.carve
+#^ punctuation.definition.list.begin.carve
+:  A definition.
+# <- punctuation.definition.list.begin.carve
+
 See [@smith2023] for details.
 #   ^ punctuation.definition.citation.begin.carve
 #    ^^^^^^^^^^ constant.other.symbol.mention.carve
