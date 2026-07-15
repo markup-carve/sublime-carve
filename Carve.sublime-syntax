@@ -181,8 +181,13 @@ contexts:
         - match: '(?<=\|)\s*(<)\s*(?=\|)'
           captures:
             1: keyword.operator.table.colspan.carve
-        - match: '\|-{2,}\|'
-          scope: punctuation.separator.table.delimiter.carve
+        # Separator/alignment cell: the dash run is the delimiter; leading/
+        # trailing alignment colons (`:--`, `--:`, `:-:`) get their own scope.
+        - match: '(?<=\|)\s*(:?)(-+)(:?)\s*(?=\|)'
+          captures:
+            1: keyword.operator.table.alignment.carve
+            2: punctuation.separator.table.delimiter.carve
+            3: keyword.operator.table.alignment.carve
         - match: '\|'
           scope: punctuation.separator.table.carve
         - include: trailing-comment-cell
@@ -234,6 +239,10 @@ contexts:
         3: constant.language.task-list.carve
     - match: '^(\s*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdmIVXLCDM]+[.)])\s+'
       scope: markup.list.numbered.carve
+      captures:
+        2: punctuation.definition.list.begin.carve
+    - match: '^(\s*)(::)\s+'
+      scope: markup.list.definition.term.carve
       captures:
         2: punctuation.definition.list.begin.carve
     - match: '^(\s*)(:)\s+'
