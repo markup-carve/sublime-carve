@@ -1,0 +1,5 @@
+* text=auto eol=lf
+
+.github export-ignore
+.gitattributes export-ignore
+syntax_test_carve.crv export-ignore
