@@ -44,6 +44,23 @@ This package is authored from the maintained Carve TextMate grammar
 2. Create a folder named `Carve` inside it.
 3. Copy the contents of this repository into that folder.
 
+## Recommended view settings
+
+The package does not override any editor settings. Since Carve is
+prose-oriented markup, settings like these tend to work well - open a `.crv`
+file and pick **Preferences > Settings - Syntax Specific** to apply them for
+Carve files only:
+
+```json
+{
+    "tab_size": 2,
+    "translate_tabs_to_spaces": true,
+    "word_wrap": true,
+    "spell_check": true,
+    "trim_trailing_white_space_on_save": false
+}
+```
+
 ## Running the syntax tests
 
 `syntax_test_carve.crv` uses Sublime's syntax-test format. Open it in Sublime
