@@ -135,16 +135,23 @@ Jump to </#install> now.
 #          ^^^^^^^ constant.other.reference.crossref.carve
 #                 ^ punctuation.definition.crossref.end.carve
 
-A note^[with content] here.
-#     ^^ punctuation.definition.footnote.begin.carve
-#       ^^^^^^^^^^^^ string.unquoted.footnote.carve
-#                   ^ punctuation.definition.footnote.end.carve
+Note^[with /em/ inside] here.
+#   ^^ punctuation.definition.footnote.begin.carve
+#          ^ punctuation.definition.italic.carve
+#           ^^ markup.italic.carve
+#                     ^ punctuation.definition.footnote.end.carve
 
 And a ref[^label] too.
 #        ^ punctuation.definition.footnote.carve
 #          ^^^^^ constant.other.footnote.carve
 
 ![alt](i.png)
-^ Figure 1: a caption line
+^ Figure 1: a /styled/ caption
 # <- punctuation.definition.caption.carve
-# ^^^^^^^^^^^^^^^^^^^^^^^^ string.unquoted.caption.carve
+#             ^ punctuation.definition.italic.carve
+#              ^^^^^^ markup.italic.carve
+
+| a | b |
+^ Table 1: a caption
+# <- punctuation.definition.caption.carve
+#  ^^^^^^^^^^^^^^^^ markup.caption.carve

@@ -211,21 +211,22 @@ contexts:
       scope: markup.table.continuation.carve
       captures:
         1: keyword.operator.table.continuation.carve
-    - match: '^\s*(\^)\s+(.+)$'
-      scope: markup.table.caption.carve
-      captures:
-        1: punctuation.definition.caption.carve
-        2: string.unquoted.caption.carve
+    - include: captions
 
-  # ----- Caption lines ( `^ text` under an image, quote, or code block ) -----
-  # A `^` followed by at least one space opens a caption; the table variant
-  # lives in `tables`. `^[` (inline note) has no space and is not a caption.
+  # ----- Caption lines ( `^ text` under a table, image, quote, or code block ) -----
+  # One rule for every caption: the construct is the same wherever it appears
+  # (all render to <figcaption> / <caption>), so a table caption and an image
+  # caption share a scope. `^[` (inline note) has no space and is not a caption.
+  # The body is full inline markup, so `^ Figure 1: a /styled/ caption` works.
   captions:
-    - match: '^\s*(\^)\s+(.+)$'
-      scope: markup.caption.carve
+    - match: '^\s*(\^)(?=\s)'
       captures:
         1: punctuation.definition.caption.carve
-        2: string.unquoted.caption.carve
+      push:
+        - meta_scope: markup.caption.carve
+        - match: '$'
+          pop: true
+        - include: inline
 
   # ----- Block quotes -----
   block-quotes:
@@ -327,15 +328,17 @@ contexts:
 
   # ----- Footnotes -----
   footnotes:
-    # Inline note `^[content]` (grammar section 16). Flat like the reference
-    # form below: the content stops at the first `]`, so a note containing a
-    # bracketed construct is not fully covered.
-    - match: '(\^\[)([^\]]*)(\])'
-      scope: meta.footnote.inline.carve
+    # Inline note `^[content]` (grammar section 16). The body is full inline
+    # markup, so `^[a /styled/ note]` highlights inside the note.
+    - match: '(\^\[)'
       captures:
         1: punctuation.definition.footnote.begin.carve
-        2: string.unquoted.footnote.carve
-        3: punctuation.definition.footnote.end.carve
+      push:
+        - meta_scope: meta.footnote.inline.carve
+        - match: '\]'
+          scope: punctuation.definition.footnote.end.carve
+          pop: true
+        - include: inline
     - match: '(\[)(\^)([^\]]+)(\])'
       scope: constant.other.reference.footnote.carve
       captures:
