@@ -26,9 +26,11 @@ contexts:
     - include: divs
     - include: tables
     - include: block-quotes
+    - include: captions
     - include: lists
     - include: definitions
     - include: citations
+    - include: crossrefs
     - include: links
     - include: images
     - include: footnotes
@@ -53,6 +55,7 @@ contexts:
     - include: raw-inline
     - include: inline-code
     - include: math
+    - include: crossrefs
     - include: autolink
     - include: extension-inline
     - include: critic-markup
@@ -214,6 +217,16 @@ contexts:
         1: punctuation.definition.caption.carve
         2: string.unquoted.caption.carve
 
+  # ----- Caption lines ( `^ text` under an image, quote, or code block ) -----
+  # A `^` followed by at least one space opens a caption; the table variant
+  # lives in `tables`. `^[` (inline note) has no space and is not a caption.
+  captions:
+    - match: '^\s*(\^)\s+(.+)$'
+      scope: markup.caption.carve
+      captures:
+        1: punctuation.definition.caption.carve
+        2: string.unquoted.caption.carve
+
   # ----- Block quotes -----
   block-quotes:
     - match: '^\s*(>+)\s?'
@@ -301,8 +314,28 @@ contexts:
         4: markup.underline.link.image.carve
         5: string.quoted.double.image-title.carve
 
+  # ----- Cross-references ( </#id> ) -----
+  # Carve's own construct: the link text is filled from the target heading.
+  # Must be tried before `autolink`, whose `<scheme:...>` rule cannot match it.
+  crossrefs:
+    - match: '(</#)([^>\s]+)(>)'
+      scope: meta.link.crossref.carve
+      captures:
+        1: punctuation.definition.crossref.begin.carve
+        2: constant.other.reference.crossref.carve
+        3: punctuation.definition.crossref.end.carve
+
   # ----- Footnotes -----
   footnotes:
+    # Inline note `^[content]` (grammar section 16). Flat like the reference
+    # form below: the content stops at the first `]`, so a note containing a
+    # bracketed construct is not fully covered.
+    - match: '(\^\[)([^\]]*)(\])'
+      scope: meta.footnote.inline.carve
+      captures:
+        1: punctuation.definition.footnote.begin.carve
+        2: string.unquoted.footnote.carve
+        3: punctuation.definition.footnote.end.carve
     - match: '(\[)(\^)([^\]]+)(\])'
       scope: constant.other.reference.footnote.carve
       captures:
