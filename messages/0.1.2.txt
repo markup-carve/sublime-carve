@@ -1,0 +1,42 @@
+Carve 0.1.2
+===========
+
+The package now does more than highlight. It also fixes three bugs that
+mis-scoped real constructs.
+
+New
+  - Code inside a fenced block is highlighted with Sublime's own syntax
+    for that language: python, js/ts, rust, go, php, ruby, sql, shell,
+    yaml, json, html, css and ~35 more. Previously a fence got one flat
+    colour (it embedded a placeholder scope that no syntax defines).
+  - Frontmatter is highlighted with its declared format (yaml/toml/json).
+  - Headings feed the symbol list: Goto Symbol (ctrl+r) and the
+    breadcrumb now navigate a document by its sections.
+  - Commands (command palette):
+      Carve: Go to Cross-Reference Target - jumps a </#id> to its heading
+      Carve: Format Buffer - runs `carve fmt` over the buffer
+  - Build system (ctrl+b): lints the file with clickable results, plus
+    variants for project lint, fmt --check, fmt -w, HTML, ANSI preview.
+    Needs the `carve` CLI on PATH.
+  - Snippets and completions: admonitions, tables, list-table,
+    code-group, figure with caption, definition lists, footnotes,
+    cross-references, frontmatter, math, spoiler, tabs, toc, mermaid.
+
+Fixed
+  - Raw fences (```=FORMAT) were parsed as code blocks with a language
+    literally named "=html", while %%% - which is a block COMMENT - was
+    being treated as a raw block.
+  - Block comment fences of four or more percent signs were mis-scoped.
+  - Cross-references (</#id>), inline footnotes (^[note]) and caption
+    lines (^ text under an image or quote) had no rules at all; captions
+    were also mis-scoped as table captions.
+
+Note on scopes
+  All captions now use markup.caption.carve. The old
+  markup.table.caption.carve and string.unquoted.caption.carve scopes
+  are gone - update any colour scheme that targeted them.
+
+Optional
+  Formatting and the build system use the `carve` CLI:
+    npm install -g @markup-carve/carve   (or cargo install carve-lang)
+  Everything else works with no external dependencies.
