@@ -21,7 +21,10 @@ jobs:
         with:
           build: ${{ matrix.build }}
           package_name: Carve
-          dummy_syntaxes: source.embedded.carve
+          # Fenced code embeds the real bundled syntaxes (source.python, ...),
+          # so the default packages must be present for the embeds to resolve.
+          # `binary` pins them to the tag closest to the tested build.
+          default_packages: binary
 
   validate:
     name: Validate Sublime syntax YAML
