@@ -129,3 +129,22 @@ Marked =text= and braced {=text=} here.
 #       ^^^^ markup.highlight.carve
 #                        ^^ punctuation.definition.highlight.carve
 #                          ^^^^ markup.highlight.carve
+
+Jump to </#install> now.
+#       ^^^ punctuation.definition.crossref.begin.carve
+#          ^^^^^^^ constant.other.reference.crossref.carve
+#                 ^ punctuation.definition.crossref.end.carve
+
+A note^[with content] here.
+#     ^^ punctuation.definition.footnote.begin.carve
+#       ^^^^^^^^^^^^ string.unquoted.footnote.carve
+#                   ^ punctuation.definition.footnote.end.carve
+
+And a ref[^label] too.
+#        ^ punctuation.definition.footnote.carve
+#          ^^^^^ constant.other.footnote.carve
+
+![alt](i.png)
+^ Figure 1: a caption line
+# <- punctuation.definition.caption.carve
+# ^^^^^^^^^^^^^^^^^^^^^^^^ string.unquoted.caption.carve
