@@ -1,0 +1,8 @@
+<snippet>
+	<content><![CDATA[:: ${1:Term}
+:  ${2:Definition}
+]]></content>
+	<tabTrigger>deflist</tabTrigger>
+	<scope>text.carve</scope>
+	<description>:: definition list</description>
+</snippet>

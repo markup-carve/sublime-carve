@@ -1,0 +1,6 @@
+<snippet>
+	<content><![CDATA[</#${1:heading-id}>]]></content>
+	<tabTrigger>xref</tabTrigger>
+	<scope>text.carve</scope>
+	<description>cross-reference to a heading id</description>
+</snippet>

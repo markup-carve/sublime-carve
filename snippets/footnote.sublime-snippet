@@ -1,0 +1,9 @@
+<snippet>
+	<content><![CDATA[[^${1:label}]
+
+[^${1:label}]: ${2:Definition}
+]]></content>
+	<tabTrigger>fn</tabTrigger>
+	<scope>text.carve</scope>
+	<description>[^footnote] + definition</description>
+</snippet>

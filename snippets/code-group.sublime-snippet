@@ -1,0 +1,15 @@
+<snippet>
+	<content><![CDATA[::: code-group
+```${1:bash} [${2:npm}]
+${3:command}
+```
+
+```${4:bash} [${5:pnpm}]
+${6:command}
+```
+:::
+]]></content>
+	<tabTrigger>codegroup</tabTrigger>
+	<scope>text.carve</scope>
+	<description>::: code-group</description>
+</snippet>

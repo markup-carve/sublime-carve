@@ -1,0 +1,8 @@
+<snippet>
+	<content><![CDATA[![${1:alt text}](${2:image.png})
+^ ${3:Figure 1: caption}
+]]></content>
+	<tabTrigger>figure</tabTrigger>
+	<scope>text.carve</scope>
+	<description>image + caption</description>
+</snippet>

@@ -75,8 +75,39 @@ contexts:
     - include: smart-typography
 
   # ----- Frontmatter -----
+  # Carve does not interpret frontmatter - the fence token declares the format
+  # and the application parses it - so highlight the body with that format's
+  # syntax. Bare `---` is YAML by convention; `---toml` / `---json` embed those.
   frontmatter:
-    - match: '\A(---)\s*([A-Za-z0-9_-]+)?\s*$'
+    - match: '\A(---)[ \t]*(toml)[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.toml
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)\s*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '\A(---)[ \t]*(json)[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.json
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)\s*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '\A(---)[ \t]*(yaml|yml)?[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.yaml
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)\s*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    # An unknown format keeps the body as plain text.
+    - match: '\A(---)[ \t]*([A-Za-z0-9_-]+)[ \t]*$'
       captures:
         1: punctuation.definition.frontmatter.begin.carve
         2: entity.name.type.frontmatter.carve

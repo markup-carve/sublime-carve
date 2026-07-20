@@ -1,0 +1,10 @@
+[
+	{
+		"caption": "Carve: Go to Cross-Reference Target",
+		"command": "carve_goto_crossref"
+	},
+	{
+		"caption": "Carve: Format Buffer (carve fmt)",
+		"command": "carve_format"
+	}
+]

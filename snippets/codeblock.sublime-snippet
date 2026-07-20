@@ -1,0 +1,9 @@
+<snippet>
+	<content><![CDATA[```${1:python} "${2:file.py}"
+${3:code}
+```
+]]></content>
+	<tabTrigger>code</tabTrigger>
+	<scope>text.carve</scope>
+	<description>``` fenced code</description>
+</snippet>

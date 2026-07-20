@@ -1,0 +1,8 @@
+<snippet>
+	<content><![CDATA[|= ${1:Header} |= ${2:Header} |
+| ${3:cell} | ${4:cell} |
+]]></content>
+	<tabTrigger>table</tabTrigger>
+	<scope>text.carve</scope>
+	<description>|= table</description>
+</snippet>

@@ -1,0 +1,9 @@
+<snippet>
+	<content><![CDATA[::: spoiler "${1:Summary}"
+${2:Hidden content.}
+:::
+]]></content>
+	<tabTrigger>spoiler</tabTrigger>
+	<scope>text.carve</scope>
+	<description>::: spoiler</description>
+</snippet>
