@@ -27,10 +27,23 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 CROSSREF_RE = re.compile(r"</#([^>\s]+)>")
 
 
-def carve_binary():
-    """The `carve` executable, overridable via Carve.sublime-settings."""
-    settings = sublime.load_settings(SETTINGS_FILE)
-    return settings.get("carve_binary", "carve")
+def setting(view, key, default):
+    """Read a setting, letting a view or project override the package default.
+
+    Sublime merges project settings into view settings, so checking the view
+    first is what lets a project pin its own carve build (a repo checkout, a
+    pinned version) without changing the user's global preference.
+    """
+    if view is not None:
+        value = view.settings().get(key)
+        if value is not None:
+            return value
+    return sublime.load_settings(SETTINGS_FILE).get(key, default)
+
+
+def carve_binary(view=None):
+    """The `carve` executable: view/project setting, else package setting."""
+    return setting(view, "carve_binary", "carve")
 
 
 def slugify(text):
@@ -107,7 +120,7 @@ class CarveFormatCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         source = self.view.substr(sublime.Region(0, self.view.size()))
-        binary = carve_binary()
+        binary = carve_binary(self.view)
         try:
             proc = subprocess.Popen(
                 [binary, "fmt"],
@@ -122,7 +135,7 @@ class CarveFormatCommand(sublime_plugin.TextCommand):
             sublime.error_message(
                 "Carve: '%s' not found on PATH.\n\n"
                 "Install it (npm install -g @markup-carve/carve) or set "
-                "\"carve_binary\" in Carve.sublime-settings." % binary
+                "\"carve_binary\" in settings (package, project, or view)." % binary
             )
             return
         except subprocess.TimeoutExpired:
@@ -154,7 +167,7 @@ class CarveFormatOnSave(sublime_plugin.EventListener):
     def on_pre_save(self, view):
         if not view.match_selector(0, "text.carve"):
             return
-        if not sublime.load_settings(SETTINGS_FILE).get("carve_format_on_save", False):
+        if not setting(view, "carve_format_on_save", False):
             return
         view.run_command("carve_format")
 

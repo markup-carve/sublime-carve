@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Symbol List: Hide Embedded Code</string>
+	<!-- Fenced code embeds real language syntaxes, and those contribute their
+	     OWN symbols (a Python def, a JS class). In a prose document the outline
+	     should be the headings, not the symbols of every code sample, so hide
+	     anything inside a code fence or a raw block.
+
+	     The info-string language name is scoped entity.name.type.language and
+	     sits on the fence line, OUTSIDE the embedded body, so it needs hiding
+	     separately or every fenced block adds a "python" entry. -->
+	<key>scope</key>
+	<string>text.carve markup.raw.block.fenced.code, text.carve markup.raw.block, text.carve entity.name.type.language, text.carve entity.name.type.format</string>
+	<key>settings</key>
+	<dict>
+		<key>showInSymbolList</key>
+		<integer>0</integer>
+		<key>showInIndexedSymbolList</key>
+		<integer>0</integer>
+	</dict>
+</dict>
+</plist>

@@ -5,13 +5,30 @@
 	<key>name</key>
 	<string>Symbol List: Headings</string>
 	<!-- Headings become the document outline: Goto Symbol (ctrl+r) and the
-	     breadcrumb list navigate a .crv file by its sections. -->
+	     breadcrumb navigate a .crv file by its sections.
+
+	     The selector takes the WHOLE heading, not just entity.name.section:
+	     Sublime builds the symbol from the matched region, and selecting only
+	     the name loses the spaces inside it ("Setup Guide" -> "SetupGuide").
+	     The transformation then strips the marker and indents by level, the
+	     same shape Sublime's own Markdown package uses. -->
 	<key>scope</key>
-	<string>text.carve entity.name.section</string>
+	<string>text.carve markup.heading</string>
 	<key>settings</key>
 	<dict>
 		<key>showInSymbolList</key>
 		<integer>1</integer>
+		<key>symbolTransformation</key>
+		<string><![CDATA[
+			s/^\s*//g;              # strip leading whitespace
+			s/\s+/ /g;              # collapse runs of whitespace
+			s/^#{6}\s*/          /g;  # indent level 6
+			s/^#{5}\s*/        /g;    # indent level 5
+			s/^#{4}\s*/      /g;      # indent level 4
+			s/^#{3}\s*/    /g;        # indent level 3
+			s/^#{2}\s*/  /g;          # indent level 2
+			s/^#{1}\s*//g;            # level 1 sits flush left
+		]]></string>
 	</dict>
 </dict>
 </plist>
