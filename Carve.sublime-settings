@@ -1,0 +1,9 @@
+{
+	// Path to the `carve` executable used by the format command and the build
+	// system. Leave as "carve" to use whatever is on PATH.
+	"carve_binary": "carve",
+
+	// Run `carve fmt` over the buffer every time a .crv file is saved.
+	// Off by default: formatting on save should be an explicit choice.
+	"carve_format_on_save": false
+}

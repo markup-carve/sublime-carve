@@ -1,0 +1,40 @@
+{
+	// Requires the `carve` CLI on PATH:
+	//   npm install -g @markup-carve/carve   (or cargo install carve-lang)
+	// Default (ctrl+b / cmd+b) lints the current file; results are clickable
+	// because carve reports `file:line:column`.
+	"selector": "text.carve",
+	"file_patterns": ["*.crv"],
+
+	"shell_cmd": "carve lint \"$file\"",
+	"file_regex": "^(.+?):([0-9]+):([0-9]+) (.*)$",
+	"working_dir": "$file_path",
+
+	"variants": [
+		{
+			"name": "Lint Project",
+			"shell_cmd": "carve lint $(find . -name '*.crv' -print)",
+			"working_dir": "$folder"
+		},
+		{
+			"name": "Format (check only)",
+			"shell_cmd": "carve fmt --check \"$file\""
+		},
+		{
+			"name": "Format (write file)",
+			"shell_cmd": "carve fmt -w \"$file\""
+		},
+		{
+			"name": "Render HTML to stdout",
+			"shell_cmd": "carve --html \"$file\""
+		},
+		{
+			"name": "Render HTML to file",
+			"shell_cmd": "carve --html \"$file\" > \"${file_base_name}.html\""
+		},
+		{
+			"name": "Render ANSI preview",
+			"shell_cmd": "carve --ansi \"$file\""
+		}
+	]
+}

@@ -1,0 +1,20 @@
+{
+	"scope": "text.carve",
+	"completions": [
+		{ "trigger": "note\t admonition", "contents": "::: note\n$1\n:::\n" },
+		{ "trigger": "tip\t admonition", "contents": "::: tip\n$1\n:::\n" },
+		{ "trigger": "warning\t admonition", "contents": "::: warning\n$1\n:::\n" },
+		{ "trigger": "danger\t admonition", "contents": "::: danger\n$1\n:::\n" },
+		{ "trigger": "info\t admonition", "contents": "::: info\n$1\n:::\n" },
+		{ "trigger": "caution\t admonition", "contents": "::: caution\n$1\n:::\n" },
+		{ "trigger": "important\t admonition", "contents": "::: important\n$1\n:::\n" },
+		{ "trigger": "spoiler\t extension", "contents": "::: spoiler \"${1:Summary}\"\n$2\n:::\n" },
+		{ "trigger": "tabs\t extension", "contents": "::: tabs\n::: tab [${1:First}]\n$2\n:::\n:::\n" },
+		{ "trigger": "code-group\t extension", "contents": "::: code-group\n```${1:bash} [${2:npm}]\n$3\n```\n:::\n" },
+		{ "trigger": "list-table\t extension", "contents": "{header-rows=1}\n::: list-table \"${1:Caption}\"\n- - ${2:Header}\n- - ${3:cell}\n:::\n" },
+		{ "trigger": "toc\t placement", "contents": "::: toc\n:::\n" },
+		{ "trigger": "footnotes\t placement", "contents": "::: footnotes\n:::\n" },
+		{ "trigger": "mermaid\t diagram", "contents": "```mermaid\ngraph TD\n    ${1:A} --> ${2:B}\n```\n" },
+		{ "trigger": "chart\t diagram", "contents": "```chart\n{\"type\":\"${1:bar}\",\"data\":{\"labels\":[],\"datasets\":[]}}\n```\n" }
+	]
+}

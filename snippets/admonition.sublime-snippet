@@ -1,0 +1,9 @@
+<snippet>
+	<content><![CDATA[::: ${1:note} "${2:Title}"
+${3:Body text.}
+:::
+]]></content>
+	<tabTrigger>note</tabTrigger>
+	<scope>text.carve</scope>
+	<description>::: admonition</description>
+</snippet>

@@ -1,0 +1,11 @@
+<snippet>
+	<content><![CDATA[---
+title: ${1:Title}
+date: ${2:2026-01-01}
+---
+
+]]></content>
+	<tabTrigger>fm</tabTrigger>
+	<scope>text.carve</scope>
+	<description>--- frontmatter</description>
+</snippet>

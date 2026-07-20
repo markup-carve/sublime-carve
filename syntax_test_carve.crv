@@ -155,3 +155,39 @@ And a ref[^label] too.
 ^ Table 1: a caption
 # <- punctuation.definition.caption.carve
 #  ^^^^^^^^^^^^^^^^ markup.caption.carve
+
+::: warning "Careful" [tab1]
+#   ^^^^^^^ entity.name.type.div.carve
+Body text.
+:::
+
+```=html
+# <- punctuation.definition.raw.begin.carve
+#  ^ punctuation.definition.raw.format.carve
+#   ^^^^ entity.name.type.format.carve
+<b>raw</b>
+```
+
+$$`e = mc^2`
+
+
+A symbol :heart: here.
+
+Trailing text %% a comment
+
+```python
+def greet(name):
+# <- keyword.declaration.function.python
+#^^^ source.python
+    return f"hi {name}"
+```
+
+```js
+const x = 1;
+# <- keyword.declaration.js
+#^^^^ source.js
+```
+
+%%%%
+a longer comment fence
+%%%%

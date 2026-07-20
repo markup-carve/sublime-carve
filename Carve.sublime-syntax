@@ -5,8 +5,10 @@
 #   vscode-carve/syntaxes/carve.tmLanguage.json
 # Scope names mirror that grammar so existing color schemes light it up.
 #
-# NOTE: In-editor rendering and the syntax_test_carve.crv assertions need
-# manual verification inside Sublime Text (not installable in the build env).
+# The syntax_test_carve.crv assertions run in CI (SublimeText/syntax-test-action)
+# and locally without a GUI: download the headless runner for your build from
+#   https://download.sublimetext.com/st_syntax_tests_build_<BUILD>_x64.tar.xz
+# then copy this package into its Data/Packages/Carve and run ./syntax_tests.
 name: Carve
 file_extensions:
   - crv
@@ -20,8 +22,8 @@ contexts:
     - include: frontmatter
     - include: comments
     - include: headings
-    - include: code-blocks
     - include: raw-blocks
+    - include: code-blocks
     - include: math-blocks
     - include: divs
     - include: tables
@@ -73,8 +75,39 @@ contexts:
     - include: smart-typography
 
   # ----- Frontmatter -----
+  # Carve does not interpret frontmatter - the fence token declares the format
+  # and the application parses it - so highlight the body with that format's
+  # syntax. Bare `---` is YAML by convention; `---toml` / `---json` embed those.
   frontmatter:
-    - match: '\A(---)\s*([A-Za-z0-9_-]+)?\s*$'
+    - match: '\A(---)[ \t]*(toml)[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.toml
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)\s*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '\A(---)[ \t]*(json)[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.json
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)\s*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '\A(---)[ \t]*(yaml|yml)?[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.yaml
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)\s*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    # An unknown format keeps the body as plain text.
+    - match: '\A(---)[ \t]*([A-Za-z0-9_-]+)[ \t]*$'
       captures:
         1: punctuation.definition.frontmatter.begin.carve
         2: entity.name.type.frontmatter.carve
@@ -89,10 +122,16 @@ contexts:
 
   # ----- Comments -----
   comments:
-    - match: '^\s*%%%\s*$'
+    # A block comment fence is three OR MORE percent signs (fmt widens the
+    # fence when the body contains a `%%%` run), so match `%{3,}`.
+    - match: '^\s*(%{3,})\s*$'
+      captures:
+        1: punctuation.definition.comment.carve
       push:
         - meta_scope: comment.block.carve
-        - match: '^\s*%%%\s*$'
+        - match: '^\s*(%{3,})\s*$'
+          captures:
+            1: punctuation.definition.comment.carve
           pop: true
     - match: '^\s*%%(?!%).*$'
       scope: comment.line.percent.carve
@@ -114,27 +153,487 @@ contexts:
         3: entity.name.section.carve
 
   # ----- Fenced code blocks (with optional language + #201 "header"/[label]) -----
+  # Fenced code. A block whose info string names a language Sublime ships gets
+  # that language embedded, so the code inside is really highlighted; anything
+  # else (mermaid, chart, an unknown tag, no tag at all) falls through to the
+  # last rule and stays plain raw text.
   code-blocks:
+    - match: '^(`{3,}|~{3,})[ \t]*(python|py)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.python
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(javascript|js|node)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.js
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(jsx)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.jsx
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(typescript|ts)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.ts
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(tsx)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.tsx
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(json)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.json
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(html)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:text.html.basic
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(xml)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:text.xml
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(css)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.css
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(yaml|yml)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.yaml
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(toml)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.toml
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(sql)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.sql
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(rust|rs)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.rust
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(go|golang)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.go
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(c)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.c
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(cpp|c\+\+|cxx|cc)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.c++
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(csharp|cs)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.cs
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(java)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.java
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(php)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.php
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(ruby|rb)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.ruby
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(perl|pl)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.perl
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(lua)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.lua
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(r)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.r
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(bash|sh|shell)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.shell.bash
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(zsh)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.shell.zsh
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(bat|batch|dosbatch)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.dosbatch
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(make|makefile)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.makefile
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(diff|patch)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.diff
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(dot|graphviz)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.dot
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(haskell|hs)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.haskell
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(scala)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.scala
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(clojure|clj)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.clojure
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(erlang|erl)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.erlang
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(lisp)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.lisp
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(matlab)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.matlab
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(objc|objectivec)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.objc
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(ocaml)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.ocaml
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(pascal)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.pascal
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(tcl)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.tcl
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(groovy)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.groovy
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(applescript)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.applescript
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(markdown|md)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:text.html.markdown
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(latex|tex)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:text.tex.latex
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(rst|restructuredtext)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:text.restructuredtext
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^(`{3,}|~{3,})[ \t]*(regexp|regex)\b(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        2: entity.name.type.language.carve
+        3: meta.code-fence.header.carve
+      embed: scope:source.regexp
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(`{3,}|~{3,})\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
     - match: '^(`{3,}|~{3,})\s*([^`~\s]+)?(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         2: entity.name.type.language.carve
         3: meta.code-fence.header.carve
-      embed: scope:source.embedded.carve
-      embed_scope: markup.raw.block.fenced.code.carve
-      escape: '^(`{3,}|~{3,})\s*$'
-      escape_captures:
-        1: punctuation.definition.raw.end.carve
+      push:
+        - meta_scope: markup.raw.block.fenced.code.carve
+        - match: '^(`{3,}|~{3,})\s*$'
+          captures:
+            1: punctuation.definition.raw.end.carve
+          pop: true
 
   # ----- Raw blocks (%%% FORMAT ... %%%) -----
+  # A raw block is a fence whose info string starts with `=`: ```=html passes
+  # its body through to that output format verbatim. It is NOT code, so no
+  # language is embedded. Must be tried before `code-blocks`, which would
+  # otherwise read `=html` as a language name.
   raw-blocks:
-    - match: '^(%{3,})\s*([^\s]+)?\s*$'
+    - match: '^(`{3,}|~{3,})(=)([^\s`~]+)\s*$'
       captures:
         1: punctuation.definition.raw.begin.carve
-        2: entity.name.type.language.carve
+        2: punctuation.definition.raw.format.carve
+        3: entity.name.type.format.carve
       push:
         - meta_scope: markup.raw.block.carve
-        - match: '^(%{3,})\s*$'
+        - match: '^(`{3,}|~{3,})\s*$'
           captures:
             1: punctuation.definition.raw.end.carve
           pop: true

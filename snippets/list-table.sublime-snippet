@@ -1,0 +1,13 @@
+<snippet>
+	<content><![CDATA[{header-rows=1}
+::: list-table "${1:Caption}"
+- - ${2:Header}
+  - ${3:Header}
+- - ${4:cell}
+  - ${5:cell}
+:::
+]]></content>
+	<tabTrigger>listtable</tabTrigger>
+	<scope>text.carve</scope>
+	<description>::: list-table</description>
+</snippet>
