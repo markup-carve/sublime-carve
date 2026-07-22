@@ -208,3 +208,33 @@ const x = 1;
 %%%%
 a longer comment fence
 %%%%
+
+# ----- Math span containment -----
+
+Unclosed math $`oops does not leak.
+#               ^^^^ -markup.other.math.inline.carve
+#                             ^^^^ -markup.other.math.content.carve
+
+This paragraph after it stays ordinary prose.
+#    ^^^^^^^^^ -markup.other.math.inline.carve
+#                             ^^^^^^^^ -markup.other.math.content.carve
+
+Unclosed display $$`oops also does not leak.
+#                   ^^^^ -markup.other.math.display.carve
+
+Another following paragraph stays prose.
+#       ^^^^^^^^^ -markup.other.math.display.carve
+
+Closed inline $`a+b` still works.
+#             ^ punctuation.definition.math.carve
+#              ^ punctuation.definition.raw.carve
+#               ^^^ markup.other.math.content.carve
+
+Closed display $$`x^2` still works.
+#              ^^ punctuation.definition.math.carve
+#                 ^^^ markup.other.math.content.carve
+
+Wide math $``a ` b`` keeps its backtick.
+#         ^ punctuation.definition.math.carve
+#          ^^ punctuation.definition.raw.carve
+#            ^^^^^ markup.other.math.content.carve

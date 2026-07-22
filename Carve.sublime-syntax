@@ -948,27 +948,25 @@ contexts:
         4: punctuation.definition.raw.carve
 
   # ----- Inline math ( $`..` and $$`..` ) -----
+  # Closed spans, like inline-code and inline-literal: a single match is
+  # line-bounded and length-matched, so an unclosed opener cannot leak math
+  # scoping into the rest of the document, and a shorter backtick run inside
+  # the span no longer closes it early. Display ($$) is tried before inline ($).
   math:
-    - match: '(\$\$)(`+)'
+    - match: '(\$\$)(`+)([^`]|[^`][\s\S]*?[^`])(\2)'
+      scope: markup.other.math.display.carve
       captures:
         1: punctuation.definition.math.carve
         2: punctuation.definition.raw.carve
-      push:
-        - meta_scope: markup.other.math.display.carve
-        - meta_content_scope: markup.other.math.content.carve
-        - match: '(`+)'
-          scope: punctuation.definition.raw.carve
-          pop: true
-    - match: '(\$)(`+)'
+        3: markup.other.math.content.carve
+        4: punctuation.definition.raw.carve
+    - match: '(\$)(`+)([^`]|[^`][\s\S]*?[^`])(\2)'
+      scope: markup.other.math.inline.carve
       captures:
         1: punctuation.definition.math.carve
         2: punctuation.definition.raw.carve
-      push:
-        - meta_scope: markup.other.math.inline.carve
-        - meta_content_scope: markup.other.math.content.carve
-        - match: '(`+)'
-          scope: punctuation.definition.raw.carve
-          pop: true
+        3: markup.other.math.content.carve
+        4: punctuation.definition.raw.carve
 
   # ----- Autolinks -----
   autolink:
