@@ -42,6 +42,7 @@ contexts:
     - include: forced-emphasis
     - include: attributes
     - include: raw-inline
+    - include: inline-literal
     - include: inline-code
     - include: trailing-comment
     - include: math
@@ -55,6 +56,7 @@ contexts:
   # ----- inline-only group (reused inside tables, etc.) -----
   inline:
     - include: raw-inline
+    - include: inline-literal
     - include: inline-code
     - include: math
     - include: crossrefs
@@ -693,6 +695,7 @@ contexts:
         - match: '\|'
           scope: punctuation.separator.table.carve
         - include: trailing-comment-cell
+        - include: inline-literal
         - include: inline-code
         - include: extension-inline
         - include: critic-markup
@@ -926,6 +929,23 @@ contexts:
         1: punctuation.definition.raw.carve
         2: markup.raw.inline.content.carve
         3: punctuation.definition.raw.carve
+
+  # ----- Inline literal ( !`..` ) -----
+  # A `!` prefix on a verbatim backtick span renders as literal prose (no
+  # <code>), mirroring the `$`-math prefix. Must precede inline-code so the
+  # `!` is claimed with the span rather than left as stray text.
+  # Single match with a backreferenced closer (\2), exactly as inline-code
+  # does: a push/pop pair would pop on the first backtick run of ANY length,
+  # ending `!``a ` b`` ` early on its inner backtick. Unlike math there is no
+  # closing sentinel to anchor the end, so the run length has to be matched.
+  inline-literal:
+    - match: '(!)(`+)([^`]|[^`][\s\S]*?[^`])(\2)'
+      scope: markup.raw.inline.literal.carve
+      captures:
+        1: punctuation.definition.literal.carve
+        2: punctuation.definition.raw.carve
+        3: markup.raw.inline.content.carve
+        4: punctuation.definition.raw.carve
 
   # ----- Inline math ( $`..` and $$`..` ) -----
   math:
