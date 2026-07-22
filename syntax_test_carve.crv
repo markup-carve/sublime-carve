@@ -238,3 +238,11 @@ Wide math $``a ` b`` keeps its backtick.
 #         ^ punctuation.definition.math.carve
 #          ^^ punctuation.definition.raw.carve
 #            ^^^^^ markup.other.math.content.carve
+
+Symbol boundary: a:b:c and 10:30: and :_bad: stay literal, (:tada:) is a symbol.
+(:tada:) is a symbol but a:b:c is not.
+#^^^^^^ constant.character.emoji.carve
+
+Reactions :+1: and :-1: still parse.
+#         ^^^^ constant.character.emoji.carve
+#                  ^^^^ constant.character.emoji.carve
