@@ -83,9 +83,9 @@ Wide fence !``a ` b`` keeps its inner backtick.
 #                    ^^ punctuation.definition.raw.carve
 
 | !`kaet` | b |
-#  ^ punctuation.definition.literal.carve
-#   ^ punctuation.definition.raw.carve
-#    ^^^^ markup.raw.inline.content.carve
+# ^ punctuation.definition.literal.carve
+#  ^ punctuation.definition.raw.carve
+#   ^^^^ markup.raw.inline.content.carve
 
 A mention @alice and tag #topic here.
 #         ^ punctuation.definition.mention.carve
