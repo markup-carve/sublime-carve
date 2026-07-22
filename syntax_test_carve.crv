@@ -79,8 +79,8 @@ Inline literal !`kaet` here.
 Wide fence !``a ` b`` keeps its inner backtick.
 #          ^ punctuation.definition.literal.carve
 #           ^^ punctuation.definition.raw.carve
-#             ^^^^^^^ markup.raw.inline.content.carve
-#                    ^^ punctuation.definition.raw.carve
+#             ^^^^^ markup.raw.inline.content.carve
+#                  ^^ punctuation.definition.raw.carve
 
 | !`kaet` | b |
 # ^ punctuation.definition.literal.carve
