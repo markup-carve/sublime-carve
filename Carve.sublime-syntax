@@ -1101,7 +1101,7 @@ contexts:
       captures:
         0: constant.numeric.callout.carve
 
-  # ----- Mentions / tags / emoji -----
+  # ----- Mentions / tags / symbols -----
   mentions-tags:
     - match: '(?<![\w.])(@)([A-Za-z0-9_][A-Za-z0-9_-]*)'
       scope: constant.other.symbol.mention.carve
@@ -1118,7 +1118,7 @@ contexts:
     # `(:tada:)` is a symbol. The first name character may be a letter, digit,
     # `+` or `-` but never `_` (spec `symbol_name`), so `:_x:` stays literal.
     - match: '(?<!\w):[A-Za-z0-9+-][A-Za-z0-9_+-]*:'
-      scope: constant.character.emoji.carve
+      scope: constant.language.symbol.carve
 
   # ----- Smart typography / escapes -----
   smart-typography:
