@@ -209,6 +209,23 @@ const x = 1;
 a longer comment fence
 %%%%
 
+%%% html
+# <- comment.block.carve
+a tail on the opener is insignificant, so this body stays hidden
+# <- comment.block.carve
+%%% end
+# <- comment.block.carve
+visible again
+# <- -comment.block.carve
+
+%%%% wide
+an inner %%% run is content, not a closer, because widths must match
+# <- comment.block.carve
+%%%%
+# <- comment.block.carve
+visible after the wide fence
+# <- -comment.block.carve
+
 # ----- Math span containment -----
 
 Unclosed math $`oops does not leak.
