@@ -124,14 +124,22 @@ contexts:
 
   # ----- Comments -----
   comments:
-    # A block comment fence is three OR MORE percent signs (fmt widens the
-    # fence when the body contains a `%%%` run), so match `%{3,}`.
-    - match: '^\s*(%{3,})\s*$'
+    # A `%%%` fence line is a DELIMITER plus an INSIGNIFICANT TAIL (spec PART 9
+    # section 28): only the leading run of `%` is structural, so `%%% TODO`
+    # opens and `%%% end` closes. `%%%` carries no info string - a raw
+    # passthrough block is a CODE fence with an `=FORMAT` info string - so
+    # `%%% html` is a comment, not raw output.
+    #
+    # The closer matches the opener width EXACTLY via a backreference, which is
+    # what lets a longer fence nest a shorter one: inside a `%%%%` block a
+    # `%%%` line is content. `\1` in the pop pattern refers to the capture from
+    # the push pattern, so the width travels with the context.
+    - match: '^\s*(%{3,})[^\n]*$'
       captures:
         1: punctuation.definition.comment.carve
       push:
         - meta_scope: comment.block.carve
-        - match: '^\s*(%{3,})\s*$'
+        - match: '^\s*(\1)(?!%)[^\n]*$'
           captures:
             1: punctuation.definition.comment.carve
           pop: true
