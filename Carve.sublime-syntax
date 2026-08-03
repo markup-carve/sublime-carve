@@ -740,7 +740,11 @@ contexts:
 
   # ----- Block quotes -----
   block-quotes:
-    - match: '^\s*(>+)\s?'
+    # A `>` marker takes a SPACE, or stands alone on its line. Not `>+`, and not
+    # `\s`: verified against carve-rs, `>no space`, `>>x`, `>> x` and `>\tx` are
+    # all paragraphs - nesting is written `> > x`, a space per marker, and a tab
+    # does not separate (markup-carve/carve#525).
+    - match: '^[ \t]*(>)(?= |$)[ ]?'
       captures:
         1: punctuation.definition.quote.carve
       push:
