@@ -59,14 +59,33 @@ An image ![alt](pic.png) here.
 > a block quote line
 # <- punctuation.definition.quote.carve
 
+# MARKER REQUIRES CONTENT (markup-carve/carve#513). A bare marker never matched
+# here anyway - Sublime applies a pattern to the line WITHOUT its newline, so a
+# `\s+` separator has nothing to eat and `-` alone was already prose. What did
+# match is a marker followed by whitespace ONLY, which carve-rs also renders as
+# a paragraph. Each of the four lines below ends in a space.
+#
+- 
+# <- -punctuation.definition.list.begin.carve
+1. 
+# <- -punctuation.definition.list.begin.carve
+:: 
+# <- -punctuation.definition.list.begin.carve
+^ 
+# <- -punctuation.definition.caption.carve
+# An empty task item is a plain bullet holding the literal `[ ]`, with no
+# checkbox: carve-rs renders `<ul><li>[ ]</li></ul>`.
+- [ ] 
+#     <- -constant.language.task-list.carve
+
 >no space is prose
-# <- - punctuation.definition.quote.carve
+# <- -punctuation.definition.quote.carve
 >>x is prose
-# <- - punctuation.definition.quote.carve
+# <- -punctuation.definition.quote.carve
 >> x is prose
-# <- - punctuation.definition.quote.carve
+# <- -punctuation.definition.quote.carve
 >	x is prose (a tab does not separate)
-# <- - punctuation.definition.quote.carve
+# <- -punctuation.definition.quote.carve
 >
 # <- punctuation.definition.quote.carve
 
