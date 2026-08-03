@@ -26,6 +26,21 @@ jobs:
           # `binary` pins them to the tag closest to the tested build.
           default_packages: binary
 
+  lint_assertions:
+    name: Lint syntax-test assertions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      # The syntax-test runner cannot report an assertion that cannot fail: a
+      # negative marker written `- scope` instead of `-scope` is accepted and
+      # checks nothing. Every negative in this repo was dead that way once.
+      - name: Reject assertions that cannot fail
+        run: python3 tools/lint-syntax-tests.py
+
   validate:
     name: Validate Sublime syntax YAML
     runs-on: ubuntu-latest
