@@ -41,6 +41,17 @@ jobs:
       - name: Reject assertions that cannot fail
         run: python3 tools/lint-syntax-tests.py
 
+      # The generated battery block is a copy of carve-grammars' table, compiled
+      # into this file's assertion language. A copy nothing compares is the
+      # failure the battery exists to catch, one level up.
+      - name: The generated battery block is in sync
+        run: python3 tools/generate-battery-tests.py --check
+
+      # Reaches the network, so a failure means the vendored table is stale (or
+      # GitHub is down), not that the syntax is wrong.
+      - name: The vendored block battery still matches carve-grammars
+        run: ./tools/check-battery-drift.sh
+
   validate:
     name: Validate Sublime syntax YAML
     runs-on: ubuntu-latest
