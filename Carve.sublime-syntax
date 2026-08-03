@@ -156,7 +156,7 @@ contexts:
 
   # ----- Headings -----
   headings:
-    - match: '^(#{1,6})(\s+)(.+)$'
+    - match: '^(#{1,6})([ \t]+)(?![ \t]*$)(.+)$'
       scope: markup.heading.carve
       captures:
         1: punctuation.definition.heading.carve
@@ -729,7 +729,7 @@ contexts:
   # caption share a scope. `^[` (inline note) has no space and is not a caption.
   # The body is full inline markup, so `^ Figure 1: a /styled/ caption` works.
   captions:
-    - match: '^\s*(\^)(?=\s)'
+    - match: '^[ \t]*(\^)(?=[ \t])(?![ \t]*$)'
       captures:
         1: punctuation.definition.caption.carve
       push:
@@ -760,22 +760,22 @@ contexts:
       captures:
         2: punctuation.definition.list.continuation.carve
       scope: markup.list.continuation.carve
-    - match: '^(\s*)([-*])\s+(\[[ xX]\]\s+)?'
+    - match: '^([ \t]*)([-*])[ \t]+(\[[ xX]\][ \t]+)?(?![ \t]*$)'
       scope: markup.list.unnumbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
         3: constant.language.task-list.carve
     # The BARE DOT is a marker on its own (carve#472): `.` continues an
     # ordered sequence, and is the only marker allowed to drop its value.
-    - match: '^(\s*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdmIVXLCDM]+[.)]|\.)(?=\s|\{)\s*'
+    - match: '^([ \t]*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdmIVXLCDM]+[.)]|\.)(?=[ \t]|\{)[ \t]*(?![ \t]*$)'
       scope: markup.list.numbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
-    - match: '^(\s*)(::)\s+'
+    - match: '^([ \t]*)(::)[ \t]+(?![ \t]*$)'
       scope: markup.list.definition.term.carve
       captures:
         2: punctuation.definition.list.begin.carve
-    - match: '^(\s*)(:)\s+'
+    - match: '^([ \t]*)(:)[ \t]+(?![ \t]*$)'
       scope: markup.list.definition.carve
       captures:
         2: punctuation.definition.list.begin.carve
