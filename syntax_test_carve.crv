@@ -50,6 +50,12 @@ An image ![alt](pic.png) here.
 1. numbered item
 # <- punctuation.definition.list.begin.carve
 
+. a bare-dot ordered item
+# <- punctuation.definition.list.begin.carve
+
+.{#x} a bare-dot item carrying attributes
+# <- punctuation.definition.list.begin.carve
+
 > a block quote line
 # <- punctuation.definition.quote.carve
 
