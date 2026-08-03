@@ -59,6 +59,17 @@ An image ![alt](pic.png) here.
 > a block quote line
 # <- punctuation.definition.quote.carve
 
+>no space is prose
+# <- - punctuation.definition.quote.carve
+>>x is prose
+# <- - punctuation.definition.quote.carve
+>> x is prose
+# <- - punctuation.definition.quote.carve
+>	x is prose (a tab does not separate)
+# <- - punctuation.definition.quote.carve
+>
+# <- punctuation.definition.quote.carve
+
 %% a trailing-style line comment
 # <- comment.line.percent.carve
 
