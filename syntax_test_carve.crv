@@ -299,3 +299,73 @@ Symbol boundary: a:b:c and 10:30: and :_bad: stay literal, (:tada:) is a symbol.
 Reactions :+1: and :-1: still parse.
 #         ^^^^ constant.language.symbol.carve
 #                  ^^^^ constant.language.symbol.carve
+
+# --- BEGIN GENERATED BLOCK BATTERY (tools/generate-battery-tests.py) ---
+#
+# Generated from tests/lib/block-battery.json, the table every Carve
+# grammar is checked against. Do not edit by hand: run
+# tools/generate-battery-tests.py and commit the result.
+#
+# `want` is what carve-rs renders.
+#
+-
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+- 
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+1.
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+1. 
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+# the bare dot may drop its VALUE, not its content
+.
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+::
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+:: 
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+^
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+^ 
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+- item
+# <- punctuation.definition.list.begin.carve
+1. item
+# <- punctuation.definition.list.begin.carve
+. bare
+# <- punctuation.definition.list.begin.carve
+:: term
+# <- punctuation.definition.list.begin.carve
+^ cap
+# <- punctuation.definition.caption.carve
+-  item
+# <- punctuation.definition.list.begin.carve
+>
+# <- punctuation.definition.quote.carve
+> real
+# <- punctuation.definition.quote.carve
+>no space
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+>>x
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+>> x
+# <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+- - 
+# <- punctuation.definition.list.begin.carve
+- - item
+# <- punctuation.definition.list.begin.carve
+# a plain bullet holding the literal [ ], no checkbox
+- [ ] 
+# <- punctuation.definition.list.begin.carve
+- [x] done
+# <- punctuation.definition.list.begin.carve
+#
+# NOT covered here, because this file cannot express them:
+#   '#' - a line starting with `#` is this file's own comment prefix
+#   '# ' - a line starting with `#` is this file's own comment prefix
+#   '#  ' - a line starting with `#` is this file's own comment prefix
+#   '# H' - a line starting with `#` is this file's own comment prefix
+#   '# \xa0Title' - a line starting with `#` is this file's own comment prefix
+#   '>\tx' - contains a literal tab
+# They are covered by the grammars that run the table directly:
+# carve-grammars, vscode-carve, intellij-carve, vim-carve, emacs-carve.
+# --- END GENERATED BLOCK BATTERY ---
