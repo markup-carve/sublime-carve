@@ -760,7 +760,7 @@ contexts:
       captures:
         2: punctuation.definition.list.continuation.carve
       scope: markup.list.continuation.carve
-    - match: '^([ \t]*)([-*])[ \t]+(\[[ xX]\][ \t]+)?(?![ \t]*$)'
+    - match: '^(\s*)([-*])\s+(\[[ xX]\]\s+)?'
       scope: markup.list.unnumbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
