@@ -59,6 +59,20 @@ An image ![alt](pic.png) here.
 > a block quote line
 # <- punctuation.definition.quote.carve
 
+# MARKER REQUIRES CONTENT (markup-carve/carve#513): a marker alone on its line
+# is prose, and trailing whitespace is not content. Verified against carve-rs.
+#
+-
+# <- - punctuation.definition.list.begin.carve
+1.
+# <- - punctuation.definition.list.begin.carve
+::
+# <- - punctuation.definition.list.begin.carve
+^
+# <- - punctuation.definition.caption.carve
+# A heading whose content starts with a NON-ASCII space is still a heading:
+# only spaces and tabs separate a marker from its content.
+
 >no space is prose
 # <- - punctuation.definition.quote.carve
 >>x is prose
