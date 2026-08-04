@@ -22,6 +22,7 @@ contexts:
     - include: frontmatter
     - include: comments
     - include: headings
+    - include: thematic-breaks
     - include: raw-blocks
     - include: code-blocks
     - include: math-blocks
@@ -155,6 +156,18 @@ contexts:
       scope: comment.line.percent.carve
 
   # ----- Headings -----
+  # ----- Thematic breaks -----
+  # Three spellings, all equivalent (PART 9): `---`, `***`, `___`. Indentation
+  # is allowed because a break can open inside a container, where the content
+  # column is not zero and Carve has no indented code block to disambiguate
+  # against. Frontmatter is matched earlier and only at the very start of the
+  # buffer, so a leading `---` there is not stolen by this rule.
+  thematic-breaks:
+    - match: '^[ \t]*(-{3,}|\*{3,}|_{3,})[ \t]*$'
+      scope: meta.separator.thematic-break.carve
+      captures:
+        1: punctuation.definition.thematic-break.carve
+
   headings:
     - match: '^(#{1,6})( +)(?![ \t]*$)(.+)$'
       scope: markup.heading.carve

@@ -262,6 +262,17 @@ an inner %%% run is content, not a closer, because widths must match
 visible after the wide fence
 # <- -comment.block.carve
 
+# ----- Thematic breaks -----
+
+---
+# <- meta.separator.thematic-break.carve
+
+***
+# <- meta.separator.thematic-break.carve
+
+___
+# <- meta.separator.thematic-break.carve
+
 # ----- Math span containment -----
 
 Unclosed math $`oops does not leak.
