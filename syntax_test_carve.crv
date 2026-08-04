@@ -366,6 +366,12 @@ Reactions :+1: and :-1: still parse.
 #   '# H' - a line starting with `#` is this file's own comment prefix
 #   '# \xa0Title' - a line starting with `#` is this file's own comment prefix
 #   '>\tx' - contains a literal tab
+#   '#\tH' - a line starting with `#` is this file's own comment prefix
+#   '-\ta' - contains a literal tab
+#   '1.\ta' - contains a literal tab
+#   '::\tx' - contains a literal tab
+#   '^\tcap' - contains a literal tab
+#   '-\t[x] a' - contains a literal tab
 # They are covered by the grammars that run the table directly:
 # carve-grammars, vscode-carve, intellij-carve, vim-carve, emacs-carve.
 # --- END GENERATED BLOCK BATTERY ---
