@@ -18,8 +18,19 @@ variables:
   ws: '[ \t]'
 
 contexts:
+  # `main` is entered once, at the start of the buffer, and left on the first
+  # line that is not front matter. That is what makes front matter a
+  # START-OF-DOCUMENT construct here: Sublime applies a pattern to each LINE, so
+  # the `\A` anchor those rules carry does NOT mean "start of buffer" - it
+  # matched at the start of every line, and a `---` thematic break anywhere in
+  # the file opened a YAML embed that ran to the next `---` or to the end of the
+  # document. Nothing caught it because no test had a bare `---` line.
   main:
     - include: frontmatter
+    - match: '(?=\S|\s)'
+      set: body
+
+  body:
     - include: comments
     - include: headings
     - include: thematic-breaks
