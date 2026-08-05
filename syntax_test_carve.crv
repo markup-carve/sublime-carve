@@ -386,3 +386,42 @@ Reactions :+1: and :-1: still parse.
 # They are covered by the grammars that run the table directly:
 # carve-grammars, vscode-carve, intellij-carve, vim-carve, emacs-carve.
 # --- END GENERATED BLOCK BATTERY ---
+
+# A ROMAN RUN IS CASE-CONSISTENT (markup-carve/carve-grammars#118). One
+# `[ivxlcdmIVXLCDM]` class matched any mixture, so `Vim.` and `Mix.` - the shape
+# of a word starting a sentence - coloured as markers. `mix.` IS a marker (1009),
+# so the fix is the case split, not a rule against multi-letter runs.
+iv. a lower-case roman marker
+# <- punctuation.definition.list.begin.carve
+IV. an upper-case roman marker
+# <- punctuation.definition.list.begin.carve
+ivx. a longer lower-case run
+# <- punctuation.definition.list.begin.carve
+IVX. a longer upper-case run
+# <- punctuation.definition.list.begin.carve
+mix. a word made only of roman letters is still a marker
+# <- punctuation.definition.list.begin.carve
+Vim. mixed case is prose
+# <- -punctuation.definition.list.begin.carve
+Mix. mixed case is prose
+# <- -punctuation.definition.list.begin.carve
+Ix. two letters, mixed case, prose
+# <- -punctuation.definition.list.begin.carve
+Note. an ordinary sentence start is prose
+# <- -punctuation.definition.list.begin.carve
+
+# MARKER REQUIRES CONTENT PAST THE ATTRIBUTE BLOCK
+# (markup-carve/carve-grammars#85). The guard was `(?= |\{)`, so an empty block
+# with nothing after it still coloured as a marker.
+1.{#x} an attributed item
+# <- punctuation.definition.list.begin.carve
+1.{title="a}b"} a `}` inside a quoted value does not end the block
+# <- punctuation.definition.list.begin.carve
+1.{#x} {*bold*} content may itself be a brace span
+# <- punctuation.definition.list.begin.carve
+1.{#x}
+# <- -punctuation.definition.list.begin.carve
+.{#x}
+# <- -punctuation.definition.list.begin.carve
+1.{#x}{.y} two glued blocks are prose even with content
+# <- -punctuation.definition.list.begin.carve

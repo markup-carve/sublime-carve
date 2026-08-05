@@ -791,7 +791,20 @@ contexts:
         3: constant.language.task-list.carve
     # The BARE DOT is a marker on its own (carve#472): `.` continues an
     # ordered sequence, and is the only marker allowed to drop its value.
-    - match: '^([ \t]*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdmIVXLCDM]+[.)]|\.)(?= |\{) *(?![ \t]*$)'
+    #
+    # A ROMAN RUN IS CASE-CONSISTENT: two classes, not one `[ivxlcdmIVXLCDM]`,
+    # which matched any mixture and coloured `Vim. text` and `Mix. text` as
+    # lists where carve-js renders paragraphs
+    # (markup-carve/carve-grammars#118). `mix.`, `civil.` and `did.` DO open
+    # lists, so the fix is the case split, not rejecting multi-letter words.
+    #
+    # MARKER REQUIRES CONTENT PAST THE ATTRIBUTE BLOCK: the guard was
+    # `(?= |\{)`, which any brace satisfies, so `1.{#x}` with nothing after the
+    # block coloured as a list where it is a paragraph. The block is spelled out
+    # rather than skipped with `\{[^}]*\}` - a quoted value may hold a `}` and
+    # may escape its own quote, so a short run rejects `1.{title="a}b"} item`,
+    # which is a valid item (markup-carve/carve-grammars#85).
+    - match: '^([ \t]*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(?![ \t]*$)'
       scope: markup.list.numbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
