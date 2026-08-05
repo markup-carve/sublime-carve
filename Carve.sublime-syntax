@@ -784,7 +784,24 @@ contexts:
       captures:
         2: punctuation.definition.list.continuation.carve
       scope: markup.list.continuation.carve
-    - match: '^([ \t]*)([-*]) +(\[[ xX]\] +)?(?![ \t]*$)'
+    # A BULLET MAY BE GLUED TO AN ATTRIBUTE BLOCK, and then the required space
+    # comes after the block, not after the marker - so `-{#x} item` and
+    # `*{.c} item` got no marker colour on a line that IS a list item (#22). The
+    # guard is the ordered rule's, unchanged: content is still required past the
+    # block (`-{#x}` alone is a paragraph), and the block is spelled out rather
+    # than skipped with `\{[^}]*\}`, because a quoted value may hold a `}` and
+    # may escape its own quote - a short run rejects `-{title="a}b"} item`,
+    # which is a valid item. It is a LOOKAHEAD: consuming the block here would
+    # make this rule own those characters, and the attribute rule could no
+    # longer scope them.
+    #
+    # ALL SEVEN TASK STATES (grammar.ebnf `task_state`: ` x X - _ > ?`), not
+    # just `[ xX]`. The other four are still task markers - only `x`/`X` render
+    # CHECKED, which is the distinction the narrower class was written around -
+    # so `- [-] dropped` and `- [>] deferred` are task items whose brackets used
+    # to render as ordinary content (#23). Corpus 06-task-lists-2 uses four of
+    # the others. The `-` is escaped so it is not read as a range.
+    - match: '^([ \t]*)([-*])(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(\[[ xX\-_>?]\] +)?(?![ \t]*$)'
       scope: markup.list.unnumbered.carve
       captures:
         2: punctuation.definition.list.begin.carve

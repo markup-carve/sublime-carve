@@ -425,3 +425,47 @@ Note. an ordinary sentence start is prose
 # <- -punctuation.definition.list.begin.carve
 1.{#x}{.y} two glued blocks are prose even with content
 # <- -punctuation.definition.list.begin.carve
+
+# A BULLET MAY BE GLUED TO AN ATTRIBUTE BLOCK (#22). The required space comes
+# after the block, so the old ` +` guard left the marker uncoloured on a line
+# that IS a list item. Content is still required past the block.
+-{#x} an attributed bullet
+# <- punctuation.definition.list.begin.carve
+#^^^^ meta.attributes.carve
+*{.c} an attributed star bullet
+# <- punctuation.definition.list.begin.carve
+-{title="a}b"} a `}` inside a quoted value does not end the block
+# <- punctuation.definition.list.begin.carve
+-{#x}
+# <- -punctuation.definition.list.begin.carve
+-{#x}{.y} two glued blocks are prose even with content
+# <- -punctuation.definition.list.begin.carve
+# KNOWN LIMITATION, shared with every other Carve TextMate grammar: the task
+# marker after a glued block is not scoped, because the block is looked ahead at
+# rather than consumed, so the task group never reaches past it. The bullet
+# itself IS a marker, which is what this pins.
+-{.c} [x] done
+# <- punctuation.definition.list.begin.carve
+
+# ALL SEVEN TASK STATES (grammar.ebnf `task_state`), not just `[ xX]` (#23).
+# Only `x`/`X` render CHECKED; the other five are still task markers.
+- [x] checked
+#  ^^^ constant.language.task-list.carve
+- [X] checked, upper case
+#  ^^^ constant.language.task-list.carve
+- [ ] unchecked
+#  ^^^ constant.language.task-list.carve
+- [-] dropped
+#  ^^^ constant.language.task-list.carve
+- [_] paused
+#  ^^^ constant.language.task-list.carve
+- [>] deferred
+#  ^^^ constant.language.task-list.carve
+- [?] unsure
+#  ^^^ constant.language.task-list.carve
+
+# An empty task item is a plain bullet holding the literal `[ ]` - the marker is
+# a marker, but no checkbox forms. carve-js renders `<li>[ ]</li>`.
+- [ ] 
+# <- punctuation.definition.list.begin.carve
+#  ^^^ -constant.language.task-list.carve
