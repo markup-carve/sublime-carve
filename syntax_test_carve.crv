@@ -469,3 +469,30 @@ Note. an ordinary sentence start is prose
 - [ ] 
 # <- punctuation.definition.list.begin.carve
 #  ^^^ -constant.language.task-list.carve
+
+# An abbreviation term is `(letter | digit)+`, and `letter` is enumerated ASCII.
+# So the term is case-blind, may lead with a digit, and may be a digit alone.
+# Every abbreviation sample in the shared corpus uses an uppercase multi-letter
+# term, which is the one shape every misreading of this rule still agrees on -
+# so these are the shapes that separate them (carve#791).
+
+*[HTML]: HyperText Markup Language
+# ^^^^ entity.name.abbreviation.carve
+*[dl]: definition list
+# ^^ entity.name.abbreviation.carve
+*[Wm]: watt metre
+# ^^ entity.name.abbreviation.carve
+*[3D]: three dimensional
+# ^^ entity.name.abbreviation.carve
+*[9]: nine
+# ^ entity.name.abbreviation.carve
+
+# Outside that alphabet the line is not a definition at all - it stays ordinary
+# paragraph text. That direction matters: an abbreviation has no marker at the
+# use site, so calling this a definition would tell the reader the line vanishes
+# from the rendered document, and it does not.
+
+*[e.g.]: for example
+# ^^^^ -entity.name.abbreviation.carve
+*[HTTP API]: an interface
+# ^^^^^^^^ -entity.name.abbreviation.carve
