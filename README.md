@@ -109,26 +109,8 @@ Tab triggers for the constructs that are tedious to type by hand: `note`
 
 ## Running the syntax tests
 
-`syntax_test_carve.crv` uses Sublime's syntax-test format, and CI runs it on
-every push via [SublimeText/syntax-test-action](https://github.com/SublimeText/syntax-test-action).
-
-To run it locally **without a GUI**, use Sublime's headless test runner:
-
-```bash
-# match <BUILD> to your Sublime build (Help > About)
-curl -sSLO https://download.sublimetext.com/st_syntax_tests_build_4200_x64.tar.xz
-tar xf st_syntax_tests_build_4200_x64.tar.xz
-cd st_syntax_tests
-mkdir -p Data/Packages/Carve && cp -r /path/to/sublime-carve/* Data/Packages/Carve/
-./syntax_tests
-```
-
-Fenced code embeds Sublime's bundled language syntaxes, so to exercise those
-assertions the runner also needs the default packages: download
-`https://github.com/sublimehq/Packages/archive/v<BUILD>.tar.gz` and copy its
-folders into `Data/Packages/` (this is what CI's `default_packages: binary`
-does). Inside Sublime itself, the tests also run from **Build With... > Syntax
-Tests**.
+See the [development guide](docs/development.md) for running the syntax suite
+locally and maintaining the package.
 
 ## License
 
