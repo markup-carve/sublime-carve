@@ -383,6 +383,11 @@ Reactions :+1: and :-1: still parse.
 #   '::\tx' - contains a literal tab
 #   '^\tcap' - contains a literal tab
 #   '-\t[x] a' - contains a literal tab
+#   '*\ta' - contains a literal tab
+#   '.\ta' - contains a literal tab
+#   'a.\ta' - contains a literal tab
+#   'iv.\ta' - contains a literal tab
+#   '1)\ta' - contains a literal tab
 # They are covered by the grammars that run the table directly:
 # carve-grammars, vscode-carve, intellij-carve, vim-carve, emacs-carve.
 # --- END GENERATED BLOCK BATTERY ---
