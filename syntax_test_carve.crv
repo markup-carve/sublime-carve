@@ -100,6 +100,27 @@ Block attrs {#id .class key="val"} applied.
 #            ^^^ entity.other.attribute-name.id.carve
 #                ^^^^^^ entity.other.attribute-name.class.carve
 
+Language attr [x]{:fr} applied.
+#                 ^^^ entity.other.attribute-name.language.carve
+
+Language subtags [y]{:zh-Hant .hl} applied.
+#                    ^^^^^^^^ entity.other.attribute-name.language.carve
+#                             ^^^ entity.other.attribute-name.class.carve
+
+Language beside others [z]{#i :fr .c} applied.
+#                          ^^ entity.other.attribute-name.id.carve
+#                             ^^^ entity.other.attribute-name.language.carve
+
+Empty language form [w]{:} applied.
+#                       ^ entity.other.attribute-name.language.carve
+
+A colon-leading VALUE is a value, not a language: [v]{key=:fr} applied.
+#                                                     ^^^ entity.other.attribute-name.carve
+#                                                         ^^^ -entity.other.attribute-name.language.carve
+
+A tag over eight characters is not a subtag: [u]{:toolongtag} stays prose.
+#                                                ^ -entity.other.attribute-name.language.carve
+
 A footnote ref[^note] here.
 #             ^ punctuation.definition.footnote.carve
 
