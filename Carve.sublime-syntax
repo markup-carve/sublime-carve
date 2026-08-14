@@ -970,6 +970,26 @@ contexts:
         - match: '\}'
           scope: punctuation.definition.attributes.end.carve
           pop: true
+        # THE LANGUAGE ATTRIBUTE (markup-carve/carve#1114) is the one item that
+        # opens with a colon, and it goes FIRST: the key rule below admits a
+        # leading colon but requires an `=` after it, so `:fr` would otherwise
+        # match no rule and keep only the enclosing `meta.attributes` scope.
+        #
+        # The lookbehind is what keeps it an ITEM rather than a colon anywhere.
+        # An unquoted value may itself begin with a colon (`{key=:fr}`), and
+        # that colon sits at the same offset the value would start at, so
+        # without the guard the first-listed rule claims it. Negative rather
+        # than positive so a block that wraps onto its own line still scopes
+        # its first item.
+        #
+        # The trailing guard matters HERE in a way it does not in the TextMate
+        # ports: those validate the whole block in one outer match, so
+        # `{:toolongtag}` is not an attribute block at all and no inner rule
+        # ever runs. This context opens on a bare `{`, so without the guard the
+        # rule takes the first eight characters of an over-long tag and scopes
+        # `:toolongt` as a language.
+        - match: '(?<![^\s{]):(?:[A-Za-z0-9]{1,8}(?:-[A-Za-z0-9]{1,8})*)?(?=[\s}])'
+          scope: entity.other.attribute-name.language.carve
         - match: '#[A-Za-z_][A-Za-z0-9_-]*'
           scope: entity.other.attribute-name.id.carve
         - match: '\.[A-Za-z_][A-Za-z0-9_-]*'
