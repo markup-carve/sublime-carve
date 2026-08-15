@@ -23,7 +23,9 @@ This package is authored from the maintained Carve TextMate grammar
   html, css and ~35 more)
 - Raw passthrough fences (```` ```=html ````), kept verbatim and never
   highlighted as code
-- Divs (`:::`) with admonition types and `"title"` / `[label]`
+- Divs (`:::`) with admonition types and `"title"` / `[label]`, and the bare
+  `::: figure` opener, which is a composite figure rather than an admonition
+  and gets its own scope
 - Block and inline attributes (`{#id .class key="val"}`)
 - Tables with `|`, `|=` header rows, `^` rowspan, `<` colspan, and GFM
   `|---|` delimiter rows

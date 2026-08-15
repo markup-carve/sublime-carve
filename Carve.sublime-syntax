@@ -37,6 +37,9 @@ contexts:
     - include: raw-blocks
     - include: code-blocks
     - include: math-blocks
+    # Before `divs`, deliberately: a bare `::: figure` opener is a composite
+    # figure and not a generic container, and `divs` matches every `:::` line.
+    - include: figure-groups
     - include: divs
     - include: tables
     - include: block-quotes
@@ -686,7 +689,50 @@ contexts:
             1: punctuation.definition.raw.end.carve
           pop: true
 
+  # ----- Composite figures (a BARE `::: figure` opener) -----
+  # PART 9 S4c (markup-carve/carve#1215), ported from
+  # markup-carve/carve-grammars#223 and tracked by markup-carve/carve-grammars#222.
+  #
+  # The kind word `figure` is reserved among the `:::` types: a BARE opener -
+  # the fence, its separator, the word, and NOTHING else - is ONE figure of
+  # ordered panels, not an admonition. THE WHOLE DISTINCTION IS THE TAIL of one
+  # line: an opener carrying a quoted title or a `[label]` (`::: figure "T"`,
+  # `::: figure [g]`) is not that production at all, does not match here, and
+  # falls through to `divs` - the generic container the clause says it stays,
+  # with title and label preserved. So this context is included BEFORE `divs`,
+  # whose own pattern matches every `:::` line.
+  #
+  # THE SEPARATOR IS A SPACE RUN, NEVER A TAB (grammar.ebnf PART 7, MARKER
+  # SEPARATORS; corpus 254): `:::<TAB>note` renders as a paragraph, so this is
+  # spelled ` +` rather than the `\s*` `divs` uses beside it. A tab-separated
+  # opener falls to `divs` and reads exactly as it does today - an
+  # over-colouring this rule neither widens nor fixes. Trailing whitespace after
+  # the kind word is insignificant and may be a tab.
+  #
+  # THE GROUP CAPTION NEEDS NO RULE HERE: it is an ordinary `^ ` line one line
+  # below the closing fence, which `captions` already claims. `divs` pops at end
+  # of line, so the caption line is reached at document level like any other.
+  #
+  # RESIDUAL, written down rather than left to be rediscovered: GROUPS DO NOT
+  # NEST - a bare `::: figure` at any depth inside an open group is a generic
+  # container - but `divs` pops on `$`, so no `:::` container is ever open
+  # across lines here and this syntax has no notion of being inside one. The
+  # inner opener therefore over-colours as a group. carve-grammars carries the
+  # rule through a begin/end pair plus a second container variant; giving `divs`
+  # a multi-line region is what it would take here too, and is not part of this
+  # change.
+  figure-groups:
+    - match: '^[ \t]*(:::+) +(figure)[ \t]*$'
+      scope: markup.other.figure-group.carve
+      captures:
+        1: punctuation.definition.figure-group.carve
+        2: entity.name.type.figure-group.carve
+
   # ----- Divs (::: type "title" [label]) -----
+  # A BARE `::: figure` opener never reaches this context - it is a composite
+  # figure, and `figure-groups` above claims it first (PART 9 S4c). An opener
+  # carrying a title or a `[label]` does reach it, which is the point of the
+  # split.
   divs:
     - match: '^\s*(:::+)\s*([^\s{]+)?'
       captures:
