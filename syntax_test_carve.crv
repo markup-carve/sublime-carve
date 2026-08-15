@@ -235,6 +235,69 @@ And a ref[^label] too.
 Body text.
 :::
 
+# ----- Composite figures -----
+# A BARE `::: figure` opener is a composite figure (PART 9 S4c,
+# markup-carve/carve#1215): the fence, its separator, the kind word, and
+# NOTHING else. The same opener carrying a quoted title or a [label] is not
+# that production and stays a generic container. The whole distinction is the
+# tail of one line, so both readings are asserted here, and both directions -
+# a positive alone would pass for a rule that claimed every `:::` line.
+
+::: figure
+# <- punctuation.definition.figure-group.carve
+#   ^^^^^^ entity.name.type.figure-group.carve
+#   ^^^^^^ markup.other.figure-group.carve
+#   ^^^^^^ -entity.name.type.div.carve
+
+![One](one.png)
+^ Panel one.
+# <- punctuation.definition.caption.carve
+#  ^^^^^^^^^ markup.caption.carve
+
+:::
+^ The group caption, one line below the closing fence.
+# <- punctuation.definition.caption.carve
+#  ^^^^^^^^^^^^^^^^^ markup.caption.carve
+
+# A quoted title makes the line a generic container, not a group.
+
+::: figure "Titled"
+#   ^^^^^^ entity.name.type.div.carve
+#   ^^^^^^ -entity.name.type.figure-group.carve
+#          ^^^^^^^^ string.quoted.double.div-title.carve
+
+# So does a [label], and so do both together.
+
+::: figure [g]
+#   ^^^^^^ entity.name.type.div.carve
+#   ^^^^^^ -entity.name.type.figure-group.carve
+#          ^^^ constant.other.reference.div-label.carve
+
+::: figure "Titled" [g]
+#   ^^^^^^ -entity.name.type.figure-group.carve
+#          ^^^^^^^^ string.quoted.double.div-title.carve
+#                   ^^^ constant.other.reference.div-label.carve
+
+# THE SEPARATOR IS A SPACE RUN, NEVER A TAB (grammar.ebnf PART 7; corpus 254):
+# `:::<TAB>note` renders as a paragraph, so the group scope must not claim the
+# line below. It falls to the generic container rule, which over-colours it
+# exactly as it always has.
+
+:::	figure
+# <- punctuation.definition.div.carve
+# <- -punctuation.definition.figure-group.carve
+
+# A longer fence opens a group just as three colons do.
+
+:::: figure
+#    ^^^^^^ entity.name.type.figure-group.carve
+
+# `figures` is a different word, and a trailing word is not the kind word.
+
+::: figures
+#   ^^^^^^^ entity.name.type.div.carve
+#   ^^^^^^^ -entity.name.type.figure-group.carve
+
 ```=html
 # <- punctuation.definition.raw.begin.carve
 #  ^ punctuation.definition.raw.format.carve
