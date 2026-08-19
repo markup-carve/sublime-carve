@@ -322,8 +322,8 @@ A note {% hidden %} inline.
 #  ^^^^^^^^^ -markup.bold.carve
 
 `{% stays code %}`
-# ^^^^^^^^^^^^^^^^ markup.raw.inline.content.carve
-# ^^^^^^^^^^^^^^^^ -comment
+#^^^^^^^^^^^^^^^^ markup.raw.inline.content.carve
+#^^^^^^^^^^^^^^^^ -comment
 
 ```python
 def greet(name):
