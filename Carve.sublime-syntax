@@ -59,6 +59,7 @@ contexts:
     - include: raw-inline
     - include: inline-literal
     - include: inline-code
+    - include: inline-comment
     - include: trailing-comment
     - include: math
     - include: autolink
@@ -160,6 +161,17 @@ contexts:
           pop: true
     - match: '^\s*%%(?!%).*$'
       scope: comment.line.percent.carve
+
+  # A DELIMITED INLINE COMMENT, `{% ... %}` (PART 9 section 21a,
+  # markup-carve/carve#1239). It hides its payload the way `%%` hides the rest
+  # of a line, so it is scoped WHOLE rather than letting the emphasis and
+  # attribute rules reach inside: `{% *not bold* %}` must not render a bold
+  # run. Included after the code and literal inline rules so a `{%` inside a
+  # code span stays code, and before trailing-comment so a `%%` in the payload
+  # does not open a second comment.
+  inline-comment:
+    - match: '\{%[^\n]*?%\}'
+      scope: comment.block.inline.carve
 
   trailing-comment:
     - match: '(?<=[ \t])%%.*$'
@@ -772,6 +784,7 @@ contexts:
             3: keyword.operator.table.alignment.carve
         - match: '\|'
           scope: punctuation.separator.table.carve
+        - include: inline-comment
         - include: trailing-comment-cell
         - include: inline-literal
         - include: inline-code
