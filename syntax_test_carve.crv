@@ -312,6 +312,19 @@ A symbol :heart: here.
 
 Trailing text %% a comment
 
+A note {% hidden %} inline.
+#      ^^^^^^^^^^^^ comment.block.inline.carve
+#                   ^ -comment
+
+{% *not bold* and `not code` %}
+# <- comment.block.inline.carve
+#  ^^^^^^^^^ comment.block.inline.carve
+#  ^^^^^^^^^ -markup.bold.carve
+
+`{% stays code %}`
+#^^^^^^^^^^^^^^^^ markup.raw.inline.content.carve
+#^^^^^^^^^^^^^^^^ -comment
+
 ```python
 def greet(name):
 # <- keyword.declaration.function.python
