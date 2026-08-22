@@ -113,7 +113,3 @@ Tab triggers for the constructs that are tedious to type by hand: `note`
 
 See the [development guide](docs/development.md) for running the syntax suite
 locally and maintaining the package.
-
-## License
-
-MIT. See [LICENSE](LICENSE).
