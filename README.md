@@ -13,8 +13,9 @@ This package is authored from the maintained Carve TextMate grammar
 - Headings (`#` ... `######`)
 - Inline mnemonics: `/italic/`, `*bold*`, `_underline_`, `~strike~`,
   `=highlight=` (single `=`), `{^sup^}`, `{,sub,}`, `` `code` ``
-- Links, autolinks (`<https://...>`, `<a@b.com>`), images, reference and
+- Links, autolinks (`<https://...>`, `<a@b.com>`), reference and
   cross-reference links, inline spans
+- Images in all three forms: `![alt](src)`, `![alt][ref]` and `![alt][]`
 - Lists, task lists (`- [ ]` / `- [x]`), ordered lists, definition lists (`:`)
 - Block quotes (`>`)
 - Fenced code with language plus the fence header `"header"` / `[label]` -
@@ -23,19 +24,25 @@ This package is authored from the maintained Carve TextMate grammar
   html, css and ~35 more)
 - Raw passthrough fences (```` ```=html ````), kept verbatim and never
   highlighted as code
-- Divs (`:::`) with admonition types and `"title"` / `[label]`, and the bare
-  `::: figure` opener, which is a composite figure rather than an admonition
-  and gets its own scope
+- Divs (`:::`) with `"title"` / `[label]`; the eight Tier-1 admonition types
+  get a scope of their own, distinct from a custom container, and so do the
+  bare `::: figure` composite-figure opener, the `::: |` line block and the
+  `::: \` local hard-break block
 - Block and inline attributes (`{#id .class key="val"}`)
 - Tables with `|`, `|=` header rows, `^` rowspan, `<` colspan, and GFM
   `|---|` delimiter rows
-- Footnotes (`[^id]`)
+- Footnotes: references (`[^id]`), inline notes (`^[text]`) and definitions
+  (`[^id]: body`), whose body is inline content rather than a destination
+- Hard line breaks (a trailing `\`)
 - Math: inline `$`..`` `` ` ``, display `$$`..`` `` ` ``, and ```` ```math ```` fences
 - Frontmatter (`---`, `---toml`, `---json`), highlighted with the declared
   format's own syntax
 - Mentions (`@name`), tags (`#tag`), symbols (`:smile:`)
 - Critic markup (`{+ins+}`, `{-del-}`, `{~a~>b~}`, `{#comment#}`)
-- Line comments (`%%`) and block comments (`%%%`)
+- Line comments (`%%`), trailing comments, block comments (`%%%`) and
+  delimited inline comments (`{% ... %}`)
+- Every verbatim payload stays verbatim: nothing inside a code block, raw
+  block, code span, inline literal, math span or comment is coloured as markup
 
 ## Install
 

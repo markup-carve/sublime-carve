@@ -39,7 +39,10 @@ contexts:
     - include: math-blocks
     # Before `divs`, deliberately: a bare `::: figure` opener is a composite
     # figure and not a generic container, and `divs` matches every `:::` line.
+    # `line-blocks` and `local-hard-break-blocks` are here for the same reason.
     - include: figure-groups
+    - include: line-blocks
+    - include: local-hard-break-blocks
     - include: divs
     - include: tables
     - include: block-quotes
@@ -67,6 +70,7 @@ contexts:
     - include: emphasis
     - include: mentions-tags
     - include: code-callouts
+    - include: hard-breaks
     - include: smart-typography
 
   # ----- inline-only group (reused inside tables, etc.) -----
@@ -90,6 +94,7 @@ contexts:
     - include: emphasis
     - include: mentions-tags
     - include: code-callouts
+    - include: hard-breaks
     - include: smart-typography
 
   # ----- Frontmatter -----
@@ -742,12 +747,58 @@ contexts:
         1: punctuation.definition.figure-group.carve
         2: entity.name.type.figure-group.carve
 
+  # ----- Line blocks ( ::: | ) -----
+  # A colon fence whose kind is a single `|` (PART 9 S23): every intra-stanza
+  # newline inside it is a hard break. `divs` matches every `:::` line, so this
+  # opener was already coloured - as a generic container, the one thing it is
+  # not - and had to be claimed ahead of it, the way `figure-groups` is.
+  #
+  # The OPENER carries the distinction, so the opener is what gets a name. The
+  # body is ordinary inline content and the closer is an ordinary `:::`, which
+  # `divs` claims exactly as it does for every other container.
+  line-blocks:
+    - match: '^[ \t]*(:::+) +(\|)[ \t]*$'
+      scope: markup.other.line-block.carve
+      captures:
+        1: punctuation.definition.line-block.carve
+        2: entity.name.type.line-block.carve
+
+  # ----- Local hard-break blocks ( ::: \ ) -----
+  # The same shape with a backslash for its kind, and the same reasoning.
+  local-hard-break-blocks:
+    - match: '^[ \t]*(:::+) +(\\)[ \t]*$'
+      scope: markup.other.local-hard-break.carve
+      captures:
+        1: punctuation.definition.local-hard-break.carve
+        2: entity.name.type.local-hard-break.carve
+
   # ----- Divs (::: type "title" [label]) -----
   # A BARE `::: figure` opener never reaches this context - it is a composite
   # figure, and `figure-groups` above claims it first (PART 9 S4c). An opener
   # carrying a title or a `[label]` does reach it, which is the point of the
   # split.
   divs:
+    # AN ADMONITION IS NOT A GENERIC DIV. `admonition_type` in the grammar
+    # enumerates eight Tier-1 kinds and then falls back to `identifier` for a
+    # custom container, and the two render differently (PART 9 S12) - but both
+    # came back `entity.name.type.div.carve`, so nothing on this surface could
+    # tell `::: note` from `::: mydiv`. Tried first; a name outside the eight
+    # falls through to the generic rule below unchanged.
+    - match: '^\s*(:::+) +(note|tip|warning|danger|info|success|example|quote)(?=[ \t]|$)'
+      captures:
+        1: punctuation.definition.div.carve
+        2: entity.name.type.admonition.carve
+      push:
+        - meta_scope: markup.other.admonition.carve
+        - match: '"[^"]*"'
+          scope: string.quoted.double.div-title.carve
+        - match: '\[[^\]]*\]'
+          scope: constant.other.reference.div-label.carve
+        - match: '$'
+          pop: true
+        - include: highlight
+        - include: forced-emphasis
+        - include: attributes
     - match: '^\s*(:::+)\s*([^\s{]+)?'
       captures:
         1: punctuation.definition.div.carve
@@ -897,6 +948,26 @@ contexts:
 
   # ----- Reference + abbreviation definitions -----
   definitions:
+    # A FOOTNOTE DEFINITION IS NOT A LINK REFERENCE DEFINITION, and it has to be
+    # tried first because the rule below cannot tell them apart: `[^\]]+`
+    # accepts the leading `^`, so `[^fn]: text` matched it and every footnote
+    # definition in a document was coloured as a link reference whose body was a
+    # URL. The body is inline content, not a destination.
+    - match: '^\s*(\[\^)([^\]]+)(\]:)(?=[ \t])'
+      captures:
+        1: punctuation.definition.footnote.carve
+        2: constant.other.footnote.carve
+        3: punctuation.definition.footnote.carve
+      push:
+        - meta_scope: meta.footnote.definition.carve
+        - match: '$'
+          pop: true
+        # The two comment contexts ahead of `inline`, the way `block-quotes`
+        # does it: the shared context carries neither, so `{% ... %}` would be
+        # read as an attribute block and a trailing `%%` would stay prose.
+        - include: inline-comment
+        - include: trailing-comment
+        - include: inline
     - match: '^\s*(\[[^\]]+\]:)\s+(\S+)'
       scope: meta.link.reference.definition.carve
       captures:
@@ -949,6 +1020,35 @@ contexts:
         2: string.other.image.alt.carve
         4: markup.underline.link.image.carve
         5: string.quoted.double.image-title.carve
+    # An image has the SAME THREE FORMS as a link, and only the leading `!` and
+    # the rendered element differ. Only the inline form had a rule, so the `!`
+    # was left as prose and the reference-link rule claimed the rest:
+    # `![alt][ref]` was coloured as a reference LINK, which is a statement about
+    # the document that is false. A context per form, because the spec counts
+    # the full and collapsed spellings as separate constructs and a surface that
+    # names them together cannot say it carries both.
+    - include: reference-images
+    - include: collapsed-reference-images
+
+  reference-images:
+    - match: '(!\[)([^\]]*)(\])(\[)([^\]]+)(\])'
+      scope: meta.image.reference.carve
+      captures:
+        1: punctuation.definition.image.begin.carve
+        2: string.other.image.alt.carve
+        3: punctuation.definition.image.end.carve
+        5: constant.other.reference.image.carve
+
+  # The collapsed form takes an EMPTY label and reuses the definition the alt
+  # text names. It cannot collide with the rule above, whose label is `[^\]]+`.
+  collapsed-reference-images:
+    - match: '(!\[)([^\]]*)(\])(\[\])'
+      scope: meta.image.reference.collapsed.carve
+      captures:
+        1: punctuation.definition.image.begin.carve
+        2: string.other.image.alt.carve
+        3: punctuation.definition.image.end.carve
+        4: constant.other.reference.image.carve
 
   # ----- Cross-references ( </#id> ) -----
   # Carve's own construct: the link text is filled from the target heading.
@@ -1272,6 +1372,16 @@ contexts:
     # `+` or `-` but never `_` (spec `symbol_name`), so `:_x:` stays literal.
     - match: '(?<!\w):[A-Za-z0-9+-][A-Za-z0-9_+-]*:'
       scope: constant.language.symbol.carve
+
+  # ----- Hard line break ( a trailing backslash ) -----
+  # `hard_break = '\', newline`. A backslash at end of line is the only inline
+  # construct whose mark is invisible once rendered, and it had no rule at all:
+  # the one character that turns two lines into one carried no colour, so a
+  # stray trailing backslash and a deliberate break looked the same. The escape
+  # rule below cannot claim it - a newline is not in its punctuation class.
+  hard-breaks:
+    - match: '\\$'
+      scope: punctuation.definition.hard-break.carve
 
   # ----- Smart typography / escapes -----
   smart-typography:
