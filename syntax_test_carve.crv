@@ -94,7 +94,13 @@ An image ![alt](pic.png) here.
 
 ::: note
 # <- punctuation.definition.div.carve
-#   ^^^^ entity.name.type.div.carve
+#   ^^^^ entity.name.type.admonition.carve
+#   ^^^^ -entity.name.type.div.carve
+
+::: mydiv
+# <- punctuation.definition.div.carve
+#   ^^^^^ entity.name.type.div.carve
+#   ^^^^^ -entity.name.type.admonition.carve
 
 Block attrs {#id .class key="val"} applied.
 #            ^^^ entity.other.attribute-name.id.carve
@@ -231,7 +237,7 @@ And a ref[^label] too.
 #  ^^^^^^^^^^^^^^^^ markup.caption.carve
 
 ::: warning "Careful" [tab1]
-#   ^^^^^^^ entity.name.type.div.carve
+#   ^^^^^^^ entity.name.type.admonition.carve
 Body text.
 :::
 
@@ -598,3 +604,150 @@ Note. an ordinary sentence start is prose
 # ^^^^ -entity.name.abbreviation.carve
 *[HTTP API]: an interface
 # ^^^^^^^^ -entity.name.abbreviation.carve
+
+# ===========================================================================
+# CONSTRUCTS THAT HAD NO RULE OF THEIR OWN
+#
+# The rows come from the shared construct ledger in carve-grammars. A GAP row
+# is a construct this syntax never NAMES, and every one below was already
+# coloured as something ELSE - which is worse than uncoloured, because the
+# colour then says something about the document that is not true.
+# ===========================================================================
+
+# ----- Line blocks and local hard-break blocks -----
+# `::: |` and `::: \` are colon fences whose kind is a punctuation mark, and
+# inside them every intra-stanza newline is a hard break (PART 9 S23). Both
+# came back as generic containers, indistinguishable from `::: mydiv`.
+
+::: |
+# <- punctuation.definition.line-block.carve
+#   ^ entity.name.type.line-block.carve
+#   ^ -entity.name.type.div.carve
+one stanza line
+another stanza line
+:::
+# <- punctuation.definition.div.carve
+
+::: \
+# <- punctuation.definition.local-hard-break.carve
+#   ^ entity.name.type.local-hard-break.carve
+#   ^ -entity.name.type.div.carve
+a paragraph whose newlines are hard breaks
+:::
+# <- punctuation.definition.div.carve
+
+# ----- Footnote definitions -----
+# `[^id]:` also matches the link-reference-definition rule, whose label class
+# accepts the leading `^`, so a footnote definition was coloured as a link
+# reference and its body as a destination.
+
+[^note]: a footnote body with /emphasis/ in it
+# ^^^^ constant.other.footnote.carve
+# ^^^^ -constant.other.reference.link.carve
+#                              ^^^^^^^^ markup.italic.carve
+
+# A footnote body is ordinary inline content, comments included.
+
+[^one]: a body with {% a hidden note %} in it
+#                   ^^^^^^^^^^^^^^^^^^^ comment.block.inline.carve
+#                   ^^^^^^^^^^^^^^^^^^^ -meta.attributes.carve
+
+[^two]: a body ending in a comment %% like this
+#                                  ^^^^^^^^^^^^ comment.line.percent.carve
+
+# A link reference definition is still one.
+[ref]: https://example.test/x
+#^^^ constant.other.reference.link.carve
+#      ^^^^^^ markup.underline.link.carve
+
+# ----- Reference and collapsed-reference images -----
+# An image has the same three forms as a link; only the inline one had a rule,
+# so the `!` stayed prose and the reference-LINK rule claimed the rest.
+
+![alt][ref] and ![alt][] here.
+# <- punctuation.definition.image.begin.carve
+#      ^^^ constant.other.reference.image.carve
+#      ^^^ -constant.other.reference.link.carve
+#                 ^^^ string.other.image.alt.carve
+#                     ^^ constant.other.reference.image.carve
+
+# ----- Hard line break -----
+# A trailing backslash is the one inline mark that vanishes when rendered, and
+# nothing coloured it, so a stray one and a deliberate break looked the same.
+
+a line that breaks here\
+#                      ^ punctuation.definition.hard-break.carve
+
+# ----- Admonitions -----
+# An admonition is not a generic container: the grammar enumerates eight
+# Tier-1 kinds and falls back to `identifier` for anything else, and the two
+# render differently. Asserted with the divs above.
+
+# ===========================================================================
+# EVERY VERBATIM PAYLOAD IS INERT
+#
+# The ledger tracks two things per construct - is it recognized, and does it
+# keep its payload inert. Twelve constructs here carry a payload that is not
+# Carve, and every one of their rows read `unmeasured`. One sample each, with
+# a live emphasis marker inside the payload: if it comes back scoped as markup
+# the row LEAKS, which is the defect carve-grammars#309 found in highlight.js
+# and carve#1239 found on four surfaces at once.
+# ===========================================================================
+
+```
+x = *not bold* and _not underline_
+#   ^^^^^^^^^^ -markup.bold.carve
+#   ^^^^^^^^^^ markup.raw.block.fenced.code.carve
+#                  ^^^^^^^^^^^^^^^ -markup.underline.text.carve
+```
+
+```=html
+<b>*not bold*</b>
+#  ^^^^^^^^^^ -markup.bold.carve
+#  ^^^^^^^^^^ markup.raw.block.carve
+```
+
+%% a *not bold* line comment
+#    ^^^^^^^^^^ -markup.bold.carve
+#    ^^^^^^^^^^ comment.line.percent.carve
+
+text %% a *not bold* trailing comment
+#         ^^^^^^^^^^ -markup.bold.carve
+#         ^^^^^^^^^^ comment.line.percent.carve
+
+%%%
+a *not bold* line inside a comment block
+# ^^^^^^^^^^ -markup.bold.carve
+# ^^^^^^^^^^ comment.block.carve
+%%%
+
+a `*not bold*` code span
+#  ^^^^^^^^^^ -markup.bold.carve
+#  ^^^^^^^^^^ markup.raw.inline.content.carve
+
+a !`*not bold*` inline literal
+#   ^^^^^^^^^^ -markup.bold.carve
+#   ^^^^^^^^^^ markup.raw.inline.content.carve
+
+a `x`{=html} raw inline passthrough
+#  ^ markup.raw.inline.content.carve
+
+a $`*not bold*` inline math
+#   ^^^^^^^^^^ -markup.bold.carve
+#   ^^^^^^^^^^ markup.other.math.content.carve
+
+$$`*not bold*`
+#  ^^^^^^^^^^ -markup.bold.carve
+#  ^^^^^^^^^^ markup.other.math.content.carve
+
+a {% *not bold* %} braced comment
+#    ^^^^^^^^^^ -markup.bold.carve
+#    ^^^^^^^^^^ comment.block.inline.carve
+
+a {# *not bold* #} editorial comment
+#    ^^^^^^^^^^ -markup.bold.carve
+#    ^^^^^^^^^^ comment.block.content.carve
+
+a <https://x.test/*not*> autolink
+#                 ^^^^^ -markup.bold.carve
+#                 ^^^^^ markup.underline.link.carve
