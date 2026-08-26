@@ -285,12 +285,13 @@ Body text.
 #                   ^^^ constant.other.reference.div-label.carve
 
 # THE SEPARATOR IS A SPACE RUN, NEVER A TAB (grammar.ebnf PART 7; corpus 254):
-# `:::<TAB>note` renders as a paragraph, so the group scope must not claim the
-# line below. It falls to the generic container rule, which over-colours it
-# exactly as it always has.
+# `:::<TAB>note` renders as a paragraph, so no container scope may claim the
+# line below. It used to fall to the generic container rule, which took a tab
+# and over-coloured it; that rule takes a space run now too, so the line opens
+# nothing at all - which is what the three engines render for it.
 
 :::	figure
-# <- punctuation.definition.div.carve
+# <- -punctuation.definition.div.carve
 # <- -punctuation.definition.figure-group.carve
 
 # A longer fence opens a group just as three colons do.
@@ -635,6 +636,55 @@ another stanza line
 a paragraph whose newlines are hard breaks
 :::
 # <- punctuation.definition.div.carve
+
+# ----- Fenced block quotes -----
+# The third sigil (markup-carve/carve#1718): `::: >` is the block quote the
+# `>`-prefixed form builds, written without a marker on every line - so the
+# opener carries the QUOTE's scope rather than a generic container's.
+
+::: >
+# <- punctuation.definition.quote.carve
+#   ^ entity.name.type.quote-fence.carve
+#   ^ -entity.name.type.div.carve
+a quoted paragraph
+:::
+# <- punctuation.definition.div.carve
+
+# THE SEPARATOR IS A SPACE RUN HERE TOO. A glued marker, a tab-separated one
+# and a trailing word each leave the line as paragraph text in every engine.
+
+:::>
+# <- -punctuation.definition.quote.carve
+# <- -punctuation.definition.div.carve
+
+:::	>
+# <- -punctuation.definition.quote.carve
+# <- -punctuation.definition.div.carve
+
+::: > x
+# <- -punctuation.definition.quote.carve
+
+# AND SO IT IS FOR EVERY OTHER KIND TOKEN. `divs` used to take a tab or nothing
+# at both of its slots, so it coloured each of these as an opener; the engines
+# render every one of them as a paragraph (corpus 254 and 255).
+
+:::note
+# <- -punctuation.definition.div.carve
+
+:::	note
+# <- -punctuation.definition.div.carve
+
+:::|
+# <- -punctuation.definition.line-block.carve
+# <- -punctuation.definition.div.carve
+
+# A GLUED LABEL IS THE ONE SLOT THAT TAKES NO SEPARATOR: `:::[l]` does open.
+
+:::[l]
+# <- punctuation.definition.div.carve
+
+:::	[l]
+# <- -punctuation.definition.div.carve
 
 # ----- Footnote definitions -----
 # `[^id]:` also matches the link-reference-definition rule, whose label class

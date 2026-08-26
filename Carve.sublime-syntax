@@ -43,6 +43,7 @@ contexts:
     - include: figure-groups
     - include: line-blocks
     - include: local-hard-break-blocks
+    - include: quote-fences
     - include: divs
     - include: tables
     - include: block-quotes
@@ -763,6 +764,30 @@ contexts:
         1: punctuation.definition.line-block.carve
         2: entity.name.type.line-block.carve
 
+  # ----- Fenced block quotes ( ::: > ) -----
+  # The colon fence's THIRD sigil (markup-carve/carve#1718): a fence whose kind
+  # token is a bare `>` is a block quote, the same node the `>`-prefixed form
+  # builds, written without a marker on every line.
+  #
+  # It is claimed ahead of `divs` for the reason the line block is: `divs`
+  # matches every `:::` line, so the opener was already coloured as a generic
+  # container, which is the one thing it is not. The scope is the QUOTE's
+  # (`markup.quote.carve`), not another `markup.other.*`, because the two
+  # spellings are one construct and a reader who colours quotes should see this
+  # one - the marker keeps its own `punctuation.definition.quote.carve` for the
+  # same reason.
+  #
+  # Only the OPENER is claimed here. The body is ordinary block content, and
+  # `divs` claims the closing fence exactly as it does for every other
+  # container - which is also why the body is not inside the quote's scope, the
+  # residual this syntax already carries for the line block.
+  quote-fences:
+    - match: '^[ \t]*(:::+) +(>)[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: entity.name.type.quote-fence.carve
+
   # ----- Local hard-break blocks ( ::: \ ) -----
   # The same shape with a backslash for its kind, and the same reasoning.
   local-hard-break-blocks:
@@ -799,7 +824,25 @@ contexts:
         - include: highlight
         - include: forced-emphasis
         - include: attributes
-    - match: '^\s*(:::+)\s*([^\s{]+)?'
+    # THE SEPARATOR IS A SPACE RUN, NEVER A TAB AND NEVER NOTHING (grammar.ebnf
+    # PART 7, MARKER SEPARATORS; corpus 254 and 255). `:::note`,
+    # `:::<TAB>note`, `:::|` and `:::<TAB>[l]` all render as a paragraph, and
+    # this rule used `\s*` at both slots, so it coloured every one of them as
+    # an opener - the over-colouring `figure-groups` above names and leaves to
+    # this rule. The admonition rule beside it already spells the separator
+    # ` +`; this is the same rule at the generic slot.
+    #
+    # A tab belongs at the START of a line and nowhere else on one. THE
+    # LOOKAHEAD is what makes the optional type token safe: without it a glued
+    # `:::note` still matched the fence alone and pushed. What may follow the
+    # fence is end of line, a space-separated type token, or a `[label]` glued
+    # or space-separated - `:::[l]` does open a div, measured, and it is the
+    # one slot that takes no separator at all.
+    #
+    # The fenced block quote is why this was looked at: `::: >` (carve#1718)
+    # reaches this context the way `::: |` does, and its `>` is an ordinary
+    # type token here.
+    - match: '^[ \t]*(:::+)(?: +([^\s{]+))?(?=[ \t]*$| *["\[])'
       captures:
         1: punctuation.definition.div.carve
         2: entity.name.type.div.carve
