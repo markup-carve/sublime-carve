@@ -1,0 +1,23 @@
+Carve 0.1.4
+===========
+
+New
+  - The fenced block quote is highlighted. A colon fence whose separator
+    is followed by ">" opens a block quote, the third member of the sigil
+    family beside the line block's "|" and the local hard-break block's
+    backslash.
+  - A marker separator is a RUN of spaces, not one space. "^   Caption"
+    and "##   Heading" now scope the whole run as the marker, so column
+    alignment is no longer painted as content.
+  - Eleven constructs the syntax never named: the line block, the local
+    hard-break block, admonitions, footnote definitions, reference and
+    collapsed-reference images and hard breaks had no rule at all and
+    took the color of whatever claimed them first. Four more had rules
+    the coverage probe could not see and are now named for what they are.
+
+Fixes
+  - The delimited inline comment {% ... %} is highlighted. The comment
+    rules covered %% lines and %%% fences only, so the payload read as
+    ordinary text and the markers inside it stayed live: {% *not bold* %}
+    rendered a bold run inside a comment. A {% inside backticks stays
+    code.
