@@ -896,7 +896,14 @@ contexts:
         - include: attributes
         - match: '$'
           pop: true
-    - match: '^(\+)(.*)$'
+    # A CONTINUATION ROW ENDS IN A PIPE, and the pattern has to say so:
+    # `continuation_row = '+', table_cell, {'|', table_cell}, '|', newline`.
+    # Matching any `+` line made this rule claim the LIST continuation marker
+    # too - a lone `+` - because `tables` is included before `lists`, so the
+    # list's own rule below never got the line (markup-carve/sublime-carve#36).
+    # The two forms need no context to tell apart: a lone `+` is the container
+    # marker, a `+` line ending in a pipe is the table row.
+    - match: '^(\+)(.*\|)[ \t]*$'
       scope: markup.table.continuation.carve
       captures:
         1: keyword.operator.table.continuation.carve

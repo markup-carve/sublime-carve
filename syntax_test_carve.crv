@@ -801,3 +801,17 @@ a {# *not bold* #} editorial comment
 a <https://x.test/*not*> autolink
 #                 ^^^^^ -markup.bold.carve
 #                 ^^^^^ markup.underline.link.carve
+
+# THE TWO `+` CONTINUATIONS. A lone `+` is the container marker; a `+` line
+# ending in a pipe is a table continuation row. The table rule used to match any
+# `+` line, and `tables` is included before `lists`, so it swallowed the list
+# form too (#36).
+- item
++
+# <- markup.list.continuation.carve
+attached block
+
+| a | b |
+| x | y |
++ more | z |
+# <- markup.table.continuation.carve
