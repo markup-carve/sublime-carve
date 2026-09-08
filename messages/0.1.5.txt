@@ -1,0 +1,15 @@
+Carve 0.1.5
+===========
+
+Fixes
+  - A lone "+" is now highlighted as the list continuation marker rather
+    than a table row. Only a "+" line ending in a pipe is treated as a
+    table continuation row.
+
+Improvements
+  - Completions now offer the three punctuation colon fences, triggered
+    by their construct names: the line block's bar, the fenced block
+    quote's greater-than, and the local hard-break block's backslash.
+    These sit alongside the word-named fences that were already
+    completable. The definition-list snippet's separator is also
+    narrowed to the single canonical space.
