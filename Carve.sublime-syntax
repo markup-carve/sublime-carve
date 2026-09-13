@@ -1414,8 +1414,35 @@ contexts:
   # this syntax already has, so `#section` was claimed by `mentions-tags` and an
   # option slot read as a mention. One match, so it cannot cross a line.
   include-directive:
-    - match: '\{\{[^{}\n]*\}\}'
-      scope: meta.directive.include.carve
+    # The CLOSER is required in the lookahead, so an unterminated `{{` never
+    # opens the context and stays the ordinary text the processor treats it as.
+    - match: '(\{\{)(?=[ \t]+[^\n]*?\}\})([ \t]+)((?:"(?:\\.|[^"\\])*"|[^#@}\s"][^#@}\s]*))'
+      captures:
+        1: punctuation.definition.directive.begin.carve
+        3: string.other.link.include.carve
+      push: include-directive-parts
+
+  # The tail of a directive: its selector, option slots, and anything else
+  # written there. Scoped BY PART - the opener is what keeps `mentions-tags` out
+  # of the directive, so painting one run buys nothing, and a reader wants the
+  # path to look like a path. A part that is neither a section nor an option
+  # stays unscoped rather than being refused, matching the processor.
+  include-directive-parts:
+    - meta_scope: meta.directive.include.carve
+    - match: '\}\}'
+      scope: punctuation.definition.directive.end.carve
+      pop: true
+    - match: '#[A-Za-z_][A-Za-z0-9_-]*'
+      scope: entity.name.section.include.carve
+    - match: '(@[A-Za-z_][A-Za-z0-9_-]*)(:)([^\s}]+)'
+      captures:
+        1: variable.parameter.include.carve
+        2: punctuation.separator.include.carve
+        3: constant.other.include.carve
+    # A directive cannot cross a line, so a newline ends the context whatever
+    # else is pending.
+    - match: $
+      pop: true
 
   # ----- Mentions / tags / symbols -----
   mentions-tags:
