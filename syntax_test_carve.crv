@@ -154,6 +154,10 @@ A mention @alice and tag #topic here.
 #         ^ punctuation.definition.mention.carve
 #                        ^ punctuation.definition.tag.carve
 
+See {{ chapters/intro.crv #intro }} here.
+#   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.directive.include.carve
+#                         ^ -punctuation.definition.tag.carve
+
 Critic {+inserted+} markup.
 #      ^^ punctuation.definition.critic.carve
 

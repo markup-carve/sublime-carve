@@ -60,6 +60,7 @@ contexts:
     - include: highlight
     - include: forced-emphasis
     - include: inline-comment
+    - include: include-directive
     - include: attributes
     - include: raw-inline
     - include: inline-literal
@@ -91,6 +92,7 @@ contexts:
     - include: sup-sub
     - include: highlight
     - include: forced-emphasis
+    - include: include-directive
     - include: attributes
     - include: emphasis
     - include: mentions-tags
@@ -1403,6 +1405,17 @@ contexts:
       scope: meta.code-callout.carve
       captures:
         0: constant.numeric.callout.carve
+
+  # ----- Reserved include directive -----
+  # `{{ path #section @key:value }}` (PART 9 section 19, grammar.ebnf
+  # `include_directive`). The core leaves it literal and a processor expands it
+  # only when a host supplies a resolver - but a grammar that does not know the
+  # shape does not leave it alone: its own selector is spelled with constructs
+  # this syntax already has, so `#section` was claimed by `mentions-tags` and an
+  # option slot read as a mention. One match, so it cannot cross a line.
+  include-directive:
+    - match: '\{\{[^{}\n]*\}\}'
+      scope: meta.directive.include.carve
 
   # ----- Mentions / tags / symbols -----
   mentions-tags:
