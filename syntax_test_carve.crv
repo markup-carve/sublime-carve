@@ -166,6 +166,42 @@ See {{ ch.crv @shift:auto }} here.
 #                    ^^^^ constant.other.include.carve
 #             ^ -punctuation.definition.mention.carve
 
+# AN OPTION VALUE IS AN `attribute_value` (PART 9 S19), so it may be quoted and
+# a quoted one carries spaces. Read as a run of non-space characters it scoped
+# `"two` and left `words"` out (markup-carve/sublime-carve#40, upstream
+# carve-grammars#411).
+
+See {{ ch.crv @label:"two words" }} here.
+#                    ^^^^^^^^^^^ constant.other.include.carve
+
+See {{ ch.crv @label:'two words' }} here.
+#                    ^^^^^^^^^^^ constant.other.include.carve
+
+See {{ ch.crv @label:"it's here" }} here.
+#                    ^^^^^^^^^^^ constant.other.include.carve
+
+See {{ ch.crv @label:'say "hi"' }} here.
+#                    ^^^^^^^^^^ constant.other.include.carve
+
+# A colon INSIDE a quoted value is part of the value, not a second separator.
+See {{ ch.crv @label:"a:b c" }} here.
+#                    ^^^^^^^ constant.other.include.carve
+#                      ^ -punctuation.separator.include.carve
+
+# A `}` inside a quoted value stays in the value, and the closer is still
+# found: the option rule matches before the pop rule reaches the brace, so
+# nothing here has to widen the unquoted run (markup-carve/carve-grammars#412
+# is about an outer part run this file does not have).
+See {{ ch.crv @label:"a}b" }} here.
+#                    ^^^^^ constant.other.include.carve
+#                          ^^ punctuation.definition.directive.end.carve
+
+# AN UNTERMINATED QUOTE falls back to the unquoted reading and still stops at
+# the space: it must never pair with a quote further along the line.
+See {{ ch.crv @label:"two words }} here.
+#                    ^^^^ constant.other.include.carve
+#                         ^^^^^ -constant.other.include.carve
+
 Critic {+inserted+} markup.
 #      ^^ punctuation.definition.critic.carve
 

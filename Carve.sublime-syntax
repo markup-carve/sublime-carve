@@ -1434,7 +1434,15 @@ contexts:
       pop: true
     - match: '#[A-Za-z_][A-Za-z0-9_-]*'
       scope: entity.name.section.include.carve
-    - match: '(@[A-Za-z_][A-Za-z0-9_-]*)(:)([^\s}]+)'
+    # THE VALUE IS AN `attribute_value`, so it may be quoted and a quoted one
+    # carries spaces. Read as a run of non-space characters it scoped `"two` and
+    # left `words"` out of the option (markup-carve/sublime-carve#40, upstream
+    # carve-grammars#411). Both quoted alternatives require their closing quote,
+    # so an UNTERMINATED one falls back to the unquoted run and still stops at
+    # the space rather than pairing with a quote further along, and both exclude
+    # the newline as `quoted_value` does [CARVE-P4-006] - belt and braces here,
+    # since a context matches a line at a time anyway.
+    - match: '(@[A-Za-z_][A-Za-z0-9_-]*)(:)((?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^\s}]+))'
       captures:
         1: variable.parameter.include.carve
         2: punctuation.separator.include.carve
