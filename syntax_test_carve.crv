@@ -157,9 +157,9 @@ A mention @alice and tag #topic here.
 See {{ chapters/intro.crv#intro }} here.
 #   ^^ punctuation.definition.directive.begin.carve
 #      ^^^^^^^^^^^^^^^^^^ string.other.link.include.carve
-#                         ^^^^^^ entity.name.section.include.carve
-#                         ^ -punctuation.definition.tag.carve
-#                                ^^ punctuation.definition.directive.end.carve
+#                        ^^^^^^ entity.name.section.include.carve
+#                        ^ -punctuation.definition.tag.carve
+#                               ^^ punctuation.definition.directive.end.carve
 
 See {{ ch.crv @shift:auto }} here.
 #             ^^^^^^ variable.parameter.include.carve
