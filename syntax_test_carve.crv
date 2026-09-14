@@ -195,6 +195,20 @@ See {{ ch.crv @label:"a:b c" }} here.
 See {{ ch.crv @label:"a}b" }} here.
 #                    ^^^^^ constant.other.include.carve
 #                          ^^ punctuation.definition.directive.end.carve
+See {{ ch.crv @label:'a}b' }} here.
+#                    ^^^^^ constant.other.include.carve
+#                          ^^ punctuation.definition.directive.end.carve
+
+# A `}}` PAIR is the directive's OWN closer, never value text. The option
+# rule starts at the `@`, ahead of the pop rule, so a quoted run admitting
+# the pair swallowed the closer and the directive ended on the SECOND one
+# (#44, upstream carve-grammars#413). Excluding the pair - not every `}` -
+# keeps the value above intact.
+See {{ ch.crv @label:"a }} more" }} here.
+#                    ^^ constant.other.include.carve
+#                       ^^ punctuation.definition.directive.end.carve
+#                          ^^^^ -meta.directive.include.carve
+#                              ^ -constant.other.include.carve
 
 # AN UNTERMINATED QUOTE falls back to the unquoted reading and still stops at
 # the space: it must never pair with a quote further along the line.
