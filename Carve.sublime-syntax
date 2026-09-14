@@ -1176,12 +1176,27 @@ contexts:
 
   # ----- Block / inline attributes {...} -----
   attributes:
-    - match: '\{'
+    # `{{` IS THE DIRECTIVE OPENER (PART 9 S19), never an attribute one, and the
+    # directive rule declines to open without its closer. What it declines must
+    # not be picked up here: the `{` of an unterminated `{{` opened an attribute
+    # block nothing popped, and every line below it lost its inline highlighting
+    # for the rest of the buffer (#42). The guard is two-sided because the
+    # scanner retries at the next character - a lookahead alone refuses the
+    # first brace and then opens on the second.
+    - match: '(?<!\{)\{(?!\{)'
       scope: punctuation.definition.attributes.begin.carve
       push:
         - meta_scope: meta.attributes.carve
         - match: '\}'
           scope: punctuation.definition.attributes.end.carve
+          pop: true
+        # A BLANK LINE ENDS THE BLOCK [grammar.ebnf PART 4]: `opt_pad` and
+        # `attr_separator` admit at most ONE line break each, so a block may
+        # wrap onto its own line and never across a blank one. This is the
+        # house `$` pop of every block context here, widened by exactly one
+        # line so the wrap survives - an unbounded push is what let a stray
+        # `{` run to the end of the buffer.
+        - match: '^[ \t]*$'
           pop: true
         # THE LANGUAGE ATTRIBUTE (markup-carve/carve#1114) is the one item that
         # opens with a colon, and it goes FIRST: the key rule below admits a
