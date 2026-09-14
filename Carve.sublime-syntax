@@ -1416,7 +1416,7 @@ contexts:
   include-directive:
     # The CLOSER is required in the lookahead, so an unterminated `{{` never
     # opens the context and stays the ordinary text the processor treats it as.
-    - match: '(\{\{)(?=[ \t]+[^\n]*?\}\})([ \t]+)((?:"(?:\\.|[^"\\])*"|[^#@}\s"][^#@}\s]*))'
+    - match: '(\{\{)(?=[ \t]+[^\n]*?[ \t]+\}\})([ \t]+)((?:"(?:\\.|[^"\\])*"|[^#@}\s"][^#@}\s]*))'
       captures:
         1: punctuation.definition.directive.begin.carve
         3: string.other.link.include.carve
