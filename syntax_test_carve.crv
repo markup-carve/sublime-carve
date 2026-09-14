@@ -202,6 +202,42 @@ See {{ ch.crv @label:"two words }} here.
 #                    ^^^^ constant.other.include.carve
 #                         ^^^^^ -constant.other.include.carve
 
+# AN UNTERMINATED `{{` IS NOT AN ATTRIBUTE BLOCK (#42). The directive rule
+# declines to open without its closer, and the `{` it declines must not then be
+# picked up as an attribute opener: it pushed a context nothing popped, so every
+# line below the opener lost its inline highlighting to the rest of the buffer.
+See {{ chapters/intro.crv
+#   ^^ -meta.attributes.carve
+#   ^^ -punctuation.definition.attributes.begin.carve
+#      ^^^^^^^^^^^^^^^^^^ -meta.attributes.carve
+
+# A heading below the unterminated opener
+# <- markup.heading.carve
+# <- -meta.attributes.carve
+
+Then *bold* here.
+#    ^ punctuation.definition.bold.carve
+#     ^^^^ markup.bold.carve
+#    ^^^^^^ -meta.attributes.carve
+
+# A GENUINE BLOCK MAY STILL WRAP ONTO ITS OWN LINE. The bound above is the blank
+# line, not the line end: `opt_pad` and `attr_separator` each admit one line
+# break (grammar.ebnf PART 4), so this block is one block and closes normally.
+{#wrapid
+# <- punctuation.definition.attributes.begin.carve
+#^^^^^^^ entity.other.attribute-name.id.carve
+ .wrapclass}
+# ^^^^^^^^^ entity.other.attribute-name.class.carve
+#          ^ punctuation.definition.attributes.end.carve
+
+# AND AN ORDINARY INLINE BLOCK STILL OPENS AND CLOSES.
+A span [x]{#sid .sc} here.
+#         ^ punctuation.definition.attributes.begin.carve
+#          ^^^^ entity.other.attribute-name.id.carve
+#               ^^^ entity.other.attribute-name.class.carve
+#                  ^ punctuation.definition.attributes.end.carve
+#                   ^^^^^^ -meta.attributes.carve
+
 Critic {+inserted+} markup.
 #      ^^ punctuation.definition.critic.carve
 
@@ -863,3 +899,9 @@ attached block
 | x | y |
 + more | z |
 # <- markup.table.continuation.carve
+
+# AN UNTERMINATED `{{` AT THE END OF THE BUFFER (#42). Nothing follows it to
+# lose its highlighting, so this row pins the opener itself: it stays prose.
+See {{ chapters/intro.crv
+#   ^^ -meta.attributes.carve
+#      ^^^^^^^^^^^^^^^^^^ -meta.attributes.carve
