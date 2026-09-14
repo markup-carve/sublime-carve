@@ -1457,7 +1457,13 @@ contexts:
     # the space rather than pairing with a quote further along, and both exclude
     # the newline as `quoted_value` does [CARVE-P4-006] - belt and braces here,
     # since a context matches a line at a time anyway.
-    - match: '(@[A-Za-z_][A-Za-z0-9_-]*)(:)((?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^\s}]+))'
+    # THE CLOSER WINS OVER THE VALUE. A quoted run that admits `}}` swallows the
+    # directive's own closer: Sublime picks the earliest match and this rule
+    # starts at the `@`, ahead of the `}}` pop, so `@label:"a }} more" }}` closed
+    # on the SECOND pair (#44, upstream carve-grammars#413). The pair is excluded
+    # and a LONE `}` still admitted - narrowing to `[^}]` would take the quoted
+    # value carve-grammars#412 is about, which this grammar already handles.
+    - match: '(@[A-Za-z_][A-Za-z0-9_-]*)(:)((?:"(?:\\.|\}(?!\})|[^"\\\n}])*"|''(?:\\.|\}(?!\})|[^''\\\n}])*''|[^\s}]+))'
       captures:
         1: variable.parameter.include.carve
         2: punctuation.separator.include.carve
