@@ -1431,7 +1431,20 @@ contexts:
   include-directive:
     # The CLOSER is required in the lookahead, so an unterminated `{{` never
     # opens the context and stays the ordinary text the processor treats it as.
-    - match: '(\{\{)(?=[ \t]+[^\n]*?[ \t]+\}\})([ \t]+)((?:"(?:\\.|[^"\\])*"|[^#@}\s"][^#@}\s]*))'
+    #
+    # AND THE CLOSER IS THE FIRST `}}` OUTSIDE A QUOTED RUN (markup-carve/carve#2013),
+    # so the lookahead has to read what lies between rather than ask whether SOME
+    # pair is on the line. A run holding the line's ONLY pair leaves no closer, and
+    # a lookahead that could not see that opened the context and never popped -
+    # scoping the line to its end as a directive the grammar says is ordinary text.
+    #
+    # THE QUOTE DECIDES THE BRANCH, the technique #45 already uses below: a quote's
+    # two alternatives carry lookaheads that negate each other, so exactly one is
+    # ever viable, and the ordinary class excludes both quote characters so nothing
+    # else can claim one. With the tail lazy, the scan tries the closer at each
+    # position and otherwise consumes exactly one unit, which is what keeps it
+    # linear on a line with many quotes (upstream carve-grammars#417).
+    - match: '(\{\{)(?=[ \t]+(?:"(?=(?:\\.|[^"\\\n])*")(?:\\.|[^"\\\n])*"|"(?!(?:\\.|[^"\\\n])*")|''(?=(?:\\.|[^''\\\n])*'')(?:\\.|[^''\\\n])*''|''(?!(?:\\.|[^''\\\n])*'')|[^"''\n])*?[ \t]\}\})([ \t]+)((?:"(?:\\.|[^"\\])*"|[^#@}\s"][^#@}\s]*))'
       captures:
         1: punctuation.definition.directive.begin.carve
         3: string.other.link.include.carve
@@ -1457,13 +1470,18 @@ contexts:
     # the space rather than pairing with a quote further along, and both exclude
     # the newline as `quoted_value` does [CARVE-P4-006] - belt and braces here,
     # since a context matches a line at a time anyway.
-    # THE CLOSER WINS OVER THE VALUE. A quoted run that admits `}}` swallows the
-    # directive's own closer: Sublime picks the earliest match and this rule
-    # starts at the `@`, ahead of the `}}` pop, so `@label:"a }} more" }}` closed
-    # on the SECOND pair (#44, upstream carve-grammars#413). The pair is excluded
-    # and a LONE `}` still admitted - narrowing to `[^}]` would take the quoted
-    # value carve-grammars#412 is about, which this grammar already handles.
-    - match: '(@[A-Za-z_][A-Za-z0-9_-]*)(:)((?:"(?:\\.|\}(?!\})|[^"\\\n}])*"|''(?:\\.|\}(?!\})|[^''\\\n}])*''|[^\s}]+))'
+    # THE VALUE WINS OVER THE CLOSER, and the ordering that used to be the
+    # problem is now the mechanism. markup-carve/carve#2013 rules that a quoted
+    # run MAY hold the `}}` pair and that the directive's closer is the first
+    # pair OUTSIDE any quoted run, superseding the bound #45 landed here.
+    # Sublime picks the earliest match, and this rule starts at the option
+    # sigil - ahead of the `}}` pop - so a terminated run consumes its pair and
+    # the pop lands on the next one, with no sub-context needed to hide it.
+    # Both quoted alternatives still REQUIRE their closing quote, so an
+    # unterminated one falls through to the unquoted run, stops at the space,
+    # and leaves the pop at the first pair: the reading that keeps a malformed
+    # directive literal.
+    - match: '(@[A-Za-z_][A-Za-z0-9_-]*)(:)((?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^\s}]+))'
       captures:
         1: variable.parameter.include.carve
         2: punctuation.separator.include.carve

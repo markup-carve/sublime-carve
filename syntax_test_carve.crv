@@ -199,22 +199,62 @@ See {{ ch.crv @label:'a}b' }} here.
 #                    ^^^^^ constant.other.include.carve
 #                          ^^ punctuation.definition.directive.end.carve
 
-# A `}}` PAIR is the directive's OWN closer, never value text. The option
-# rule starts at the `@`, ahead of the pop rule, so a quoted run admitting
-# the pair swallowed the closer and the directive ended on the SECOND one
-# (#44, upstream carve-grammars#413). Excluding the pair - not every `}` -
-# keeps the value above intact.
+# A `}}` PAIR INSIDE A TERMINATED QUOTED RUN IS THE VALUE'S, and the closer is
+# the first pair OUTSIDE the run (markup-carve/carve#2013). This reverses the
+# call #45 made here: the option rule starting at the option sigil, ahead of the
+# pop rule, is now the mechanism rather than the defect, because Sublime picks
+# the earliest match and the run therefore consumes its own pair before the pop
+# rule can see it.
 See {{ ch.crv @label:"a }} more" }} here.
-#                    ^^ constant.other.include.carve
+#                    ^^^^^^^^^^^ constant.other.include.carve
+#                       ^^ -punctuation.definition.directive.end.carve
+#                                ^^ punctuation.definition.directive.end.carve
+#                                   ^^^^^ -meta.directive.include.carve
+
+See {{ ch.crv @label:'a }} more' }} here.
+#                    ^^^^^^^^^^^ constant.other.include.carve
+#                       ^^ -punctuation.definition.directive.end.carve
+#                                ^^ punctuation.definition.directive.end.carve
+#                                   ^^^^^ -meta.directive.include.carve
+
+# THE PATH HALF of the same ruling. This one never carried the bound - the
+# pushing match spells the quoted path `"(?:\\.|[^"\\])*"` and has always
+# admitted the pair - so it is asserted to keep the two halves from drifting
+# apart again, which is how one line came to be read two ways.
+See {{ "a }} more" @k:v }} here.
+#      ^^^^^^^^^^^ string.other.link.include.carve
+#         ^^ -punctuation.definition.directive.end.carve
 #                       ^^ punctuation.definition.directive.end.carve
-#                          ^^^^ -meta.directive.include.carve
-#                              ^ -constant.other.include.carve
+#                          ^^^^^ -meta.directive.include.carve
 
 # AN UNTERMINATED QUOTE falls back to the unquoted reading and still stops at
 # the space: it must never pair with a quote further along the line.
 See {{ ch.crv @label:"two words }} here.
 #                    ^^^^ constant.other.include.carve
 #                         ^^^^^ -constant.other.include.carve
+
+# AND THAT IS WHAT KEEPS THE OLD READING FOR A MALFORMED DIRECTIVE. No closing
+# quote on the line, so no run is open, so the value is the unquoted `"a` and
+# the closer is the FIRST pair - the property the superseded bound was
+# protecting, preserved here explicitly while the other half widens.
+See {{ ch.crv @label:"a }} more }} here.
+#                    ^^ constant.other.include.carve
+#                       ^^ punctuation.definition.directive.end.carve
+#                          ^^^^ -meta.directive.include.carve
+
+# A TERMINATED RUN HOLDING THE LINE'S ONLY PAIR LEAVES NO CLOSER, so the line
+# is not an `include_directive` at all and is ordinary text
+# (markup-carve/carve#2013). This is what the opener's lookahead has to read
+# the line to know: one that only asked whether SOME pair was present opened
+# the context here and never popped, scoping the line to its end as a
+# directive the grammar says is prose. TextMate and Prism agree with this
+# reading (upstream carve-grammars#418).
+See {{ ch.crv @label:"a b }} tail "later"
+#   ^^ -meta.directive.include.carve
+#                    ^^^^^^^^^^^^^^ -constant.other.include.carve
+#                         ^^ -punctuation.definition.directive.end.carve
+Then *bold* after it.
+#     ^^^^ markup.bold.carve
 
 # AN UNTERMINATED `{{` IS NOT AN ATTRIBUTE BLOCK (#42). The directive rule
 # declines to open without its closer, and the `{` it declines must not then be
