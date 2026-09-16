@@ -43,6 +43,10 @@ This package is authored from the maintained Carve TextMate grammar
   delimited inline comments (`{% ... %}`)
 - Every verbatim payload stays verbatim: nothing inside a code block, raw
   block, code span, inline literal, math span or comment is coloured as markup
+- A bare delimiter never pairs across a link destination, an image source or
+  an autolink (PART 9 §9 E2a), so `/see [x](http://a.b/c/) now/` is one italic
+  run. One limit: a code span holding `]` inside a link label is not
+  recognized, so that link does not shield its destination
 
 ## Install
 
