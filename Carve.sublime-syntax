@@ -16,6 +16,14 @@ scope: text.carve
 
 variables:
   ws: '[ \t]'
+  # A bare delimiter never pairs across a link destination or an autolink
+  # (PART 9 S9 E2a). `opaque` holds two capture groups, so a rule's captures
+  # after it shift by two.
+  link_label: '(?<label>\[(?>\\.|[^\[\]\\\n]|\g<label>)*\])'
+  link_dest: '(?>\\[()\\]|[^ \t\n()]|(?<parens>\((?>\\[()\\]|[^ \t\n()]|\g<parens>)*\)))*'
+  url_autolink: '<[a-zA-Z][a-zA-Z0-9+.\-]*:(?:[a-zA-Z0-9\-._~:/?#\[\]@!$&''()*+,;=%]|[^\p{ASCII}\x{80}-\x{9F}\p{Z}\p{Cf}])+>'
+  email_autolink: '<[\p{L}0-9\-_.+]+@(?:[\p{L}0-9\-_]+\.)+\p{L}+>'
+  opaque: '(?:!?{{link_label}}\({{link_dest}}(?: (?:"(?>\\"|[^"\n])*"|''(?>\\''|[^''\n])*''))?\)|{{url_autolink}}|{{email_autolink}})'
 
 contexts:
   # `main` is entered once, at the start of the buffer, and left on the first
@@ -1041,7 +1049,7 @@ contexts:
 
   # ----- Links / references / spans -----
   links:
-    - match: '(\[)([^\]]+)(\])(\()([^\s)]+)(?:\s+"([^"]+)")?(\))'
+    - match: '(\[)([^\]]+)(\])(\()({{link_dest}})(?: (?:"((?>\\"|[^"\n])*)"|''((?>\\''|[^''\n])*)''))?(\))'
       scope: meta.link.inline.carve
       captures:
         1: punctuation.definition.link.begin.carve
@@ -1049,8 +1057,9 @@ contexts:
         3: punctuation.definition.link.end.carve
         4: punctuation.definition.metadata.begin.carve
         5: markup.underline.link.carve
-        6: string.quoted.double.link-title.carve
-        7: punctuation.definition.metadata.end.carve
+        7: string.quoted.double.link-title.carve
+        8: string.quoted.single.link-title.carve
+        9: punctuation.definition.metadata.end.carve
     - match: '(\[)([^\]]+)(\])(\[)([^\]]*)(\])'
       scope: meta.link.reference.carve
       captures:
@@ -1065,13 +1074,14 @@ contexts:
 
   # ----- Images -----
   images:
-    - match: '(!\[)([^\]]*)(\]\()([^\s)]+)(?:\s+"([^"]+)")?(\))'
+    - match: '(!\[)([^\]]*)(\]\()({{link_dest}})(?: (?:"((?>\\"|[^"\n])*)"|''((?>\\''|[^''\n])*)''))?(\))'
       scope: meta.image.inline.carve
       captures:
         1: punctuation.definition.image.begin.carve
         2: string.other.image.alt.carve
         4: markup.underline.link.image.carve
-        5: string.quoted.double.image-title.carve
+        6: string.quoted.double.image-title.carve
+        7: string.quoted.single.image-title.carve
     # An image has the SAME THREE FORMS as a link, and only the leading `!` and
     # the rendered element differ. Only the inline form had a rule, so the `!`
     # was left as prose and the reference-link rule claimed the rest:
@@ -1141,12 +1151,12 @@ contexts:
         1: punctuation.definition.highlight.carve
         2: markup.highlight.carve
         3: punctuation.definition.highlight.carve
-    - match: '(?<![\w=])(=)(?=\S)([^=\n]+?)(?<=\S)(=)(?![\w=])'
+    - match: '(?<![\w=])(=)(?=\S)((?>{{opaque}}|[^=\n])+?)(?<=\S)(=)(?![\w=])'
       scope: markup.highlight.carve
       captures:
         1: punctuation.definition.highlight.carve
         2: markup.highlight.carve
-        3: punctuation.definition.highlight.carve
+        5: punctuation.definition.highlight.carve
 
   forced-emphasis:
     - match: '(\{\*)(?=\S)([^\n]*?)(\*\})'
@@ -1290,13 +1300,13 @@ contexts:
 
   # ----- Autolinks -----
   autolink:
-    - match: '(<)([a-zA-Z][a-zA-Z0-9+.\-]*:[^>\s]+)(>)'
+    - match: '(?={{url_autolink}})(<)([^>]+)(>)'
       scope: meta.link.autolink.carve
       captures:
         1: punctuation.definition.link.carve
         2: markup.underline.link.carve
         3: punctuation.definition.link.carve
-    - match: '(<)([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})(>)'
+    - match: '(?={{email_autolink}})(<)([^>]+)(>)'
       scope: meta.link.autolink.email.carve
       captures:
         1: punctuation.definition.link.carve
@@ -1346,36 +1356,36 @@ contexts:
 
   # ----- Emphasis / inline mnemonics -----
   emphasis:
-    - match: '(/\*)(?=\S)([^*]+)(\*/)'
+    - match: '(/\*)(?=\S)((?>{{opaque}}|[^*])+)(\*/)'
       scope: markup.bold.italic.carve
       captures:
         1: punctuation.definition.bold-italic.carve
         2: markup.bold.italic.carve
-        3: punctuation.definition.bold-italic.carve
-    - match: '(\*)(?=\S)([^*\n]+?)(?<=\S)(\*)'
+        5: punctuation.definition.bold-italic.carve
+    - match: '(\*)(?=\S)((?>{{opaque}}|[^*\n])+?)(?<=\S)(\*)'
       scope: markup.bold.carve
       captures:
         1: punctuation.definition.bold.carve
         2: markup.bold.carve
-        3: punctuation.definition.bold.carve
-    - match: '(?<![\w/])(/)(?=\S)([^/\n]+?)(?<=\S)(/)(?![\w/])'
+        5: punctuation.definition.bold.carve
+    - match: '(?<![\w/])(/)(?=\S)((?>{{opaque}}|[^/\n])+?)(?<=\S)(/)(?![\w/])'
       scope: markup.italic.carve
       captures:
         1: punctuation.definition.italic.carve
         2: markup.italic.carve
-        3: punctuation.definition.italic.carve
-    - match: '(?<![\w_])(_)(?=\S)([^_\n]+?)(?<=\S)(_)(?![\w_])'
+        5: punctuation.definition.italic.carve
+    - match: '(?<![\w_])(_)(?=\S)((?>{{opaque}}|[^_\n])+?)(?<=\S)(_)(?![\w_])'
       scope: markup.underline.text.carve
       captures:
         1: punctuation.definition.underline.carve
         2: markup.underline.text.carve
-        3: punctuation.definition.underline.carve
-    - match: '(~)(?=\S)([^~\n]+?)(?<=\S)(~)'
+        5: punctuation.definition.underline.carve
+    - match: '(~)(?=\S)((?>{{opaque}}|[^~\n])+?)(?<=\S)(~)'
       scope: markup.strikethrough.carve
       captures:
         1: punctuation.definition.strike.carve
         2: markup.strikethrough.carve
-        3: punctuation.definition.strike.carve
+        5: punctuation.definition.strike.carve
     - match: '(==)([^=\n]+?)(==)'
       scope: markup.highlight.carve
       captures:

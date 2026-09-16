@@ -954,6 +954,333 @@ attached block
 + more | z |
 # <- markup.table.continuation.carve
 
+# A BARE DELIMITER NEVER PAIRS ACROSS A LINK DESTINATION OR AN AUTOLINK, in
+# either direction (PART 9 S9 E2a).
+
+/see [x](http://a.b/c/) now/
+#^^^ markup.italic.carve
+#                       ^^^ markup.italic.carve
+# <- punctuation.definition.italic.carve
+#                          ^ punctuation.definition.italic.carve
+
+/see [x](http://a/b/c) now/
+#^^^ markup.italic.carve
+#                      ^^^ markup.italic.carve
+
+/see <http://a.b/c/> now/
+#^^^ markup.italic.carve
+#                    ^^^ markup.italic.carve
+
+/see <http://a/b> now/
+#^^^ markup.italic.carve
+#                 ^^^ markup.italic.carve
+
+/see ![x](a.png "t/u") now/
+#^^^ markup.italic.carve
+#                      ^^^ markup.italic.carve
+
+/see ![x](a.png 't/u') now/
+#^^^ markup.italic.carve
+#                      ^^^ markup.italic.carve
+
+/see ![x](a.png "t/") now/
+#^^^ markup.italic.carve
+#                     ^^^ markup.italic.carve
+
+/see ![x](a.png 't/') now/
+#^^^ markup.italic.carve
+#                     ^^^ markup.italic.carve
+
+/see [x](foo(bar)/baz) now/
+#^^^ markup.italic.carve
+#                      ^^^ markup.italic.carve
+
+/see [x](foo\)x/y) now/
+#^^^ markup.italic.carve
+#                  ^^^ markup.italic.carve
+
+/see [x](foo(bar(\x))/y) now/
+#^^^ markup.italic.carve
+#                        ^^^ markup.italic.carve
+
+/see [x](a(b(c(d)))/e) now/
+#^^^ markup.italic.carve
+#                      ^^^ markup.italic.carve
+
+/see <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x/y> now/
+#^^^ markup.italic.carve
+#                                                   ^^^ markup.italic.carve
+
+*see [x](http://a.b/c*) now*
+#^^^ markup.bold.carve
+#                       ^^^ markup.bold.carve
+# <- punctuation.definition.bold.carve
+#                          ^ punctuation.definition.bold.carve
+
+*see [x](http://a*b/c) now*
+#^^^ markup.bold.carve
+#                      ^^^ markup.bold.carve
+
+*see <http://a.b/c*> now*
+#^^^ markup.bold.carve
+#                    ^^^ markup.bold.carve
+
+*see <http://a*b> now*
+#^^^ markup.bold.carve
+#                 ^^^ markup.bold.carve
+
+*see ![x](a.png "t*u") now*
+#^^^ markup.bold.carve
+#                      ^^^ markup.bold.carve
+
+*see ![x](a.png 't*u') now*
+#^^^ markup.bold.carve
+#                      ^^^ markup.bold.carve
+
+*see ![x](a.png "t*") now*
+#^^^ markup.bold.carve
+#                     ^^^ markup.bold.carve
+
+*see ![x](a.png 't*') now*
+#^^^ markup.bold.carve
+#                     ^^^ markup.bold.carve
+
+*see [x](foo(bar)*baz) now*
+#^^^ markup.bold.carve
+#                      ^^^ markup.bold.carve
+
+*see [x](foo\)x*y) now*
+#^^^ markup.bold.carve
+#                  ^^^ markup.bold.carve
+
+*see [x](foo(bar(\x))*y) now*
+#^^^ markup.bold.carve
+#                        ^^^ markup.bold.carve
+
+*see [x](a(b(c(d)))*e) now*
+#^^^ markup.bold.carve
+#                      ^^^ markup.bold.carve
+
+*see <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x*y> now*
+#^^^ markup.bold.carve
+#                                                   ^^^ markup.bold.carve
+
+_see [x](http://a.b/c_) now_
+#^^^ markup.underline.text.carve
+#                       ^^^ markup.underline.text.carve
+# <- punctuation.definition.underline.carve
+#                          ^ punctuation.definition.underline.carve
+
+_see [x](http://a_b/c) now_
+#^^^ markup.underline.text.carve
+#                      ^^^ markup.underline.text.carve
+
+_see <http://a.b/c_> now_
+#^^^ markup.underline.text.carve
+#                    ^^^ markup.underline.text.carve
+
+_see <http://a_b> now_
+#^^^ markup.underline.text.carve
+#                 ^^^ markup.underline.text.carve
+
+_see ![x](a.png "t_u") now_
+#^^^ markup.underline.text.carve
+#                      ^^^ markup.underline.text.carve
+
+_see ![x](a.png 't_u') now_
+#^^^ markup.underline.text.carve
+#                      ^^^ markup.underline.text.carve
+
+_see ![x](a.png "t_") now_
+#^^^ markup.underline.text.carve
+#                     ^^^ markup.underline.text.carve
+
+_see ![x](a.png 't_') now_
+#^^^ markup.underline.text.carve
+#                     ^^^ markup.underline.text.carve
+
+_see [x](foo(bar)_baz) now_
+#^^^ markup.underline.text.carve
+#                      ^^^ markup.underline.text.carve
+
+_see [x](foo\)x_y) now_
+#^^^ markup.underline.text.carve
+#                  ^^^ markup.underline.text.carve
+
+_see [x](foo(bar(\x))_y) now_
+#^^^ markup.underline.text.carve
+#                        ^^^ markup.underline.text.carve
+
+_see [x](a(b(c(d)))_e) now_
+#^^^ markup.underline.text.carve
+#                      ^^^ markup.underline.text.carve
+
+_see <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x_y> now_
+#^^^ markup.underline.text.carve
+#                                                   ^^^ markup.underline.text.carve
+
+~see [x](http://a.b/c~) now~
+#^^^ markup.strikethrough.carve
+#                       ^^^ markup.strikethrough.carve
+# <- punctuation.definition.strike.carve
+#                          ^ punctuation.definition.strike.carve
+
+~see [x](http://a~b/c) now~
+#^^^ markup.strikethrough.carve
+#                      ^^^ markup.strikethrough.carve
+
+~see <http://a.b/c~> now~
+#^^^ markup.strikethrough.carve
+#                    ^^^ markup.strikethrough.carve
+
+~see <http://a~b> now~
+#^^^ markup.strikethrough.carve
+#                 ^^^ markup.strikethrough.carve
+
+~see ![x](a.png "t~u") now~
+#^^^ markup.strikethrough.carve
+#                      ^^^ markup.strikethrough.carve
+
+~see ![x](a.png 't~u') now~
+#^^^ markup.strikethrough.carve
+#                      ^^^ markup.strikethrough.carve
+
+~see ![x](a.png "t~") now~
+#^^^ markup.strikethrough.carve
+#                     ^^^ markup.strikethrough.carve
+
+~see ![x](a.png 't~') now~
+#^^^ markup.strikethrough.carve
+#                     ^^^ markup.strikethrough.carve
+
+~see [x](foo(bar)~baz) now~
+#^^^ markup.strikethrough.carve
+#                      ^^^ markup.strikethrough.carve
+
+~see [x](foo\)x~y) now~
+#^^^ markup.strikethrough.carve
+#                  ^^^ markup.strikethrough.carve
+
+~see [x](foo(bar(\x))~y) now~
+#^^^ markup.strikethrough.carve
+#                        ^^^ markup.strikethrough.carve
+
+~see [x](a(b(c(d)))~e) now~
+#^^^ markup.strikethrough.carve
+#                      ^^^ markup.strikethrough.carve
+
+~see <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x~y> now~
+#^^^ markup.strikethrough.carve
+#                                                   ^^^ markup.strikethrough.carve
+
+=see [x](http://a.b/c=) now=
+#^^^ markup.highlight.carve
+#                       ^^^ markup.highlight.carve
+# <- punctuation.definition.highlight.carve
+#                          ^ punctuation.definition.highlight.carve
+
+=see [x](http://a=b/c) now=
+#^^^ markup.highlight.carve
+#                      ^^^ markup.highlight.carve
+
+=see <http://a.b/c=> now=
+#^^^ markup.highlight.carve
+#                    ^^^ markup.highlight.carve
+
+=see <http://a=b> now=
+#^^^ markup.highlight.carve
+#                 ^^^ markup.highlight.carve
+
+=see ![x](a.png "t=u") now=
+#^^^ markup.highlight.carve
+#                      ^^^ markup.highlight.carve
+
+=see ![x](a.png 't=u') now=
+#^^^ markup.highlight.carve
+#                      ^^^ markup.highlight.carve
+
+=see ![x](a.png "t=") now=
+#^^^ markup.highlight.carve
+#                     ^^^ markup.highlight.carve
+
+=see ![x](a.png 't=') now=
+#^^^ markup.highlight.carve
+#                     ^^^ markup.highlight.carve
+
+=see [x](foo(bar)=baz) now=
+#^^^ markup.highlight.carve
+#                      ^^^ markup.highlight.carve
+
+=see [x](foo\)x=y) now=
+#^^^ markup.highlight.carve
+#                  ^^^ markup.highlight.carve
+
+=see [x](foo(bar(\x))=y) now=
+#^^^ markup.highlight.carve
+#                        ^^^ markup.highlight.carve
+
+=see [x](a(b(c(d)))=e) now=
+#^^^ markup.highlight.carve
+#                      ^^^ markup.highlight.carve
+
+=see <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x=y> now=
+#^^^ markup.highlight.carve
+#                                                   ^^^ markup.highlight.carve
+
+/a [b [c] d/](u) e/
+#                ^ markup.italic.carve
+
+/a [b \] c/](u) e/
+#                ^ markup.italic.carve
+
+/see <http://ä/b/> now/
+#                  ^^^ markup.italic.carve
+
+x /a <foo:b/> c
+#  ^ -markup.italic
+
+x /a [x](b/) c
+#  ^ -markup.italic
+
+x /a [x](b "c/") d
+#  ^ -markup.italic
+
+/*see [x](a*/b) now*/
+# ^^^ markup.bold.italic.carve
+#               ^^^ markup.bold.italic.carve
+#                  ^ punctuation.definition.bold-italic.carve
+
+_see <a_b@c_d.de> now_
+#^^^ markup.underline.text.carve
+#                 ^^^ markup.underline.text.carve
+
+/see <x@a.b/> now/
+#             ^^^ -markup.italic
+
+x [x](/b) c/
+#         ^^ -markup.italic
+
+x <foo:(/y)> z/
+#            ^^ -markup.italic
+
+x <_b@c_d.de> y
+#  ^^^^^^^^^ meta.link.autolink.email.carve
+
+x ![x](a(b) "t /u") c/
+#                   ^^ -markup.italic
+#            ^^^^ string.quoted.double.image-title.carve
+
+x [x](a(b) 't /u') c/
+#                  ^^ -markup.italic
+#           ^^^^ string.quoted.single.link-title.carve
+#                ^ punctuation.definition.metadata.end.carve
+
+x [x](a "t /u") c/
+#        ^^^^ string.quoted.double.link-title.carve
+
+x ![x](a 't /u') c/
+#         ^^^^ string.quoted.single.image-title.carve
+
 # AN UNTERMINATED `{{` AT THE END OF THE BUFFER (#42). Nothing follows it to
 # lose its highlighting, so this row pins the opener itself: it stays prose.
 See {{ chapters/intro.crv
