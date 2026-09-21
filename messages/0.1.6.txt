@@ -1,0 +1,12 @@
+Carve 0.1.6
+===========
+
+Fixes
+  - Include directives are highlighted by part: the target, each @option
+    and its value, quoted or not. A quoted value may hold a }} pair, and
+    the directive closes at the first pair outside a quoted run
+    (markup-carve/carve#2013).
+  - An unterminated {{ no longer opened an attribute block, which used to
+    cost every line below it its inline highlighting.
+  - A bare *, /, _, ~ or = inside a link destination, a link title or an
+    autolink no longer opens or closes an emphasis run.
