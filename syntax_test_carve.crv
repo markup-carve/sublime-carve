@@ -483,6 +483,12 @@ const x = 1;
 #^^^^ source.js
 ```
 
+```math
+#  ^^^^ entity.name.type.language.carve
+x^2
+# <- markup.raw.block.fenced.code.carve
+```
+
 ```carve
 *bold* and /italic/
 # <- markup.raw.block.fenced.code.carve punctuation.definition.bold.carve
