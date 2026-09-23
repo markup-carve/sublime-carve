@@ -99,7 +99,11 @@ The import command is also in the sidebar context menu (**Carve: Import as .crv*
 when you right-click a single `.md`, `.markdown`, `.html` or `.htm` file.
 
 Formatting and import need the `carve` CLI on PATH (`npm install -g @markup-carve/carve`
-or `cargo install carve-lang`). Configure in **Preferences > Package Settings**:
+or `cargo install carve-lang`). The npm `carve` 0.1.7 currently exits without
+output when started through its installed symlink, so import reports "produced
+no output"; use the cargo build, or set `carve_binary` to a command list such as
+`["node", "/path/to/@markup-carve/carve/dist/cli.js"]`. Configure in
+**Preferences > Package Settings**:
 
 ```json
 {

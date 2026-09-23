@@ -53,6 +53,11 @@ def carve_binary(view=None):
     return setting(view, "carve_binary", "carve")
 
 
+def carve_command(binary):
+    """`carve_binary` as an argv prefix; a list allows e.g. ["node", ".../cli.js"]."""
+    return list(binary) if isinstance(binary, list) else [binary]
+
+
 def slugify(text):
     """Carve's heading-id slug: case-preserving, GitHub-style."""
     text = re.sub(r"[^\w\s-]", "", text, flags=re.UNICODE).strip()
@@ -130,7 +135,7 @@ class CarveFormatCommand(sublime_plugin.TextCommand):
         binary = carve_binary(self.view)
         try:
             proc = subprocess.Popen(
-                [binary, "fmt"],
+                carve_command(binary) + ["fmt"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -142,7 +147,7 @@ class CarveFormatCommand(sublime_plugin.TextCommand):
             sublime.error_message(
                 "Carve: '%s' not found on PATH.\n\n"
                 "Install it (npm install -g @markup-carve/carve) or set "
-                "\"carve_binary\" in settings (package, project, or view)." % binary
+                "\"carve_binary\" in settings (package, project, or view)." % carve_command(binary)[0]
             )
             return
         except subprocess.TimeoutExpired:
@@ -212,7 +217,7 @@ class CarveImportCommand(sublime_plugin.WindowCommand):
     def convert(self, binary, fmt, source, target):
         try:
             proc = subprocess.Popen(
-                [binary, "migrate", "--from", fmt, source],
+                carve_command(binary) + ["migrate", "--from", fmt, source],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd=os.path.dirname(source) or None,
@@ -223,7 +228,7 @@ class CarveImportCommand(sublime_plugin.WindowCommand):
             sublime.error_message(
                 "Carve: '%s' not found on PATH.\n\n"
                 "Install it (npm install -g @markup-carve/carve) or set "
-                "\"carve_binary\" in settings (package, project, or view)." % binary
+                "\"carve_binary\" in settings (package, project, or view)." % carve_command(binary)[0]
             )
             return
         except subprocess.TimeoutExpired:

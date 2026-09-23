@@ -1,6 +1,7 @@
 {
-	// Path to the `carve` executable used by the format command and the build
-	// system. Leave as "carve" to use whatever is on PATH.
+	// Path to the `carve` executable used by the format and import commands.
+	// Leave as "carve" to use whatever is on PATH, or give a command list such
+	// as ["node", "/path/to/@markup-carve/carve/dist/cli.js"].
 	"carve_binary": "carve",
 
 	// Run `carve fmt` over the buffer every time a .crv file is saved.
