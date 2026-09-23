@@ -93,8 +93,12 @@ Available from the command palette:
 |---|---|
 | **Carve: Go to Cross-Reference Target** | Jumps from a `</#id>` under the cursor to the heading it points at (explicit `{#id}` attributes and derived heading slugs both resolve, case-insensitively, like Carve itself). |
 | **Carve: Format Buffer (carve fmt)** | Runs `carve fmt` over the buffer. Formats unsaved content and keeps undo history. |
+| **Carve: Import Markdown/HTML as .crv (carve migrate)** | Converts the current `.md` or `.html` file to a `.crv` next to it with `carve migrate --from markdown` or `--from html`, then opens the result. Asks before overwriting an existing `.crv`. Reads the file on disk, so save first. |
 
-Both need the `carve` CLI on PATH for formatting (`npm install -g @markup-carve/carve`
+The import command is also in the sidebar context menu (**Carve: Import as .crv**)
+when you right-click a single `.md`, `.markdown`, `.html` or `.htm` file.
+
+Formatting and import need the `carve` CLI on PATH (`npm install -g @markup-carve/carve`
 or `cargo install carve-lang`). Configure in **Preferences > Package Settings**:
 
 ```json
@@ -103,6 +107,14 @@ or `cargo install carve-lang`). Configure in **Preferences > Package Settings**:
     "carve_format_on_save": false
 }
 ```
+
+## Export to Markdown or HTML
+
+Exporting goes the other way and comes from the language server, not this
+package. Install [sublime-carve-lsp](https://github.com/markup-carve/sublime-carve-lsp)
+and the **Export as Markdown** and **Export as HTML** code actions write
+`notes.md` or `notes.html` next to `notes.crv`. They need a carve-lsp release
+newer than 0.1.7.
 
 ## Build system
 

@@ -6,5 +6,9 @@
 	{
 		"caption": "Carve: Format Buffer (carve fmt)",
 		"command": "carve_format"
+	},
+	{
+		"caption": "Carve: Import Markdown/HTML as .crv (carve migrate)",
+		"command": "carve_import"
 	}
 ]
