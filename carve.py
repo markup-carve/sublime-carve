@@ -8,7 +8,7 @@ cannot do:
 * `carve fmt` is a canonical formatter whose output is byte-identical across
   the three engines, so formatting a buffer is safe and deterministic.
 
-Both are opt-in commands; nothing here runs on its own.
+All commands are opt-in; nothing here runs on its own.
 """
 
 import os
@@ -25,6 +25,13 @@ SETTINGS_FILE = "Carve.sublime-settings"
 ATTR_ID_RE = re.compile(r"\{[^}\n]*#([^\s}]+)[^}\n]*\}")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 CROSSREF_RE = re.compile(r"</#([^>\s]+)>")
+
+IMPORT_FORMATS = {
+    ".md": "markdown",
+    ".markdown": "markdown",
+    ".html": "html",
+    ".htm": "html",
+}
 
 
 def setting(view, key, default):
@@ -44,6 +51,11 @@ def setting(view, key, default):
 def carve_binary(view=None):
     """The `carve` executable: view/project setting, else package setting."""
     return setting(view, "carve_binary", "carve")
+
+
+def carve_command(binary):
+    """`carve_binary` as an argv prefix; a list allows e.g. ["node", ".../cli.js"]."""
+    return list(binary) if isinstance(binary, list) else [binary]
 
 
 def slugify(text):
@@ -123,7 +135,7 @@ class CarveFormatCommand(sublime_plugin.TextCommand):
         binary = carve_binary(self.view)
         try:
             proc = subprocess.Popen(
-                [binary, "fmt"],
+                carve_command(binary) + ["fmt"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -135,7 +147,7 @@ class CarveFormatCommand(sublime_plugin.TextCommand):
             sublime.error_message(
                 "Carve: '%s' not found on PATH.\n\n"
                 "Install it (npm install -g @markup-carve/carve) or set "
-                "\"carve_binary\" in settings (package, project, or view)." % binary
+                "\"carve_binary\" in settings (package, project, or view)." % carve_command(binary)[0]
             )
             return
         except subprocess.TimeoutExpired:
@@ -170,6 +182,85 @@ class CarveFormatOnSave(sublime_plugin.EventListener):
         if not setting(view, "carve_format_on_save", False):
             return
         view.run_command("carve_format")
+
+
+def import_format(path):
+    """The `carve migrate --from` format for a path, or None."""
+    if not path:
+        return None
+    return IMPORT_FORMATS.get(os.path.splitext(path)[1].lower())
+
+
+class CarveImportCommand(sublime_plugin.WindowCommand):
+    """Convert a Markdown or HTML file to a sibling .crv via `carve migrate`.
+
+    Reads the file on disk, so unsaved edits in an open buffer are not included.
+    """
+
+    def run(self, paths=None):
+        source = self.source_path(paths)
+        fmt = import_format(source)
+        if fmt is None:
+            sublime.status_message("Carve: import needs a .md or .html file")
+            return
+
+        target = os.path.splitext(source)[0] + ".crv"
+        if os.path.exists(target) and not sublime.ok_cancel_dialog(
+            "Carve: %s already exists.\n\nOverwrite it?" % os.path.basename(target),
+            "Overwrite",
+        ):
+            return
+
+        binary = carve_binary(self.window.active_view())
+        sublime.set_timeout_async(lambda: self.convert(binary, fmt, source, target), 0)
+
+    def convert(self, binary, fmt, source, target):
+        try:
+            proc = subprocess.Popen(
+                carve_command(binary) + ["migrate", "--from", fmt, source],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=os.path.dirname(source) or None,
+                startupinfo=_startupinfo(),
+            )
+            out, err = proc.communicate(timeout=30)
+        except FileNotFoundError:
+            sublime.error_message(
+                "Carve: '%s' not found on PATH.\n\n"
+                "Install it (npm install -g @markup-carve/carve) or set "
+                "\"carve_binary\" in settings (package, project, or view)." % carve_command(binary)[0]
+            )
+            return
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            sublime.error_message("Carve: 'carve migrate' timed out")
+            return
+
+        if proc.returncode != 0:
+            sublime.error_message(
+                "Carve: 'carve migrate' failed\n\n%s" % err.decode("utf-8", "replace").strip()
+            )
+            return
+        if not out.strip():
+            sublime.error_message("Carve: 'carve migrate' produced no output")
+            return
+
+        with open(target, "wb") as handle:
+            handle.write(out)
+        sublime.set_timeout(lambda: self.window.open_file(target), 0)
+        sublime.status_message("Carve: imported %s" % os.path.basename(target))
+
+    def source_path(self, paths):
+        if paths:
+            return paths[0] if len(paths) == 1 else None
+        view = self.window.active_view()
+        return view.file_name() if view else None
+
+    def is_enabled(self, paths=None):
+        return import_format(self.source_path(paths)) is not None
+
+    def is_visible(self, paths=None):
+        return self.is_enabled(paths)
 
 
 def _startupinfo():

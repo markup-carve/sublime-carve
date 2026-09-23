@@ -1,0 +1,7 @@
+[
+	{
+		"caption": "Carve: Import as .crv",
+		"command": "carve_import",
+		"args": {"paths": []}
+	}
+]
