@@ -483,6 +483,64 @@ const x = 1;
 #^^^^ source.js
 ```
 
+```carve
+*bold* and /italic/
+# <- markup.raw.block.fenced.code.carve punctuation.definition.bold.carve
+#^^^^ markup.bold.carve
+```
+
+````carve
+```js
+const y = 2;
+# <- keyword.declaration.js
+```
+still carve *inside*
+#           ^ markup.raw.block.fenced.code.carve punctuation.definition.bold.carve
+````
+After the fence.
+# <- -markup.raw.block.fenced.code.carve
+
+````js
+const t = `
+```
+# <- source.js
+# <- -punctuation.definition.raw.end.carve
+`;
+# <- source.js
+````
+# <- punctuation.definition.raw.end.carve
+After the four-backtick js fence.
+# <- -source.js
+
+```js
+~~~
+# <- source.js
+# <- -punctuation.definition.raw.end.carve
+const u = 3;
+# <- keyword.declaration.js
+````
+# <- punctuation.definition.raw.end.carve
+A longer run of the opener's character closes it.
+# <- -source.js
+
+~~~~
+```
+# <- markup.raw.block.fenced.code.carve
+# <- -punctuation.definition.raw.end.carve
+~~~~
+# <- punctuation.definition.raw.end.carve
+After the plain tilde fence.
+# <- -markup.raw.block.fenced.code.carve
+
+````=html
+```
+# <- markup.raw.block.carve
+# <- -punctuation.definition.raw.end.carve
+````
+# <- punctuation.definition.raw.end.carve
+After the raw block.
+# <- -markup.raw.block.carve
+
 %%%%
 a longer comment fence
 %%%%
