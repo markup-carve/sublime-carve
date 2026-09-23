@@ -547,6 +547,101 @@ After the plain tilde fence.
 After the raw block.
 # <- -markup.raw.block.carve
 
+# ----- Fences inside list items (#56) -----
+# carve-js renders each fence below as a code block inside its item. The same
+# indented fence at document level is NOT a fence, which the last case pins.
+# Assertion lines inside an item are indented: a column-0 line ends the item.
+
+- ```js
+  # <- punctuation.definition.raw.begin.carve
+  #  ^^ entity.name.type.language.carve
+  const onMarker = 1;
+  # <- keyword.declaration.js
+  ```
+  # <- punctuation.definition.raw.end.carve
+
+-{#x} ```js
+      # <- punctuation.definition.raw.begin.carve
+  const behindAttributes = 1;
+  # <- keyword.declaration.js
+  ```
+
+-{#x}
+
+  ```js
+  # <- -punctuation.definition.raw.begin.carve
+  ```
+
+- an item holding a fence at its body column:
+
+  ```js
+  # <- punctuation.definition.raw.begin.carve
+  #  ^^ entity.name.type.language.carve
+  const inItem = 1;
+  # <- keyword.declaration.js
+
+  const afterBlank = 2;
+  # <- keyword.declaration.js
+  ```
+  # <- punctuation.definition.raw.end.carve
+
+  Body text after the fence is still the item's, and *live* again.
+  # <- -markup.raw.block.fenced.code.carve
+  #                                                  ^^^^^^ markup.bold.carve
+
+1. an ordered item
+
+   ```
+   # <- punctuation.definition.raw.begin.carve
+   *not bold*
+   # <- markup.raw.block.fenced.code.carve
+   # <- -punctuation.definition.bold.carve
+   ```
+   # <- punctuation.definition.raw.end.carve
+
+:: a term
+: its definition
+
+  ```js
+  # <- punctuation.definition.raw.begin.carve
+  const inDefinition = 1;
+  # <- keyword.declaration.js
+  ```
+
+- outer item
+  - inner item
+
+    ```js
+    # <- punctuation.definition.raw.begin.carve
+    const nested = 1;
+    # <- keyword.declaration.js
+    ```
+    # <- punctuation.definition.raw.end.carve
+  - ```js
+    # <- punctuation.definition.raw.begin.carve
+    #  ^^ entity.name.type.language.carve
+    const nestedMarker = 1;
+    # <- keyword.declaration.js
+  - a sibling marker ends the unclosed fence opened on the marker line above
+  # <- -markup.raw.block.fenced.code.carve
+  # <- punctuation.definition.list.begin.carve
+
+- an item whose fence is never closed
+
+  ```js
+  const unclosed = 1;
+Column zero ends the item and the fence with it, so *bold* is live.
+# <- -markup.raw.block.fenced.code.carve
+# <- -source.js
+#                                                   ^^^^^^ markup.bold.carve
+
+  ```js
+  # <- -punctuation.definition.raw.begin.carve
+  const notCode = 1;
+  # <- -markup.raw.block.fenced.code.carve
+  # <- -source.js
+  ```
+
 %%%%
 a longer comment fence
 %%%%
