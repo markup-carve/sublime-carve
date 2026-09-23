@@ -483,6 +483,23 @@ const x = 1;
 #^^^^ source.js
 ```
 
+```carve
+*bold* and /italic/
+# <- markup.raw.block.fenced.code.carve punctuation.definition.bold.carve
+#^^^^ markup.bold.carve
+```
+
+````carve
+```js
+const y = 2;
+# <- keyword.declaration.js
+```
+still carve *inside*
+#           ^ markup.raw.block.fenced.code.carve punctuation.definition.bold.carve
+````
+After the fence.
+# <- -markup.raw.block.fenced.code.carve
+
 %%%%
 a longer comment fence
 %%%%
