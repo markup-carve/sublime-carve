@@ -47,6 +47,11 @@ jobs:
       - name: The generated battery block is in sync
         run: python3 tools/generate-battery-tests.py --check
 
+      # The list-item fence contexts are derived from `code-blocks`, so a
+      # language added there without regenerating stays uncoloured in items.
+      - name: The generated container fences are in sync
+        run: pip install pyyaml && python3 tools/generate-container-fences.py --check
+
       # Reaches the network, so a failure means the vendored table is stale (or
       # GitHub is down), not that the syntax is wrong.
       - name: The vendored block battery still matches carve-grammars
