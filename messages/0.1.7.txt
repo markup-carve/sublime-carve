@@ -1,0 +1,21 @@
+Carve 0.1.7
+===========
+
+Added
+  - Carve: Import Markdown/HTML as .crv, from the command palette or the
+    sidebar context menu for .md, .markdown, .html and .htm files. It runs
+    carve migrate, asks before overwriting and opens the result. The
+    carve_binary setting also accepts a command list such as
+    ["node", "/path/to/dist/cli.js"].
+  - A fence tagged carve or crv highlights as Carve. The embed list covered
+    about 45 languages but not Carve itself.
+
+Fixes
+  - A fence closes only on its own fence character at its own length or
+    longer, so a ~~~ line inside a backtick fence no longer ends it.
+  - A fenced code block inside a list item is a code block. Every fence
+    rule was anchored at column 0, so an indented fence read as paragraph
+    text with an inline code span.
+  - The unreachable math-blocks rule is gone. The plain fallback fence took
+    every opener before it could match, so a math fence was already scoped
+    as fenced code with math as its language.
