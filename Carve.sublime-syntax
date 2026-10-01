@@ -234,11 +234,29 @@ contexts:
         1: punctuation.definition.thematic-break.carve
 
   headings:
-    - match: '^(#{1,6})( +)(?![ \t]*$)(.+)$'
+    - match: '^(#{1,6})( +)(?![ \t]*$)'
       scope: markup.heading.carve
       captures:
         1: punctuation.definition.heading.carve
-        3: entity.name.section.carve
+      push:
+        - meta_scope: markup.heading.carve
+        - meta_content_scope: entity.name.section.carve
+        - match: '$'
+          pop: true
+        - include: line-verbatim
+        - include: trailing-comment
+        - include: inline
+
+  line-verbatim:
+    - match: '\\.'
+      scope: constant.character.escape.carve
+    - match: '(?:\$\$?|!)?(`+)(?!`)'
+      scope: punctuation.definition.raw.carve
+      push:
+        - meta_scope: markup.raw.inline.carve
+        - match: '(?<!`)\1(?!`)|$'
+          scope: punctuation.definition.raw.carve
+          pop: true
 
   # ----- Fenced code blocks (with optional language + #201 "header"/[label]) -----
   # Fenced code. A block whose info string names a language Sublime ships gets
@@ -2141,6 +2159,8 @@ contexts:
         - meta_scope: markup.caption.carve
         - match: '$'
           pop: true
+        - include: line-verbatim
+        - include: trailing-comment
         - include: inline
 
   # ----- Block quotes -----
@@ -2156,6 +2176,7 @@ contexts:
         - meta_scope: markup.quote.carve
         - match: '$'
           pop: true
+        - include: line-verbatim
         - include: trailing-comment
         - include: inline
 
