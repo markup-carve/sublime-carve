@@ -19,3 +19,7 @@ Fixes
   - The unreachable math-blocks rule is gone. The plain fallback fence took
     every opener before it could match, so a math fence was already scoped
     as fenced code with math as its language.
+  - A trailing %% comment in a heading or a caption is colored as a
+    comment, and a verbatim span inside either keeps its own coloring,
+    including inside a quote. An unclosed verbatim opener no longer
+    carries its coloring into the lines below.
