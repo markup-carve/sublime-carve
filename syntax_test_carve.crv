@@ -1445,3 +1445,156 @@ x ![x](a 't /u') c/
 See {{ chapters/intro.crv
 #   ^^ -meta.attributes.carve
 #      ^^^^^^^^^^^^^^^^^^ -meta.attributes.carve
+
+# a `x %% b` c %% hidden
+#      ^^^^ markup.raw.inline.carve
+#              ^^^^^^^^^ comment.line.percent.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+# a ``x %% b`` c	%% hidden
+#       ^^^^ markup.raw.inline.carve
+#                ^^^^^^^^^ comment.line.percent.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+# a `x %% b
+#      ^^^^ markup.raw.inline.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+^ cap `x %% b` c %% hidden
+#        ^^^^ markup.raw.inline.carve
+#                ^^^^^^^^^ comment.line.percent.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+^ cap ``x %% b`` c	%% hidden
+#         ^^^^ markup.raw.inline.carve
+#                  ^^^^^^^^^ comment.line.percent.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+^ cap `x %% b
+#        ^^^^ markup.raw.inline.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+> # a `x %% b` c %% hidden
+#        ^^^^ markup.raw.inline.carve
+#                ^^^^^^^^^ comment.line.percent.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+> # a ``x %% b`` c	%% hidden
+#         ^^^^ markup.raw.inline.carve
+#                  ^^^^^^^^^ comment.line.percent.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+> # a `x %% b
+#        ^^^^ markup.raw.inline.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+> ^ cap `x %% b` c %% hidden
+#          ^^^^ markup.raw.inline.carve
+#                  ^^^^^^^^^ comment.line.percent.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+> ^ cap ``x %% b`` c	%% hidden
+#           ^^^^ markup.raw.inline.carve
+#                    ^^^^^^^^^ comment.line.percent.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+> ^ cap `x %% b
+#          ^^^^ markup.raw.inline.carve
+
+plain tail
+# <- -markup.heading.carve
+# <- -markup.caption.carve
+# <- -markup.raw.inline.carve
+
+
+# a \`x %% hidden
+#       ^^^^^^^^^ comment.line.percent.carve
+
+# a \\`x %% hidden
+#        ^^^^^^^^^ markup.raw.inline.carve
+
+# a \\\`x %% hidden
+#         ^^^^^^^^^ comment.line.percent.carve
+
+# a \\\\`x %% hidden
+#          ^^^^^^^^^ markup.raw.inline.carve
+
+^ cap \`x %% hidden
+#         ^^^^^^^^^ comment.line.percent.carve
+
+^ cap \\`x %% hidden
+#          ^^^^^^^^^ markup.raw.inline.carve
+
+^ cap \\\`x %% hidden
+#           ^^^^^^^^^ comment.line.percent.carve
+
+^ cap \\\\`x %% hidden
+#            ^^^^^^^^^ markup.raw.inline.carve
+
+> # a \`x %% hidden
+#         ^^^^^^^^^ comment.line.percent.carve
+
+> # a \\`x %% hidden
+#          ^^^^^^^^^ markup.raw.inline.carve
+
+> # a \\\`x %% hidden
+#           ^^^^^^^^^ comment.line.percent.carve
+
+> # a \\\\`x %% hidden
+#            ^^^^^^^^^ markup.raw.inline.carve
+
+> ^ cap \`x %% hidden
+#           ^^^^^^^^^ comment.line.percent.carve
+
+> ^ cap \\`x %% hidden
+#            ^^^^^^^^^ markup.raw.inline.carve
+
+> ^ cap \\\`x %% hidden
+#             ^^^^^^^^^ comment.line.percent.carve
+
+> ^ cap \\\\`x %% hidden
+#              ^^^^^^^^^ markup.raw.inline.carve
