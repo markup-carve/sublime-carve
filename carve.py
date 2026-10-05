@@ -97,10 +97,6 @@ class CarveGotoCrossrefCommand(sublime_plugin.TextCommand):
 
         row = heading_ids(self.view).get(target)
         if row is None:
-            # Cross-references resolve case-insensitively.
-            lowered = {k.lower(): v for k, v in heading_ids(self.view).items()}
-            row = lowered.get(target.lower())
-        if row is None:
             sublime.status_message("Carve: no heading with id '%s'" % target)
             return
 
