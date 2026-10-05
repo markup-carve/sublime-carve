@@ -91,7 +91,7 @@ Available from the command palette:
 
 | Command | What it does |
 |---|---|
-| **Carve: Go to Cross-Reference Target** | Jumps from a `</#id>` under the cursor to the heading it points at (explicit `{#id}` attributes and derived heading slugs both resolve, case-insensitively, like Carve itself). |
+| **Carve: Go to Cross-Reference Target** | Jumps from a `</#id>` under the cursor to the heading it points at (explicit `{#id}` attributes and derived heading slugs both resolve; the id must match exactly, case included, like Carve itself). |
 | **Carve: Format Buffer (carve fmt)** | Runs `carve fmt` over the buffer. Formats unsaved content and keeps undo history. |
 | **Carve: Import Markdown/HTML as .crv (carve migrate)** | Converts the current `.md` or `.html` file to a `.crv` next to it with `carve migrate --from markdown` or `--from html`, then opens the result. Asks before overwriting an existing `.crv`. Reads the file on disk, so save first. |
 
