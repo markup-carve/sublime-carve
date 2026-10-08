@@ -1598,3 +1598,31 @@ plain tail
 
 > ^ cap \\\\`x %% hidden
 #              ^^^^^^^^^ markup.raw.inline.carve
+
+# THE CONVERGED SPELLINGS (markup-carve/carve#2775). An option needs no
+# whitespace before its `@`, the way the selector case above needs none before
+# its `#`. The path run stops at `#`, `@`, `}` and whitespace alike, so these
+# hold without a rule per spelling - but the option case above is written WITH
+# the pad, so nothing here could show it.
+See {{ ch.crv@shift:auto }} here.
+#            ^^^^^^ variable.parameter.include.carve
+#                   ^^^^ constant.other.include.carve
+#            ^ -punctuation.definition.mention.carve
+
+# A QUOTED path closes on its own quote, so a selector may touch it.
+See {{ "a ch.crv"#intro }} here.
+#      ^^^^^^^^^^ string.other.link.include.carve
+#                ^^^^^^ entity.name.section.include.carve
+#                ^ -punctuation.definition.tag.carve
+# A SELECTOR KEEPS ITS CASE. Ids compare case exactly from carve 0.1.8, so
+# `#Intro` and `#intro` are different selectors. The scope is the same either
+# way; what matters is that the directive claims both rather than leaving one
+# to the tag rule.
+See {{ ch.crv#Intro }} and {{ ch.crv#intro }} here.
+#            ^^^^^^ entity.name.section.include.carve
+#                                   ^^^^^^ entity.name.section.include.carve
+
+# An option touching a selector, both markers unpadded.
+See {{ ch.crv #Intro@shift:auto }} here.
+#             ^^^^^^ entity.name.section.include.carve
+#                   ^^^^^^ variable.parameter.include.carve
