@@ -1,0 +1,8 @@
+Carve 0.1.8
+===========
+
+Fixes
+  - Go to a heading only when its id matches the cross-reference's own
+    case. Names compare case exactly from Carve 0.1.8 on, so </#plan>
+    does not reach a heading written {#Plan} and the jump no longer
+    behaves as though it did.
