@@ -1,0 +1,225 @@
+name: Release
+
+# The tag is created by THIS workflow, after the gates pass and after a human
+# approves. Package Control installs this package from its git tags, so the tag
+# is the first irreversible act in a release here: once it is pushed, Package
+# Control can serve it, with no approval anywhere in that path. Deriving the run
+# from a tag push would run the gates after that act instead of before it.
+#
+# A release of this repository consists of the tag, the Package Control upgrade
+# message for the version, and the GitHub release. There is no registry to push
+# to: the Package Control channel reads the tag.
+#
+# The notes are published in this same run rather than by a second workflow
+# listening for the tag: a ref created with github.token does not trigger other
+# workflows, so a tag-triggered job would never fire.
+#
+# Every job declares timeout-minutes, so a hung step fails in minutes instead
+# of inheriting GitHub's 360-minute default.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without a leading v (e.g. 0.1.9)'
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: The tag is free and every version surface agrees
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: The tag does not exist yet
+        run: |
+          VER="${{ inputs.version }}"
+          if git rev-parse -q --verify "refs/tags/${VER}" >/dev/null; then
+            echo "::error::Tag ${VER} already exists. Supersede it with a new version."
+            exit 1
+          fi
+
+      # messages.json is the version surface Package Control reads: it maps each
+      # released version to the upgrade message shown after the update. A tag
+      # with no entry here upgrades users silently, and an entry pointing at a
+      # missing or empty file shows them nothing, so both are checked.
+      - name: messages.json has an entry for this version and the file has content
+        run: |
+          VER="${{ inputs.version }}" python3 - <<'PY'
+          import json, os, sys
+          ver = os.environ["VER"]
+          data = json.load(open("messages.json", encoding="utf-8"))
+          path = data.get(ver)
+          if path is None:
+              print(f"::error::messages.json has no entry for {ver}."
+                    " Package Control would upgrade users with no message.")
+              sys.exit(1)
+          if not os.path.exists(path):
+              print(f"::error::messages.json points {ver} at {path}, which does not exist.")
+              sys.exit(1)
+          if not open(path, encoding="utf-8").read().strip():
+              print(f"::error::{path} is empty, so the upgrade message is blank.")
+              sys.exit(1)
+          print(f"ok   {ver} -> {path}")
+          PY
+
+      - name: The changelog describes this version
+        run: |
+          VER="${{ inputs.version }}"
+          if ! grep -qE "^## \[?${VER//./\\.}\]?" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no section for $VER."
+            exit 1
+          fi
+
+  release-notes:
+    name: A release draft for this version exists and has notes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # `write`, not `read`: a DRAFT release is invisible to a caller without
+      # push access, so under `contents: read` the listing comes back empty and
+      # this reports "no draft" for a draft sitting right there with notes in it.
+      contents: write
+    steps:
+      # Listed rather than addressed by tag: a draft's tag is not a git ref, so
+      # `gh release view <tag>` can match nothing, change nothing and exit 0.
+      - name: The draft exists and has notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          VER: ${{ inputs.version }}
+        run: |
+          release="$(gh api "repos/$REPO/releases" --paginate \
+            --jq "[.[] | select(.tag_name == \"$VER\")] | first")"
+          if [ -z "$release" ]; then
+            echo "::error::no release draft for $VER. Write the notes first."
+            echo "::error::if a draft DOES exist, this job could not see it - check that it still declares contents: write"
+            exit 1
+          fi
+          body="$(printf '%s' "$release" | jq -r '.body // ""' | tr -d '[:space:]')"
+          if [ -z "$body" ]; then
+            echo "::error::the release for $VER has no notes."
+            exit 1
+          fi
+          printf '%s' "$release" | jq -r '"draft=\(.draft) tag=\(.tag_name)"'
+
+  tests:
+    name: Syntax tests, assertion lint and package files
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: SublimeText/syntax-test-action@v2
+        with:
+          build: stable
+          package_name: Carve
+          # Fenced code embeds the real bundled syntaxes, so the default
+          # packages must be present for the embeds to resolve.
+          default_packages: binary
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Reject assertions that cannot fail
+        run: python3 tools/lint-syntax-tests.py
+
+      - name: The generated battery block is in sync
+        run: python3 tools/generate-battery-tests.py --check
+
+      - name: The generated container fences are in sync
+        run: python3 tools/generate-container-fences.py --check
+
+      - name: The package files parse
+        run: |
+          python - <<'PY'
+          import glob, json, sys, yaml
+          files = sorted(glob.glob("*.sublime-syntax"))
+          if not files:
+              sys.exit("No .sublime-syntax files found")
+          for path in files:
+              yaml.safe_load(open(path, encoding="utf-8"))
+              print("ok  ", path)
+          for path in sorted(glob.glob("*.json") + glob.glob("messages/*.json")):
+              json.load(open(path, encoding="utf-8"))
+              print("ok  ", path)
+          PY
+
+      # The battery drift check in ci.yml is deliberately not repeated here: it
+      # reaches carve-grammars over the network, so a failure means the vendored
+      # table is stale or GitHub is down, neither of which is a reason to refuse
+      # a tag that main has already passed CI on.
+
+  tag:
+    name: Create the tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [guard, release-notes, tests]
+    # THE APPROVAL GATE, and the only one: GitHub prompts once per gated job,
+    # so a second `environment:` would ask twice for one decision. `needs:`
+    # makes this unreachable until every gate above passes.
+    environment: release-approval
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Push the tag
+        run: |
+          VER="${{ inputs.version }}"
+          # Re-checked under the approval: main can move while a run waits for a
+          # reviewer, and the gates measured the commit that was current then.
+          if ! python3 -c "import json,sys;sys.exit(0 if json.load(open('messages.json')).get('$VER') else 1)"; then
+            echo "::error::messages.json no longer has an entry for $VER. main moved" \
+                 "while this run waited for approval. Re-run the workflow."
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/${VER}" >/dev/null; then
+            echo "::error::Tag ${VER} appeared while this run waited. Stopping."
+            exit 1
+          fi
+          git tag "${VER}" "$GITHUB_SHA"
+          git push origin "refs/tags/${VER}"
+          echo "tagged ${VER} at $GITHUB_SHA"
+
+  publish:
+    name: Publish the release notes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [tag]
+    # No `environment:` here: the decision was spent on the tag, and
+    # `needs: [tag]` already makes this unreachable without it.
+    permissions:
+      contents: write
+    steps:
+      - name: Un-draft the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          VER: ${{ inputs.version }}
+        run: |
+          id="$(gh api "repos/$REPO/releases" --paginate \
+            --jq "[.[] | select(.tag_name == \"$VER\" and .draft)] | first | .id // empty")"
+          if [ -z "$id" ]; then
+            echo "No draft release for $VER; nothing to publish."
+            exit 0
+          fi
+          # `tag_name` goes with every PATCH of a release: omit it on a draft and
+          # GitHub replaces the tag with a generated `untagged-*` placeholder.
+          # `-F` for draft, so it is sent as a boolean - the string "false" is
+          # truthy and publishes anyway.
+          gh api "repos/$REPO/releases/$id" -X PATCH \
+            -f tag_name="$VER" -F draft=false --jq '"published \(.tag_name)"'
+          gh api "repos/$REPO/releases/$id" --jq '"draft=\(.draft) tag=\(.tag_name)"'
