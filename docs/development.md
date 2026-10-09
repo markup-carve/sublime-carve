@@ -25,3 +25,27 @@ folders into `Data/Packages/`; CI's `default_packages: binary` performs the
 equivalent setup.
 
 Inside Sublime, run the tests through **Build With... > Syntax Tests**.
+
+## Fence languages
+
+Which syntax a fenced code block embeds is not written by hand. The rules come
+from `tools/fence-languages.json`, a byte-for-byte copy of carve-grammars'
+`fence-languages/fence-languages.json`, the shared table every Carve editor
+grammar embeds from. Each row whose `sublime` column is set becomes one rule in
+each fence position: `code-blocks` (document level),
+`code-blocks-on-a-marker-line` and `code-blocks-at-a-body-column` (inside list
+items). Everything between the `BEGIN GENERATED` and `END GENERATED` comments in
+`Carve.sublime-syntax` is overwritten.
+
+To add or change a language, change the table in carve-grammars first, then
+re-copy it here and regenerate:
+
+```bash
+cp ../carve-grammars/fence-languages/fence-languages.json tools/
+python3 tools/generate-fence-languages.py
+```
+
+CI runs `tools/generate-fence-languages.py --check`, which fails when the
+syntax is stale against the table, and `tools/check-fence-languages-drift.sh`,
+which fails when the copy differs from carve-grammars `main` (set
+`CARVE_GRAMMARS_DIR` to compare against a local checkout instead).

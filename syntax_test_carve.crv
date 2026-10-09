@@ -547,6 +547,52 @@ After the plain tilde fence.
 After the raw block.
 # <- -markup.raw.block.carve
 
+# ----- Fence languages (tools/fence-languages.json) -----
+# The language token ends where grammar.ebnf's `language_info` ends, so `c++`
+# is one token: `\b` could not close it, and `c` used to claim it.
+
+```c++
+#  ^^^ entity.name.type.language.carve
+int cpp = 1;
+# <- source.c++
+# <- -source.c
+```
+
+```c#
+#  ^^ entity.name.type.language.carve
+int cs = 1;
+# <- source.cs
+```
+
+```bibtex
+@article{key,
+# <- text.bibtex
+}
+```
+
+```objcpp
+int objcpp = 1;
+# <- source.objc++
+```
+
+```zsh
+echo hi
+# <- source.shell.zsh
+```
+
+```Python "Mixed case" [l]
+#  ^^^^^^ entity.name.type.language.carve
+#        ^^^^^^^^^^^^^^^^^ meta.code-fence.header.carve
+x = 1
+# <- source.python
+```
+
+```python-x
+x = 1
+# <- markup.raw.block.fenced.code.carve
+# <- -source.python
+```
+
 # ----- Fences inside list items (#56) -----
 # carve-js renders each fence below as a code block inside its item. The same
 # indented fence at document level is NOT a fence, which the last case pins.
@@ -559,6 +605,12 @@ After the raw block.
   # <- keyword.declaration.js
   ```
   # <- punctuation.definition.raw.end.carve
+
+- ```c++
+  #  ^^^ entity.name.type.language.carve
+  int onMarkerCpp = 1;
+  # <- source.c++
+  ```
 
 -{#x} ```js
       # <- punctuation.definition.raw.begin.carve
@@ -584,6 +636,16 @@ After the raw block.
   # <- keyword.declaration.js
   ```
   # <- punctuation.definition.raw.end.carve
+
+  ```zsh
+  echo inItem
+  # <- source.shell.zsh
+  ```
+
+  ```c++
+  int inItemCpp = 1;
+  # <- source.c++
+  ```
 
   Body text after the fence is still the item's, and *live* again.
   # <- -markup.raw.block.fenced.code.carve
