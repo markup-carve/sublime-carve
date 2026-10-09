@@ -21,7 +21,8 @@ This package is authored from the maintained Carve TextMate grammar
 - Fenced code with language plus the fence header `"header"` / `[label]` -
   and the code inside is highlighted with Sublime's own syntax for that
   language (python, js/ts, rust, go, php, ruby, sql, shell, yaml, json,
-  html, css and ~35 more)
+  html, css and ~40 more, from the fence-language table shared by every Carve
+  editor grammar)
 - Raw passthrough fences (```` ```=html ````), kept verbatim and never
   highlighted as code
 - Divs (`:::`) with `"title"` / `[label]`; the eight Tier-1 admonition types

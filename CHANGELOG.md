@@ -9,6 +9,24 @@ Releases before 0.1.8 are described on the
 
 ## [Unreleased]
 
+### Added
+
+- More fence languages are highlighted: `bibtex`/`bib`, `d`, `erb`, `haml`,
+  `objcpp`/`objective-cpp`, and new aliases for existing languages (`c#`,
+  `objective-c`, `h`, `hpp`, `mjs`, `cjs`, `mts`, `cts`, `py3`, `jsonc`,
+  `json5`, `htm`, `xhtml`, `svg`, `xsd`, `xsl`, `xslt`, `cljs`, `edn`,
+  `gradle`, `cmd`). The list now comes from the fence-language table shared
+  by every Carve editor grammar.
+- A fence's language word matches in any case, so ```` ```Python ```` embeds
+  Python.
+
+### Fixed
+
+- A ```` ```c++ ```` fence is highlighted as C++, and ```` ```c# ```` as C#.
+  Both were highlighted as C, with `++` or `#` shown as the fence header.
+- A language word only matches as a whole info-string token: ```` ```python-x ````
+  is no longer highlighted as Python.
+
 ## [0.1.8] - 2026-10-08
 
 ### Fixed
