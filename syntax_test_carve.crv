@@ -17,7 +17,7 @@ Use _underline_ plus ~strike~ here.
 #                    ^ punctuation.definition.strike.carve
 
 A ==highlight== and {^sup^} and {,sub,} done.
-# ^^ punctuation.definition.highlight.carve
+# ^^^^^^^^^^^^^ -markup.highlight.carve
 #                   ^^ punctuation.definition.superscript.carve
 #                     ^^^ markup.superscript.carve
 #                        ^^ punctuation.definition.superscript.carve
@@ -316,6 +316,7 @@ An escaped \* star.
 :: Term one
 # <- punctuation.definition.list.begin.carve
 #^ punctuation.definition.list.begin.carve
+
 :  A definition.
 # <- punctuation.definition.list.begin.carve
 
@@ -899,6 +900,7 @@ Note. an ordinary sentence start is prose
 -{#x} an attributed bullet
 # <- punctuation.definition.list.begin.carve
 #^^^^ meta.attributes.carve
+
 *{.c} an attributed star bullet
 # <- punctuation.definition.list.begin.carve
 -{title="a}b"} a `}` inside a quoted value does not end the block
@@ -1687,3 +1689,112 @@ See {{ ch.crv#Intro }} and {{ ch.crv#intro }} here.
 See {{ ch.crv #Intro@shift:auto }} here.
 #             ^^^^^^ entity.name.section.include.carve
 #                   ^^^^^^ variable.parameter.include.carve
+
+# EDITOR AUDIT (2026-10). Assertion lines are Carve too: `# ...` is a heading
+# and ends a paragraph, so every case below asserts only its last line.
+
+para
+- not a list
+# <- -punctuation.definition.list.begin.carve
+
+para
+^ not a caption
+# <- -markup.caption.carve
+
+- a
+lazy
+- b
+# <- punctuation.definition.list.begin.carve
+
+para
+
+^ no host above
+# <- -markup.caption.carve
+
+## A heading takes no caption
+^ literal
+# <- -markup.caption.carve
+
+| t |
+
+^ a table caption after one blank line
+# <- punctuation.definition.caption.carve
+
+> # Quoted heading
+# ^ punctuation.definition.heading.carve
+#   ^^^^^^ entity.name.section.carve
+
+> - quoted item
+# ^ punctuation.definition.list.begin.carve
+
+> :: quoted term
+# ^^ punctuation.definition.list.begin.carve
+
+> | x |
+# ^ punctuation.separator.table.carve
+#  ^^^ markup.quote.carve markup.table.row.carve
+
+> ```
+> *x*
+# ^^^ markup.raw.block.carve
+# ^^^ -markup.bold.carve
+
+> ```
+> ```
+> after *b*
+#        ^ markup.bold.carve
+
+> ```
+> ```~
+> still code *b*
+#             ^ -markup.bold.carve
+
+| a | b
+# <- -markup.table.row.carve
+
+a { b *c*
+# ^ -meta.attributes.carve
+#      ^ markup.bold.carve
+
+a ^[note *b* with no closer
+
+after
+# <- -meta.footnote.inline.carve
+
+x ^[a note
+that wraps] y
+#         ^ punctuation.definition.footnote.end.carve
+
+2*3*4 and a~b~c
+#^^^ -markup.bold.carve
+#          ^^^ -markup.strikethrough.carve
+
+\$ \" \& \: \; \?
+# <- constant.character.escape.carve
+#^ constant.character.escape.carve
+#  ^^ constant.character.escape.carve
+#     ^^ constant.character.escape.carve
+#        ^^ constant.character.escape.carve
+#           ^^ constant.character.escape.carve
+#              ^^ constant.character.escape.carve
+
+a --> b ==> c => d
+# ^^^ constant.character.typography.carve
+#       ^^^ constant.character.typography.carve
+#             ^^ -constant.character.typography.carve
+
+a `code
+span` b
+# <- markup.raw.inline.carve
+#   ^ punctuation.definition.raw.carve
+
+x [a [b] c](u)
+# ^ punctuation.definition.link.begin.carve
+#           ^ markup.underline.link.carve
+
+::: note
+```
+code
+:::
+*b*
+# <- punctuation.definition.bold.carve
