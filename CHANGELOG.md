@@ -9,6 +9,31 @@ Releases before 0.1.8 are described on the
 
 ## [Unreleased]
 
+### Fixed
+
+- Front matter with no closing `---` ends at the first line no YAML mapping
+  starts, instead of the rest of the document turning into YAML.
+- An inline note ends at the end of its paragraph, so an unclosed `^[` no
+  longer runs to the next `]` anywhere in the document.
+- A stray `{` mid-line opens no attribute block without its `}` on the line.
+- A list marker or `^ ` line after a paragraph is prose, a marker after a list
+  item's lazy continuation still opens the next item, and a `^ ` line after a
+  heading or after a paragraph and a blank line is no caption.
+- Headings, list markers, definitions, tables and container fences are scoped
+  inside `> ` quotes, and a quoted fence keeps its body as code until its
+  closer or the end of the quote.
+- A colon container's closer ends a fence or other block left open inside it.
+- Bold and strikethrough need a word boundary outside their delimiters
+  (`2*3*4`, `a~b~c` stay text).
+- Every ASCII punctuation character escapes (`\$`, `\"`, `\&`, `\:`, `\;`,
+  `\?` were missing), `==x==` is no longer highlighted, `-->` and `==>` are
+  typography and `=>` is not.
+- A `|` line needs its closing pipe to be a table row.
+- An unpartnered backtick run is code to the end of its paragraph, and a span
+  may close on a later line of it.
+- A line of unclosed brackets is no longer quadratic: link labels nest three
+  deep instead of recursing, and a label stops at a bare `[`.
+
 ## [0.1.9] - 2026-10-14
 
 ### Fixed

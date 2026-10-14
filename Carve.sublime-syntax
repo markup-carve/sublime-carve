@@ -19,13 +19,27 @@ variables:
   # A bare delimiter never pairs across a link destination or an autolink
   # (PART 9 S9 E2a). `opaque` holds two capture groups, so a rule's captures
   # after it shift by two.
-  link_label: '(?<label>\[(?>\\.|[^\[\]\\\n]|\g<label>)*\])'
+  # Brackets nest three deep here rather than recursing: a recursive label
+  # made a line of unclosed brackets quadratic (12k `[` took ~5.6 s). The
+  # named group keeps the capture count `opaque` documents.
+  link_label: '(?<label>\[(?>\\.|[^\[\]\\\n]|\[(?>\\.|[^\[\]\\\n]|\[(?>\\.|[^\[\]\\\n])*\])*\])*\])'
   link_dest: '(?>\\[()\\]|[^ \t\n()]|(?<parens>\((?>\\[()\\]|[^ \t\n()]|\g<parens>)*\)))*'
   url_autolink: '<[a-zA-Z][a-zA-Z0-9+.\-]*:(?:[a-zA-Z0-9\-._~:/?#\[\]@!$&''()*+,;=%]|[^\p{ASCII}\x{80}-\x{9F}\p{Z}\p{Cf}])+>'
   email_autolink: '<[\p{L}0-9\-_.+]+@(?:[\p{L}0-9\-_]+\.)+\p{L}+>'
   # A line that opens a list item or a definition (see `list-item`). A glued
   # attribute block needs content after it, as in `lists`.
   list_item_line: '[ \t]*(?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.|::?)(?: +|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n]))(?![ \t]*$)'
+  # A link label character: anything but a bracket or a newline, or one
+  # nested bracket pair. Stopping at a bare `[` keeps a line of unclosed
+  # brackets linear.
+  lbl: '(?:[^\[\]\n]|\[[^\[\]\n]*\])'
+  # A line that ends a paragraph: every block opener except a list marker and
+  # a caption, which do not interrupt one.
+  block_interrupt: '(?:#{1,6} +\S|[ \t]*(?:>(?: |$)|`{3,}|~{3,}|:{3,}|::[ \t]+\S|\|.*\|[ \t]*$|%%|\{[^\n]*\}[ \t]*$|(?:-{3,}|\*{3,}|_{3,})[ \t]*$|\*?\[\^?[^\]\n]+\]:[ \t]))'
+  # The front matter body ends at a column-0 line no YAML mapping starts (no
+  # key, comment, sequence or flow opener), unless it holds only a scalar.
+  # Ported from carve-grammars' TextMate rule.
+  not_yaml_line: '[^\s#\-"''\[{](?![^\n]*:(?:[ \t]|$))(?!(?:(?i:true|false|null)|~|\+?(?:\d[\d_]*(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)[ \t]*$)'
   opaque: '(?:!?{{link_label}}\({{link_dest}}(?: (?:"(?>\\"|[^"\n])*"|''(?>\\''|[^''\n])*''))?\)|{{url_autolink}}|{{email_autolink}})'
 
 contexts:
@@ -72,12 +86,102 @@ contexts:
   # in it, and the first non-blank column-0 line that opens no item leaves it.
   # Each fence carries the same column-0 boundary in its escape, so an
   # unclosed fence cannot outlive its item either.
+  #
+  # A column-0 text line right after an item line is the item's LAZY
+  # CONTINUATION, so a marker below it opens the next item rather than sitting
+  # in a paragraph. After a blank line, a column-0 line that opens no item
+  # leaves the list.
   list-item:
-    - match: '^(?=\S)(?!{{list_item_line}})'
+    - match: '^[ \t]*\n'
+      set: list-item-gap
+    - match: '^(?=\S)(?!{{list_item_line}})(?={{block_interrupt}}|[ \t]*\^ +\S)'
       pop: true
+    - match: '^(?=[^ \t\n])(?!{{list_item_line}})(?!\+[ \t]*$|\+.*\|[ \t]*$)'
+      push: lazy-continuation
     - include: code-blocks-on-a-marker-line
     - include: code-blocks-at-a-body-column
     - include: body
+
+  list-item-gap:
+    - match: '^[ \t]*\n'
+    - match: '^(?=\S)(?!{{list_item_line}})'
+      pop: true
+    - match: '^(?=[ \t]|{{list_item_line}})'
+      set: list-item
+
+  lazy-continuation:
+    - match: '\n'
+      pop: true
+    - include: paragraph-inline
+
+  # ----- Paragraphs -----
+  # A list marker or a `^ ` caption does not interrupt a paragraph, so a
+  # paragraph that starts in column 0 holds such lines as text; a blank line or
+  # any other block opener ends it. A line opening with an image or display
+  # math, or holding only an attribute block, opens no paragraph, so a caption
+  # or a list can still follow it.
+  paragraph:
+    - match: '\n'
+      set: paragraph-rest
+    - include: paragraph-inline
+
+  paragraph-rest:
+    - match: '^(?=[ \t]*$)'
+      set: after-paragraph
+    - match: '^(?={{block_interrupt}})'
+      pop: true
+    - include: paragraph-inline
+
+  # A `^ ` line after a paragraph and a blank line has no host to caption.
+  after-paragraph:
+    - match: '^[ \t]*\n'
+    - match: '^(?=[ \t]*\^ +\S)'
+      push: caption-literal-line
+    - match: '^(?=[ \t]*\S)'
+      pop: true
+
+  # The same after a heading, blank lines between or not.
+  caption-literal-after:
+    - match: '^[ \t]*\n'
+    - match: '^(?=[ \t]*\^ +\S)'
+      push: caption-literal-line
+    - match: '^(?=[ \t]*\S)'
+      pop: true
+
+  caption-literal-line:
+    - match: '$'
+      pop: true
+    - include: line-verbatim
+    - include: inline-comment
+    - include: trailing-comment
+    - include: inline
+
+  paragraph-inline:
+    - include: citations
+    - include: crossrefs
+    - include: links
+    - include: images
+    - include: footnotes
+    - include: critic-markup
+    - include: sup-sub
+    - include: highlight
+    - include: forced-emphasis
+    - include: inline-comment
+    - include: include-directive
+    - include: attributes
+    - include: raw-inline
+    - include: inline-literal
+    - include: inline-code
+    - include: inline-code-across-lines
+    - include: trailing-comment
+    - include: math
+    - include: autolink
+    - include: extension-inline
+    - include: emphasis
+    - include: mentions-tags
+    - include: code-callouts
+    - include: hard-breaks
+    - include: smart-typography
 
   body:
     - include: comments
@@ -98,6 +202,8 @@ contexts:
     - include: captions
     - include: lists
     - include: definitions
+    - match: '^(?=[^ \t\n])(?![ \t]*\{[^\n]*\}[ \t]*$|!\[|\$\$`)'
+      push: paragraph
     - include: citations
     - include: crossrefs
     - include: links
@@ -113,6 +219,7 @@ contexts:
     - include: raw-inline
     - include: inline-literal
     - include: inline-code
+    - include: inline-code-across-lines
     - include: trailing-comment
     - include: math
     - include: autolink
@@ -171,13 +278,18 @@ contexts:
       escape: '^(---)\s*$'
       escape_captures:
         1: punctuation.definition.frontmatter.end.carve
+    # NO CLOSER IN SIGHT IS A THEMATIC BREAK, and a pattern cannot look ahead
+    # for one. So the YAML body also ends at the first column-0 line no YAML
+    # mapping starts, and the rest of the document stays Carve instead of
+    # turning into YAML. (`branch_point` could re-read the opener as a break,
+    # but it needs Sublime Text 4, and this package supports 3.)
     - match: '\A(---)[ \t]*(yaml|yml)?[ \t]*$'
       captures:
         1: punctuation.definition.frontmatter.begin.carve
         2: entity.name.type.frontmatter.carve
       embed: scope:source.yaml
       embed_scope: meta.frontmatter.carve
-      escape: '^(---)\s*$'
+      escape: '^(---)\s*$|^(?={{not_yaml_line}})'
       escape_captures:
         1: punctuation.definition.frontmatter.end.carve
     # An unknown format keeps the body as plain text.
@@ -257,14 +369,16 @@ contexts:
       scope: markup.heading.carve
       captures:
         1: punctuation.definition.heading.carve
-      push:
-        - meta_scope: markup.heading.carve
-        - meta_content_scope: entity.name.section.carve
-        - match: '$'
-          pop: true
-        - include: line-verbatim
-        - include: trailing-comment
-        - include: inline
+      push: [caption-literal-after, heading-line]
+
+  heading-line:
+    - meta_scope: markup.heading.carve
+    - meta_content_scope: entity.name.section.carve
+    - match: '$'
+      pop: true
+    - include: line-verbatim
+    - include: trailing-comment
+    - include: inline
 
   line-verbatim:
     - match: '\\.'
@@ -2246,11 +2360,30 @@ contexts:
   # a multi-line region is what it would take here too, and is not part of this
   # change.
   figure-groups:
-    - match: '^[ \t]*(:::+) +(figure)[ \t]*$'
+    - match: '^[ \t]*(?=(:::+) +figure[ \t]*$)'
+      embed: figure-group-container
+      escape: '^[ \t]*(\1)[ \t]*$'
+      escape_captures:
+        0: markup.other.div.carve
+        1: punctuation.definition.div.carve
+
+  figure-group-container:
+    - match: '(:::+) +(figure)[ \t]*$'
       scope: markup.other.figure-group.carve
       captures:
         1: punctuation.definition.figure-group.carve
         2: entity.name.type.figure-group.carve
+      set: container-body
+
+  # ----- Container bodies -----
+  # Every colon fence holds its body in an embed whose escape is the closer:
+  # the same run of colons, EXACTLY, alone on its line. An escape is checked
+  # ahead of everything nested in the embed, so the closer also ends a fence,
+  # a list item or any other block left open inside the container, which is
+  # how the engine reads it. A longer fence holds a shorter one; equal-length
+  # fences nested directly close together at the first closer.
+  container-body:
+    - include: document
 
   # ----- Line blocks ( ::: | ) -----
   # A colon fence whose kind is a single `|` (PART 9 S23): every intra-stanza
@@ -2262,11 +2395,20 @@ contexts:
   # body is ordinary inline content and the closer is an ordinary `:::`, which
   # `divs` claims exactly as it does for every other container.
   line-blocks:
-    - match: '^[ \t]*(:::+) +(\|)[ \t]*$'
+    - match: '^[ \t]*(?=(:::+) +\|[ \t]*$)'
+      embed: line-block-container
+      escape: '^[ \t]*(\1)[ \t]*$'
+      escape_captures:
+        0: markup.other.div.carve
+        1: punctuation.definition.div.carve
+
+  line-block-container:
+    - match: '(:::+) +(\|)[ \t]*$'
       scope: markup.other.line-block.carve
       captures:
         1: punctuation.definition.line-block.carve
         2: entity.name.type.line-block.carve
+      set: container-body
 
   # ----- Fenced block quotes ( ::: > ) -----
   # The colon fence's THIRD sigil (markup-carve/carve#1718): a fence whose kind
@@ -2286,20 +2428,38 @@ contexts:
   # container - which is also why the body is not inside the quote's scope, the
   # residual this syntax already carries for the line block.
   quote-fences:
-    - match: '^[ \t]*(:::+) +(>)[ \t]*$'
+    - match: '^[ \t]*(?=(:::+) +>[ \t]*$)'
+      embed: quote-fence-container
+      escape: '^[ \t]*(\1)[ \t]*$'
+      escape_captures:
+        0: markup.other.div.carve
+        1: punctuation.definition.div.carve
+
+  quote-fence-container:
+    - match: '(:::+) +(>)[ \t]*$'
       scope: markup.quote.carve
       captures:
         1: punctuation.definition.quote.carve
         2: entity.name.type.quote-fence.carve
+      set: container-body
 
   # ----- Local hard-break blocks ( ::: \ ) -----
   # The same shape with a backslash for its kind, and the same reasoning.
   local-hard-break-blocks:
-    - match: '^[ \t]*(:::+) +(\\)[ \t]*$'
+    - match: '^[ \t]*(?=(:::+) +\\[ \t]*$)'
+      embed: local-hard-break-container
+      escape: '^[ \t]*(\1)[ \t]*$'
+      escape_captures:
+        0: markup.other.div.carve
+        1: punctuation.definition.div.carve
+
+  local-hard-break-container:
+    - match: '(:::+) +(\\)[ \t]*$'
       scope: markup.other.local-hard-break.carve
       captures:
         1: punctuation.definition.local-hard-break.carve
         2: entity.name.type.local-hard-break.carve
+      set: container-body
 
   # ----- Divs (::: type "title" [label]) -----
   # A BARE `::: figure` opener never reaches this context - it is a composite
@@ -2313,21 +2473,12 @@ contexts:
     # came back `entity.name.type.div.carve`, so nothing on this surface could
     # tell `::: note` from `::: mydiv`. Tried first; a name outside the eight
     # falls through to the generic rule below unchanged.
-    - match: '^\s*(:::+) +(note|tip|warning|danger|info|success|example|quote)(?=[ \t]|$)'
-      captures:
+    - match: '^[ \t]*(?=(:::+) +(?:note|tip|warning|danger|info|success|example|quote)(?:[ \t]|$))'
+      embed: admonition-container
+      escape: '^[ \t]*(\1)[ \t]*$'
+      escape_captures:
+        0: markup.other.div.carve
         1: punctuation.definition.div.carve
-        2: entity.name.type.admonition.carve
-      push:
-        - meta_scope: markup.other.admonition.carve
-        - match: '"[^"]*"'
-          scope: string.quoted.double.div-title.carve
-        - match: '\[[^\]]*\]'
-          scope: constant.other.reference.div-label.carve
-        - match: '$'
-          pop: true
-        - include: highlight
-        - include: forced-emphasis
-        - include: attributes
     # THE SEPARATOR IS A SPACE RUN, NEVER A TAB AND NEVER NOTHING (grammar.ebnf
     # PART 7, MARKER SEPARATORS; corpus 254 and 255). `:::note`,
     # `:::<TAB>note`, `:::|` and `:::<TAB>[l]` all render as a paragraph, and
@@ -2346,60 +2497,56 @@ contexts:
     # The fenced block quote is why this was looked at: `::: >` (carve#1718)
     # reaches this context the way `::: |` does, and its `>` is an ordinary
     # type token here.
-    - match: '^[ \t]*(:::+)(?: +([^\s{]+))?(?=[ \t]*$| *["\[])'
+    - match: '^[ \t]*(?=(:::+)(?: +[^\s{]+)?(?:[ \t]*$| *["\[]))'
+      embed: div-container
+      escape: '^[ \t]*(\1)[ \t]*$'
+      escape_captures:
+        0: markup.other.div.carve
+        1: punctuation.definition.div.carve
+
+  admonition-container:
+    - match: '(:::+) +(note|tip|warning|danger|info|success|example|quote)(?=[ \t]|$)'
+      captures:
+        1: punctuation.definition.div.carve
+        2: entity.name.type.admonition.carve
+      set: [container-body, admonition-opener]
+
+  div-container:
+    - match: '(:::+)(?: +([^\s{]+))?(?=[ \t]*$| *["\[])'
       captures:
         1: punctuation.definition.div.carve
         2: entity.name.type.div.carve
-      push:
-        - meta_scope: markup.other.div.carve
-        - match: '"[^"]*"'
-          scope: string.quoted.double.div-title.carve
-        - match: '\[[^\]]*\]'
-          scope: constant.other.reference.div-label.carve
-        - match: '$'
-          pop: true
-        - include: highlight
-        - include: forced-emphasis
-        - include: attributes
+      set: [container-body, div-opener]
+
+  admonition-opener:
+    - meta_scope: markup.other.admonition.carve
+    - match: '"[^"]*"'
+      scope: string.quoted.double.div-title.carve
+    - match: '\[[^\]]*\]'
+      scope: constant.other.reference.div-label.carve
+    - match: '$'
+      pop: true
+    - include: highlight
+    - include: forced-emphasis
+    - include: attributes
+
+  div-opener:
+    - meta_scope: markup.other.div.carve
+    - match: '"[^"]*"'
+      scope: string.quoted.double.div-title.carve
+    - match: '\[[^\]]*\]'
+      scope: constant.other.reference.div-label.carve
+    - match: '$'
+      pop: true
+    - include: highlight
+    - include: forced-emphasis
+    - include: attributes
 
   # ----- Tables -----
   tables:
-    - match: '^(?=\s*\|)'
-      push:
-        - meta_scope: markup.table.row.carve
-        - match: '\|='
-          scope: keyword.operator.table.header.carve
-        - match: '(?<=\|)\s*(\^)\s*(?=\|)'
-          captures:
-            1: keyword.operator.table.rowspan.carve
-        - match: '(?<=\|)\s*(<)\s*(?=\|)'
-          captures:
-            1: keyword.operator.table.colspan.carve
-        # Separator/alignment cell: the dash run is the delimiter; leading/
-        # trailing alignment colons (`:--`, `--:`, `:-:`) get their own scope.
-        - match: '(?<=\|)\s*(:?)(-+)(:?)\s*(?=\|)'
-          captures:
-            1: keyword.operator.table.alignment.carve
-            2: punctuation.separator.table.delimiter.carve
-            3: keyword.operator.table.alignment.carve
-        - match: '\|'
-          scope: punctuation.separator.table.carve
-        - include: inline-comment
-        - include: trailing-comment-cell
-        - include: inline-literal
-        - include: inline-code
-        - include: extension-inline
-        - include: critic-markup
-        - include: emphasis
-        - include: links
-        - include: images
-        - include: autolink
-        - include: sup-sub
-        - include: highlight
-        - include: forced-emphasis
-        - include: attributes
-        - match: '$'
-          pop: true
+    # A ROW ENDS IN A PIPE: `| a | b` without one is a paragraph.
+    - match: '^(?=\s*\|.*\|[ \t]*$)'
+      push: table-row
     # A CONTINUATION ROW ENDS IN A PIPE, and the pattern has to say so:
     # `continuation_row = '+', table_cell, {'|', table_cell}, '|', newline`.
     # Matching any `+` line made this rule claim the LIST continuation marker
@@ -2412,6 +2559,42 @@ contexts:
       captures:
         1: keyword.operator.table.continuation.carve
     - include: captions
+
+  table-row:
+    - meta_scope: markup.table.row.carve
+    - match: '\|='
+      scope: keyword.operator.table.header.carve
+    - match: '(?<=\|)\s*(\^)\s*(?=\|)'
+      captures:
+        1: keyword.operator.table.rowspan.carve
+    - match: '(?<=\|)\s*(<)\s*(?=\|)'
+      captures:
+        1: keyword.operator.table.colspan.carve
+    # Separator/alignment cell: the dash run is the delimiter; leading/
+    # trailing alignment colons (`:--`, `--:`, `:-:`) get their own scope.
+    - match: '(?<=\|)\s*(:?)(-+)(:?)\s*(?=\|)'
+      captures:
+        1: keyword.operator.table.alignment.carve
+        2: punctuation.separator.table.delimiter.carve
+        3: keyword.operator.table.alignment.carve
+    - match: '\|'
+      scope: punctuation.separator.table.carve
+    - include: inline-comment
+    - include: trailing-comment-cell
+    - include: inline-literal
+    - include: inline-code
+    - include: extension-inline
+    - include: critic-markup
+    - include: emphasis
+    - include: links
+    - include: images
+    - include: autolink
+    - include: sup-sub
+    - include: highlight
+    - include: forced-emphasis
+    - include: attributes
+    - match: '$'
+      pop: true
 
   # ----- Caption lines ( `^ text` under a table, image, quote, or code block ) -----
   # One rule for every caption: the construct is the same wherever it appears
@@ -2436,16 +2619,75 @@ contexts:
     # `\s`: verified against carve-rs, `>no space`, `>>x`, `>> x` and `>\tx` are
     # all paragraphs - nesting is written `> > x`, a space per marker, and a tab
     # does not separate (markup-carve/carve#525).
+    #
+    # A FENCE INSIDE A QUOTE keeps its body verbatim. It closes on a fence line
+    # behind the same markers, or where that quote ends.
+    - match: '^([ \t]*>(?: [ \t]*>)*) [ \t]*((`|~)\3{2,})[^\n]*$'
+      scope: markup.quote.carve markup.raw.block.carve
+      push:
+        - meta_content_scope: markup.quote.carve markup.raw.block.carve
+        - match: '^\1 [ \t]*\2\3*[ \t]*$'
+          scope: markup.quote.carve markup.raw.block.carve
+          pop: true
+        - match: '^(?!\1(?: |$))'
+          pop: true
+        - match: '^[ \t]*>(?: [ \t]*>)*(?= |$)'
+          scope: punctuation.definition.quote.carve
     - match: '^[ \t]*(>)(?= |$)[ ]?'
       captures:
         1: punctuation.definition.quote.carve
-      push:
-        - meta_scope: markup.quote.carve
-        - match: '$'
-          pop: true
-        - include: line-verbatim
-        - include: trailing-comment
-        - include: inline
+      push: quote-start
+
+  # The start of a quote's content: a nested marker, or a block shape, or
+  # inline content for the rest of the line.
+  quote-start:
+    - meta_scope: markup.quote.carve
+    - match: '(>)(?= |$)[ ]?'
+      captures:
+        1: punctuation.definition.quote.carve
+    - match: '(#{1,6})( +)(?![ \t]*$)'
+      captures:
+        1: punctuation.definition.heading.carve
+      set: quote-heading
+    - match: '([-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)(?= +\S)'
+      scope: markup.list.carve
+      captures:
+        1: punctuation.definition.list.begin.carve
+      set: quote-line
+    - match: '(::?)(?= +\S)'
+      captures:
+        1: punctuation.definition.list.begin.carve
+      set: quote-line
+    - match: '(?=\|.*\|[ \t]*$)'
+      set: quote-table-row
+    - match: '(:::+)(?: +([^\s{]+))?'
+      captures:
+        1: punctuation.definition.div.carve
+        2: entity.name.type.div.carve
+      set: quote-line
+    - match: '(?=\S|$)'
+      set: quote-line
+
+  quote-table-row:
+    - meta_scope: markup.quote.carve markup.table.row.carve
+    - include: table-row
+
+  quote-heading:
+    - meta_scope: markup.quote.carve markup.heading.carve
+    - meta_content_scope: entity.name.section.carve
+    - match: '$'
+      pop: true
+    - include: line-verbatim
+    - include: trailing-comment
+    - include: inline
+
+  quote-line:
+    - meta_scope: markup.quote.carve
+    - match: '$'
+      pop: true
+    - include: line-verbatim
+    - include: trailing-comment
+    - include: inline
 
   # ----- Lists + tasks + definition lists -----
   lists:
@@ -2546,7 +2788,7 @@ contexts:
 
   # ----- Links / references / spans -----
   links:
-    - match: '(\[)([^\]]+)(\])(\()({{link_dest}})(?: (?:"((?>\\"|[^"\n])*)"|''((?>\\''|[^''\n])*)''))?(\))'
+    - match: '(\[)({{lbl}}+)(\])(\()({{link_dest}})(?: (?:"((?>\\"|[^"\n])*)"|''((?>\\''|[^''\n])*)''))?(\))'
       scope: meta.link.inline.carve
       captures:
         1: punctuation.definition.link.begin.carve
@@ -2557,12 +2799,12 @@ contexts:
         7: string.quoted.double.link-title.carve
         8: string.quoted.single.link-title.carve
         9: punctuation.definition.metadata.end.carve
-    - match: '(\[)([^\]]+)(\])(\[)([^\]]*)(\])'
+    - match: '(\[)({{lbl}}+)(\])(\[)([^\[\]\n]*)(\])'
       scope: meta.link.reference.carve
       captures:
         2: string.other.link.title.carve
         5: constant.other.reference.link.carve
-    - match: '(\[)([^\^\]][^\]]*)(\])(?=\{)'
+    - match: '(\[)((?!\^){{lbl}}{{lbl}}*)(\])(?=\{)'
       scope: meta.span.inline.carve
       captures:
         1: punctuation.definition.span.begin.carve
@@ -2571,7 +2813,7 @@ contexts:
 
   # ----- Images -----
   images:
-    - match: '(!\[)([^\]]*)(\]\()({{link_dest}})(?: (?:"((?>\\"|[^"\n])*)"|''((?>\\''|[^''\n])*)''))?(\))'
+    - match: '(!\[)({{lbl}}*)(\]\()({{link_dest}})(?: (?:"((?>\\"|[^"\n])*)"|''((?>\\''|[^''\n])*)''))?(\))'
       scope: meta.image.inline.carve
       captures:
         1: punctuation.definition.image.begin.carve
@@ -2590,7 +2832,7 @@ contexts:
     - include: collapsed-reference-images
 
   reference-images:
-    - match: '(!\[)([^\]]*)(\])(\[)([^\]]+)(\])'
+    - match: '(!\[)({{lbl}}*)(\])(\[)([^\[\]\n]+)(\])'
       scope: meta.image.reference.carve
       captures:
         1: punctuation.definition.image.begin.carve
@@ -2601,7 +2843,7 @@ contexts:
   # The collapsed form takes an EMPTY label and reuses the definition the alt
   # text names. It cannot collide with the rule above, whose label is `[^\]]+`.
   collapsed-reference-images:
-    - match: '(!\[)([^\]]*)(\])(\[\])'
+    - match: '(!\[)({{lbl}}*)(\])(\[\])'
       scope: meta.image.reference.collapsed.carve
       captures:
         1: punctuation.definition.image.begin.carve
@@ -2624,6 +2866,9 @@ contexts:
   footnotes:
     # Inline note `^[content]` (grammar section 16). The body is full inline
     # markup, so `^[a /styled/ note]` highlights inside the note.
+    #
+    # A note may cross a line break but not a blank line, so an unclosed `^[`
+    # ends at the end of its paragraph rather than at the next `]` anywhere.
     - match: '(\^\[)'
       captures:
         1: punctuation.definition.footnote.begin.carve
@@ -2632,8 +2877,10 @@ contexts:
         - match: '\]'
           scope: punctuation.definition.footnote.end.carve
           pop: true
+        - match: '^(?=[ \t]*$)'
+          pop: true
         - include: inline
-    - match: '(\[)(\^)([^\]]+)(\])'
+    - match: '(\[)(\^)([^\[\]\n]+)(\])'
       scope: constant.other.reference.footnote.carve
       captures:
         1: punctuation.definition.footnote.carve
@@ -2690,51 +2937,60 @@ contexts:
     # for the rest of the buffer (#42). The guard is two-sided because the
     # scanner retries at the next character - a lookahead alone refuses the
     # first brace and then opens on the second.
-    - match: '(?<!\{)\{(?!\{)'
+    #
+    # A BRACE MID-LINE OPENS A BLOCK ONLY WITH ITS CLOSER ON THE LINE: `a { b`
+    # is text. At the start of a line the block may wrap, so it opens there.
+    - match: '^[ \t]*(\{)(?!\{)'
+      captures:
+        1: punctuation.definition.attributes.begin.carve
+      push: attribute-block
+    - match: '(?<!\{)\{(?!\{)(?=[^{}\n]*\})'
       scope: punctuation.definition.attributes.begin.carve
-      push:
-        - meta_scope: meta.attributes.carve
-        - match: '\}'
-          scope: punctuation.definition.attributes.end.carve
-          pop: true
-        # A BLANK LINE ENDS THE BLOCK [grammar.ebnf PART 4]: `opt_pad` and
-        # `attr_separator` admit at most ONE line break each, so a block may
-        # wrap onto its own line and never across a blank one. This is the
-        # house `$` pop of every block context here, widened by exactly one
-        # line so the wrap survives - an unbounded push is what let a stray
-        # `{` run to the end of the buffer.
-        - match: '^[ \t]*$'
-          pop: true
-        # THE LANGUAGE ATTRIBUTE (markup-carve/carve#1114) is the one item that
-        # opens with a colon, and it goes FIRST: the key rule below admits a
-        # leading colon but requires an `=` after it, so `:fr` would otherwise
-        # match no rule and keep only the enclosing `meta.attributes` scope.
-        #
-        # The lookbehind is what keeps it an ITEM rather than a colon anywhere.
-        # An unquoted value may itself begin with a colon (`{key=:fr}`), and
-        # that colon sits at the same offset the value would start at, so
-        # without the guard the first-listed rule claims it. Negative rather
-        # than positive so a block that wraps onto its own line still scopes
-        # its first item.
-        #
-        # The trailing guard matters HERE in a way it does not in the TextMate
-        # ports: those validate the whole block in one outer match, so
-        # `{:toolongtag}` is not an attribute block at all and no inner rule
-        # ever runs. This context opens on a bare `{`, so without the guard the
-        # rule takes the first eight characters of an over-long tag and scopes
-        # `:toolongt` as a language.
-        - match: '(?<![^\s{]):(?:[A-Za-z0-9]{1,8}(?:-[A-Za-z0-9]{1,8})*)?(?=[\s}])'
-          scope: entity.other.attribute-name.language.carve
-        - match: '#[A-Za-z_][A-Za-z0-9_-]*'
-          scope: entity.other.attribute-name.id.carve
-        - match: '\.[A-Za-z_][A-Za-z0-9_-]*'
-          scope: entity.other.attribute-name.class.carve
-        - match: '[A-Za-z_:][A-Za-z0-9_:-]*(?==)'
-          scope: entity.other.attribute-name.carve
-        - match: '"[^"]*"'
-          scope: string.quoted.double.attribute.carve
-        - match: "'[^']*'"
-          scope: string.quoted.single.attribute.carve
+      push: attribute-block
+
+  attribute-block:
+    - meta_scope: meta.attributes.carve
+    - match: '\}'
+      scope: punctuation.definition.attributes.end.carve
+      pop: true
+    # A BLANK LINE ENDS THE BLOCK [grammar.ebnf PART 4]: `opt_pad` and
+    # `attr_separator` admit at most ONE line break each, so a block may
+    # wrap onto its own line and never across a blank one. This is the
+    # house `$` pop of every block context here, widened by exactly one
+    # line so the wrap survives - an unbounded push is what let a stray
+    # `{` run to the end of the buffer.
+    - match: '^[ \t]*$'
+      pop: true
+    # THE LANGUAGE ATTRIBUTE (markup-carve/carve#1114) is the one item that
+    # opens with a colon, and it goes FIRST: the key rule below admits a
+    # leading colon but requires an `=` after it, so `:fr` would otherwise
+    # match no rule and keep only the enclosing `meta.attributes` scope.
+    #
+    # The lookbehind is what keeps it an ITEM rather than a colon anywhere.
+    # An unquoted value may itself begin with a colon (`{key=:fr}`), and
+    # that colon sits at the same offset the value would start at, so
+    # without the guard the first-listed rule claims it. Negative rather
+    # than positive so a block that wraps onto its own line still scopes
+    # its first item.
+    #
+    # The trailing guard matters HERE in a way it does not in the TextMate
+    # ports: those validate the whole block in one outer match, so
+    # `{:toolongtag}` is not an attribute block at all and no inner rule
+    # ever runs. This context opens on a bare `{`, so without the guard the
+    # rule takes the first eight characters of an over-long tag and scopes
+    # `:toolongt` as a language.
+    - match: '(?<![^\s{]):(?:[A-Za-z0-9]{1,8}(?:-[A-Za-z0-9]{1,8})*)?(?=[\s}])'
+      scope: entity.other.attribute-name.language.carve
+    - match: '#[A-Za-z_][A-Za-z0-9_-]*'
+      scope: entity.other.attribute-name.id.carve
+    - match: '\.[A-Za-z_][A-Za-z0-9_-]*'
+      scope: entity.other.attribute-name.class.carve
+    - match: '[A-Za-z_:][A-Za-z0-9_:-]*(?==)'
+      scope: entity.other.attribute-name.carve
+    - match: '"[^"]*"'
+      scope: string.quoted.double.attribute.carve
+    - match: "'[^']*'"
+      scope: string.quoted.single.attribute.carve
 
   # ----- Raw inline passthrough ( `code`{=format} ) -----
   raw-inline:
@@ -2756,6 +3012,22 @@ contexts:
         1: punctuation.definition.raw.carve
         2: markup.raw.inline.content.carve
         3: punctuation.definition.raw.carve
+
+  # AN UNPARTNERED BACKTICK RUN IS A CODE SPAN TO THE END OF ITS PARAGRAPH,
+  # and a partnered one may close on a later line of it. Only reachable where
+  # a paragraph can continue, never from a single-line context.
+  inline-code-across-lines:
+    - match: '(`+)(?!`)'
+      captures:
+        1: punctuation.definition.raw.carve
+      push:
+        - meta_scope: markup.raw.inline.carve
+        - meta_content_scope: markup.raw.inline.content.carve
+        - match: '(?<!`)\1(?!`)'
+          scope: punctuation.definition.raw.carve
+          pop: true
+        - match: '^(?=[ \t]*$|{{block_interrupt}})'
+          pop: true
 
   # ----- Inline literal ( !`..` ) -----
   # A `!` prefix on a verbatim backtick span renders as literal prose (no
@@ -2859,7 +3131,7 @@ contexts:
         1: punctuation.definition.bold-italic.carve
         2: markup.bold.italic.carve
         5: punctuation.definition.bold-italic.carve
-    - match: '(\*)(?=\S)((?>{{opaque}}|[^*\n])+?)(?<=\S)(\*)'
+    - match: '(?<![\w*])(\*)(?=\S)((?>{{opaque}}|[^*\n])+?)(?<=\S)(\*)(?![\w*])'
       scope: markup.bold.carve
       captures:
         1: punctuation.definition.bold.carve
@@ -2877,18 +3149,12 @@ contexts:
         1: punctuation.definition.underline.carve
         2: markup.underline.text.carve
         5: punctuation.definition.underline.carve
-    - match: '(~)(?=\S)((?>{{opaque}}|[^~\n])+?)(?<=\S)(~)'
+    - match: '(?<![\w~])(~)(?=\S)((?>{{opaque}}|[^~\n])+?)(?<=\S)(~)(?![\w~])'
       scope: markup.strikethrough.carve
       captures:
         1: punctuation.definition.strike.carve
         2: markup.strikethrough.carve
         5: punctuation.definition.strike.carve
-    - match: '(==)([^=\n]+?)(==)'
-      scope: markup.highlight.carve
-      captures:
-        1: punctuation.definition.highlight.carve
-        2: markup.highlight.carve
-        3: punctuation.definition.highlight.carve
 
   # ----- Superscript / subscript (braced forms only: {^sup^} / {,sub,}) -----
   # Bare ^sup^ / ,sub, no longer exist in Carve; a lone ^ or , is literal text.
@@ -2912,7 +3178,7 @@ contexts:
   # optional '+' is or contains an '@key'. The whole bracket has no tail.
   # Key charset: [A-Za-z0-9_][A-Za-z0-9_:.#$%&+?<>~/-]*
   citations:
-    - match: '(\[\+?)(?=[^\]]*@[A-Za-z0-9_][A-Za-z0-9_:.#$%&+?<>\~\/\-]*)([^\]]*?)(@[A-Za-z0-9_][A-Za-z0-9_:.#$%&+?<>\~\/\-]*)([^\]]*)(\])(?![\(\[\{])'
+    - match: '(\[\+?)(?=[^\[\]\n]*@[A-Za-z0-9_][A-Za-z0-9_:.#$%&+?<>\~\/\-]*)([^\[\]\n]*?)(@[A-Za-z0-9_][A-Za-z0-9_:.#$%&+?<>\~\/\-]*)([^\[\]\n]*)(\])(?![\(\[\{])'
       scope: meta.citation.carve
       captures:
         1: punctuation.definition.citation.begin.carve
@@ -3029,9 +3295,11 @@ contexts:
 
   # ----- Smart typography / escapes -----
   smart-typography:
-    - match: '\\[\\`*_{}\[\]()#+\-.!~^/<>@%|=,]'
+    # Every ASCII punctuation character escapes.
+    - match: '\\[!-/:-@\[-`{-~]'
       scope: constant.character.escape.carve
-    - match: '\.\.\.|---|--|<->|<-|->|=>|!=|<=|>=|\+-|\(c\)|\(r\)|\(tm\)'
+    # Longest first. `=>` is literal in the engine; `-->` and `==>` convert.
+    - match: '\{--\}|<-->|<--|-->|<=>|<==|==>|---|--|\.\.\.|<->|<-|->|!=|<=|>=|\+-|\(c\)|\(r\)|\(tm\)'
       scope: constant.character.typography.carve
     - match: '"'
       scope: punctuation.definition.smartquote.carve
