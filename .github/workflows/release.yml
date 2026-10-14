@@ -139,8 +139,8 @@ jobs:
       - name: The generated battery block is in sync
         run: python3 tools/generate-battery-tests.py --check
 
-      - name: The generated container fences are in sync
-        run: python3 tools/generate-container-fences.py --check
+      - name: The generated fence languages are in sync
+        run: python3 tools/generate-fence-languages.py --check
 
       - name: The package files parse
         run: |

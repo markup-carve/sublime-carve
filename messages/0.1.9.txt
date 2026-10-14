@@ -1,0 +1,15 @@
+Carve 0.1.9
+===========
+
+Fixes
+  - A c++ fence is highlighted as C++ and a c# fence as C#. Both used to
+    be highlighted as C, with ++ or # shown as the fence header.
+  - A language word only matches as a whole info-string token, so a
+    python-x fence is no longer highlighted as Python.
+
+Added
+  - More fence languages are highlighted: bibtex/bib, d, erb, haml and
+    objcpp/objective-cpp, plus new aliases such as c#, objective-c, h,
+    hpp, mjs, cjs, py3, jsonc, json5, htm, xhtml, svg, cljs and gradle.
+  - A fence's language word matches in any case, so a Python fence
+    embeds Python.
