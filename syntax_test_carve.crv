@@ -836,7 +836,7 @@ Reactions :+1: and :-1: still parse.
 #   '# ' - a line starting with `#` is this file's own comment prefix
 #   '#  ' - a line starting with `#` is this file's own comment prefix
 #   '# H' - a line starting with `#` is this file's own comment prefix
-#   '^ cap' - the case requires the first line of a document
+#   '^ cap' - needs the first line; see syntax_test_first_line.crv
 #   '# \xa0Title' - a line starting with `#` is this file's own comment prefix
 #   '>\tx' - contains a literal tab
 #   '#\tH' - a line starting with `#` is this file's own comment prefix

@@ -1,0 +1,2 @@
+^ cap # SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+^ cap # <- -punctuation.definition.caption.carve -markup.caption.carve
