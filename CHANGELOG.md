@@ -13,7 +13,7 @@ Releases before 0.1.8 are described on the
 
 ### Fixed
 
-- A `^ text` line before the first block remains prose.
+- A `^ text` line before the first block remains prose (#70).
 - A ```` ```c++ ```` fence is highlighted as C++, and ```` ```c# ```` as C#.
   Both were highlighted as C, with `++` or `#` shown as the fence header (#67).
 - A language word only matches as a whole info-string token: ```` ```python-x ````
