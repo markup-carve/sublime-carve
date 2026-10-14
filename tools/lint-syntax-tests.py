@@ -17,16 +17,30 @@ import re
 import sys
 from pathlib import Path
 
-# `# <- selector` or `#   ^^^ selector`, capturing what follows the arrow.
-ASSERTION = re.compile(r"^\s*#\s*(?:<-|\^+)\s+(?P<selector>.*)$")
+# Read the comment token from each file's syntax-test header.
+def assertion_pattern(path):
+    lines = path.read_text().splitlines()
+    header = re.match(r"^(.*?)\s+SYNTAX TEST(?:\s|$)", lines[0]) if lines else None
+    if not header:
+        return None, lines
+    comment = header.group(1)
+    return (
+        re.compile(rf"^\s*{re.escape(comment)}\s*(?:<-|\^+)\s+(?P<selector>.*)$"),
+        lines,
+    )
 
 
 def problems(path):
     found = []
-    for number, line in enumerate(path.read_text().splitlines(), start=1):
-        match = ASSERTION.match(line)
+    assertion, lines = assertion_pattern(path)
+    if assertion is None:
+        return [f"{path.name}:1: missing syntax-test marker"], 0
+    total = 0
+    for number, line in enumerate(lines, start=1):
+        match = assertion.match(line)
         if not match:
             continue
+        total += 1
         selector = match.group("selector").strip()
         if re.match(r"^-\s", selector):
             wanted = "-" + selector[1:].strip()
@@ -34,7 +48,9 @@ def problems(path):
                 "{}:{}: negative marker followed by a space - Sublime accepts "
                 "this and checks nothing. Write `{}`.".format(path.name, number, wanted)
             )
-    return found
+    if total == 0:
+        found.append(f"{path.name}: no assertions use its syntax-test comment token")
+    return found, total
 
 
 def main():
@@ -43,15 +59,14 @@ def main():
     if not tests:
         print("No syntax_test_* files found; nothing to lint.", file=sys.stderr)
         return 1
-    found = [p for test in tests for p in problems(test)]
+    results = [problems(test) for test in tests]
+    found = [p for errors, _ in results for p in errors]
     for line in found:
         print(line, file=sys.stderr)
     if found:
         print("\n{} assertion(s) cannot fail.".format(len(found)), file=sys.stderr)
         return 1
-    total = sum(
-        len([l for l in t.read_text().splitlines() if ASSERTION.match(l)]) for t in tests
-    )
+    total = sum(count for _, count in results)
     print(
         "lint-syntax-tests: {} assertion(s) across {} file(s), none dead.".format(
             total, len(tests)

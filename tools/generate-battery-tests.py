@@ -86,7 +86,7 @@ def render():
                 if src.startswith("#")
                 else "contains a literal tab"
                 if "\t" in src
-                else "the case requires the first line of a document"
+                else "needs the first line; see syntax_test_first_line.crv"
             )
             out.append(f"#   {src!r} - {why}")
         out += [
