@@ -56,6 +56,8 @@ contexts:
   initial-caret-prose:
     - match: '$'
       set: document
+    - include: inline-comment
+    - include: trailing-comment
     - include: inline
 
   document:
