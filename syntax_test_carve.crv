@@ -809,8 +809,6 @@ Reactions :+1: and :-1: still parse.
 # <- punctuation.definition.list.begin.carve
 :: term
 # <- punctuation.definition.list.begin.carve
-^ cap
-# <- punctuation.definition.caption.carve
 -  item
 # <- punctuation.definition.list.begin.carve
 >
@@ -838,6 +836,7 @@ Reactions :+1: and :-1: still parse.
 #   '# ' - a line starting with `#` is this file's own comment prefix
 #   '#  ' - a line starting with `#` is this file's own comment prefix
 #   '# H' - a line starting with `#` is this file's own comment prefix
+#   '^ cap' - the case requires the first line of a document
 #   '# \xa0Title' - a line starting with `#` is this file's own comment prefix
 #   '>\tx' - contains a literal tab
 #   '#\tH' - a line starting with `#` is this file's own comment prefix

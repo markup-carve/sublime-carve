@@ -66,7 +66,7 @@ def render():
         # own comment and assertion prefix, and a literal tab does not survive
         # review. Those shapes are NAMED below rather than dropped, so the block
         # states what it does not cover.
-        if src.startswith("#") or "\t" in src:
+        if src.startswith("#") or "\t" in src or src == "^ cap":
             skipped.append(src)
             continue
         if shape.get("why"):
@@ -85,6 +85,8 @@ def render():
                 "a line starting with `#` is this file's own comment prefix"
                 if src.startswith("#")
                 else "contains a literal tab"
+                if "\t" in src
+                else "the case requires the first line of a document"
             )
             out.append(f"#   {src!r} - {why}")
         out += [
