@@ -38,8 +38,27 @@ contexts:
   # document. Nothing caught it because no test had a bare `---` line.
   main:
     - include: frontmatter
+    - match: '^[ \t]*\n'
+      set: before-first-block
+    # A caret before the first block has no host to caption.
+    - match: '^(?=[ \t]*\^ +\S)'
+      set: initial-caret-prose
     - match: '(?=\S|\s)'
       set: document
+
+  before-first-block:
+    - match: '^[ \t]*\n'
+    - match: '^(?=[ \t]*\^ +\S)'
+      set: initial-caret-prose
+    - match: '(?=\S|\s)'
+      set: document
+
+  initial-caret-prose:
+    - match: '$'
+      set: document
+    - include: inline-comment
+    - include: trailing-comment
+    - include: inline
 
   document:
     - match: '^(?={{list_item_line}})'

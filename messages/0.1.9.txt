@@ -2,6 +2,8 @@ Carve 0.1.9
 ===========
 
 Fixes
+  - Initial caret text is prose when no preceding block can own
+    it as a caption.
   - A c++ fence is highlighted as C++ and a c# fence as C#. Both used to
     be highlighted as C, with ++ or # shown as the fence header.
   - A language word only matches as a whole info-string token, so a
