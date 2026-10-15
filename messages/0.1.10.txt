@@ -1,0 +1,16 @@
+Carve 0.1.10
+============
+
+Fixes
+  - Block context follows the engine: a list marker or caption line
+    after a paragraph is prose, front matter without a closing ---
+    ends at the first non-YAML line, and an inline note ends with its
+    paragraph.
+  - Headings, list markers, definitions, tables and container fences
+    are highlighted inside > quotes, and a container's closer ends a
+    fence or other block left open inside it.
+  - Bold and strikethrough need a word boundary (2*3*4 stays text),
+    every ASCII punctuation character escapes, ==x== is no longer
+    highlighted, and a | line needs its closing pipe to be a table row.
+  - A line of many unclosed brackets no longer takes seconds to
+    highlight.
