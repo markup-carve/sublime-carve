@@ -3,11 +3,14 @@
 {table}
 ```csv
 Plan,Seats,Price per month
-# <- markup.heading.csv
+# <- string.unquoted.csv markup.heading.csv
 #   ^ punctuation.separator.delimiter.csv
 #    ^^^^^ markup.heading.csv
 #         ^ punctuation.separator.delimiter.csv
 Starter,1,"$0"
+# <- string.unquoted.csv
+#  ^^^^ string.unquoted.csv -markup.heading
+#       ^ string.unquoted.csv
 #      ^ punctuation.separator.delimiter.csv
 #        ^ punctuation.separator.delimiter.csv
 #         ^ punctuation.definition.string.begin.csv
@@ -31,9 +34,10 @@ line two",ok
 #        ^^ constant.character.escape.csv
 #           ^ punctuation.separator.delimiter.csv
 bad"quote,ok
-#  ^ invalid.illegal.quote-in-unquoted-field.csv
+# <- string.unquoted.csv
+#  ^ string.unquoted.csv -invalid
 "closed"junk,ok
-#       ^^^^ invalid.illegal.text-after-quote.csv
+#       ^^^^ string.unquoted.csv -invalid
 ```
 # <- punctuation.definition.raw.end.carve
 

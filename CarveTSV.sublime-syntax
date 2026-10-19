@@ -16,32 +16,49 @@ contexts:
   records:
     - include: fields
   header-fields:
-    - include: field-boundaries
-    - match: '[^\t"\r\n]+'
-      scope: markup.heading.tsv
-    - match: '"'
-      scope: invalid.illegal.quote-in-unquoted-field.tsv
+    - include: separator
+    - match: '(?:^ *|(?<=\t))(")'
+      captures:
+        1: punctuation.definition.string.begin.tsv
+      push: header-quoted
+    - include: header-text
+  header-text:
+    - match: '[^\t\r\n]+'
+      scope: string.unquoted.tsv markup.heading.tsv
   fields:
-    - include: field-boundaries
-    - match: '[^\t"\r\n]+'
-    - match: '"'
-      scope: invalid.illegal.quote-in-unquoted-field.tsv
-  field-boundaries:
-    - match: '\t'
-      scope: punctuation.separator.delimiter.tsv
+    - include: separator
     - match: '(?:^ *|(?<=\t))(")'
       captures:
         1: punctuation.definition.string.begin.tsv
       push: quoted
+    # A stray or trailing quote is field text: a malformed table fence just stays code.
+    - include: text
+  text:
+    - match: '[^\t\r\n]+'
+      scope: string.unquoted.tsv
+  separator:
+    - match: '\t'
+      scope: punctuation.separator.delimiter.tsv
   quoted:
     - meta_scope: string.quoted.double.tsv
-    - match: '""'
-      scope: constant.character.escape.tsv
+    - include: escape
     - match: '"(?!")'
       scope: punctuation.definition.string.end.tsv
       set: after-quote
+  header-quoted:
+    - meta_scope: string.quoted.double.tsv markup.heading.tsv
+    - include: escape
+    - match: '"(?!")'
+      scope: punctuation.definition.string.end.tsv
+      set: header-after-quote
+  escape:
+    - match: '""'
+      scope: constant.character.escape.tsv
   after-quote:
-    - match: '[^\t\r\n]+'
-      scope: invalid.illegal.text-after-quote.tsv
-    - match: '(?=\t|\n|$)'
+    - include: text
+    - match: '(?=[\t\n]|$)'
+      pop: true
+  header-after-quote:
+    - include: header-text
+    - match: '(?=[\t\n]|$)'
       pop: true
