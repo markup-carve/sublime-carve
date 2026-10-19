@@ -16,32 +16,49 @@ contexts:
   records:
     - include: fields
   header-fields:
-    - include: field-boundaries
-    - match: '[^,"\r\n]+'
-      scope: markup.heading.csv
-    - match: '"'
-      scope: invalid.illegal.quote-in-unquoted-field.csv
+    - include: separator
+    - match: '(?:^[ \t]*|(?<=,))(")'
+      captures:
+        1: punctuation.definition.string.begin.csv
+      push: header-quoted
+    - include: header-text
+  header-text:
+    - match: '[^,\r\n]+'
+      scope: string.unquoted.csv markup.heading.csv
   fields:
-    - include: field-boundaries
-    - match: '[^,"\r\n]+'
-    - match: '"'
-      scope: invalid.illegal.quote-in-unquoted-field.csv
-  field-boundaries:
-    - match: ','
-      scope: punctuation.separator.delimiter.csv
+    - include: separator
     - match: '(?:^[ \t]*|(?<=,))(")'
       captures:
         1: punctuation.definition.string.begin.csv
       push: quoted
+    # A stray or trailing quote is field text: a malformed table fence just stays code.
+    - include: text
+  text:
+    - match: '[^,\r\n]+'
+      scope: string.unquoted.csv
+  separator:
+    - match: ','
+      scope: keyword.operator.separator.csv
   quoted:
     - meta_scope: string.quoted.double.csv
-    - match: '""'
-      scope: constant.character.escape.csv
+    - include: escape
     - match: '"(?!")'
       scope: punctuation.definition.string.end.csv
       set: after-quote
+  header-quoted:
+    - meta_scope: string.quoted.double.csv markup.heading.csv
+    - include: escape
+    - match: '"(?!")'
+      scope: punctuation.definition.string.end.csv
+      set: header-after-quote
+  escape:
+    - match: '""'
+      scope: constant.character.escape.csv
   after-quote:
-    - match: '[^,\r\n]+'
-      scope: invalid.illegal.text-after-quote.csv
-    - match: '(?=,|\n|$)'
+    - include: text
+    - match: '(?=[,\n]|$)'
+      pop: true
+  header-after-quote:
+    - include: header-text
+    - match: '(?=[,\n]|$)'
       pop: true

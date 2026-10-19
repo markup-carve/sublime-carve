@@ -3,19 +3,22 @@
 {table}
 ```csv
 Plan,Seats,Price per month
-# <- markup.heading.csv
-#   ^ punctuation.separator.delimiter.csv
+# <- string.unquoted.csv markup.heading.csv
+#   ^ keyword.operator.separator.csv
 #    ^^^^^ markup.heading.csv
-#         ^ punctuation.separator.delimiter.csv
+#         ^ keyword.operator.separator.csv
 Starter,1,"$0"
-#      ^ punctuation.separator.delimiter.csv
-#        ^ punctuation.separator.delimiter.csv
+# <- string.unquoted.csv
+#  ^^^^ string.unquoted.csv -markup.heading
+#       ^ string.unquoted.csv
+#      ^ keyword.operator.separator.csv
+#        ^ keyword.operator.separator.csv
 #         ^ punctuation.definition.string.begin.csv
 Team,10,"$49, billed yearly"
-#      ^ punctuation.separator.delimiter.csv
+#      ^ keyword.operator.separator.csv
 #       ^ punctuation.definition.string.begin.csv
 #         ^^^^ string.quoted.double.csv
-#             ^ -punctuation.separator.delimiter.csv
+#             ^ -keyword.operator.separator.csv
 ```
 # <- punctuation.definition.raw.end.carve
 
@@ -25,26 +28,27 @@ Message,Value
 # ^^^^ string.quoted.double.csv
 line two",ok
 # <- string.quoted.double.csv
-#        ^ punctuation.separator.delimiter.csv
+#        ^ keyword.operator.separator.csv
 "say ""hi""",done
 #    ^^ constant.character.escape.csv
 #        ^^ constant.character.escape.csv
-#           ^ punctuation.separator.delimiter.csv
+#           ^ keyword.operator.separator.csv
 bad"quote,ok
-#  ^ invalid.illegal.quote-in-unquoted-field.csv
+# <- string.unquoted.csv
+#  ^ string.unquoted.csv -invalid
 "closed"junk,ok
-#       ^^^^ invalid.illegal.text-after-quote.csv
+#       ^^^^ string.unquoted.csv -invalid
 ```
 # <- punctuation.definition.raw.end.carve
 
 ```tsv
 Plan	Seats
 # <- markup.heading.tsv
-#   ^ punctuation.separator.delimiter.tsv
+#   ^ keyword.operator.separator.tsv
 Team	"a	b"
-#   ^ punctuation.separator.delimiter.tsv
+#   ^ keyword.operator.separator.tsv
 #    ^ punctuation.definition.string.begin.tsv
-#      ^ -punctuation.separator.delimiter.tsv
+#      ^ -keyword.operator.separator.tsv
 #       ^ string.quoted.double.tsv
 ```
 # <- punctuation.definition.raw.end.carve
@@ -52,9 +56,9 @@ Team	"a	b"
 - ```csv
   Plan,Seats
   # <- meta.record.header.csv
-  #   ^ punctuation.separator.delimiter.csv
+  #   ^ keyword.operator.separator.csv
   Team,"two, seats"
   #    ^ punctuation.definition.string.begin.csv
-  #        ^ -punctuation.separator.delimiter.csv
+  #        ^ -keyword.operator.separator.csv
   ```
   # <- punctuation.definition.raw.end.carve
