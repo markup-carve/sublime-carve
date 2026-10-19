@@ -38,7 +38,7 @@ contexts:
       scope: string.unquoted.tsv
   separator:
     - match: '\t'
-      scope: punctuation.separator.delimiter.tsv
+      scope: keyword.operator.separator.tsv
   quoted:
     - meta_scope: string.quoted.double.tsv
     - include: escape

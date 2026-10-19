@@ -38,7 +38,7 @@ contexts:
       scope: string.unquoted.csv
   separator:
     - match: ','
-      scope: punctuation.separator.delimiter.csv
+      scope: keyword.operator.separator.csv
   quoted:
     - meta_scope: string.quoted.double.csv
     - include: escape
