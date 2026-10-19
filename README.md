@@ -23,6 +23,7 @@ This package is authored from the maintained Carve TextMate grammar
   language (python, js/ts, rust, go, php, ruby, sql, shell, yaml, json,
   html, css and ~40 more, from the fence-language table shared by every Carve
   editor grammar)
+- CSV and TSV fences use the bundled field and header syntaxes.
 - Raw passthrough fences (```` ```=html ````), kept verbatim and never
   highlighted as code
 - Divs (`:::`) with `"title"` / `[label]`; the eight Tier-1 admonition types

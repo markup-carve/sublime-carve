@@ -1,0 +1,47 @@
+%YAML 1.2
+---
+name: TSV (Carve)
+hidden: true
+scope: text.tsv.carve
+
+contexts:
+  main:
+    - match: '\n'
+      set: header
+  header:
+    - meta_scope: meta.record.header.tsv
+    - match: '\n'
+      set: records
+    - include: header-fields
+  records:
+    - include: fields
+  header-fields:
+    - include: field-boundaries
+    - match: '[^\t"\r\n]+'
+      scope: markup.heading.tsv
+    - match: '"'
+      scope: invalid.illegal.quote-in-unquoted-field.tsv
+  fields:
+    - include: field-boundaries
+    - match: '[^\t"\r\n]+'
+    - match: '"'
+      scope: invalid.illegal.quote-in-unquoted-field.tsv
+  field-boundaries:
+    - match: '\t'
+      scope: punctuation.separator.delimiter.tsv
+    - match: '(?:^ *|(?<=\t))(")'
+      captures:
+        1: punctuation.definition.string.begin.tsv
+      push: quoted
+  quoted:
+    - meta_scope: string.quoted.double.tsv
+    - match: '""'
+      scope: constant.character.escape.tsv
+    - match: '"(?!")'
+      scope: punctuation.definition.string.end.tsv
+      set: after-quote
+  after-quote:
+    - match: '[^\t\r\n]+'
+      scope: invalid.illegal.text-after-quote.tsv
+    - match: '(?=\t|\n|$)'
+      pop: true

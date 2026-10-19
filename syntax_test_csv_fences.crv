@@ -1,0 +1,60 @@
+# SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+{table}
+```csv
+Plan,Seats,Price per month
+# <- markup.heading.csv
+#   ^ punctuation.separator.delimiter.csv
+#    ^^^^^ markup.heading.csv
+#         ^ punctuation.separator.delimiter.csv
+Starter,1,"$0"
+#      ^ punctuation.separator.delimiter.csv
+#        ^ punctuation.separator.delimiter.csv
+#         ^ punctuation.definition.string.begin.csv
+Team,10,"$49, billed yearly"
+#      ^ punctuation.separator.delimiter.csv
+#       ^ punctuation.definition.string.begin.csv
+#         ^^^^ string.quoted.double.csv
+#             ^ -punctuation.separator.delimiter.csv
+```
+# <- punctuation.definition.raw.end.carve
+
+```csv
+Message,Value
+"line one
+# ^^^^ string.quoted.double.csv
+line two",ok
+# <- string.quoted.double.csv
+#        ^ punctuation.separator.delimiter.csv
+"say ""hi""",done
+#    ^^ constant.character.escape.csv
+#        ^^ constant.character.escape.csv
+#           ^ punctuation.separator.delimiter.csv
+bad"quote,ok
+#  ^ invalid.illegal.quote-in-unquoted-field.csv
+"closed"junk,ok
+#       ^^^^ invalid.illegal.text-after-quote.csv
+```
+# <- punctuation.definition.raw.end.carve
+
+```tsv
+Plan	Seats
+# <- markup.heading.tsv
+#   ^ punctuation.separator.delimiter.tsv
+Team	"a	b"
+#   ^ punctuation.separator.delimiter.tsv
+#    ^ punctuation.definition.string.begin.tsv
+#      ^ -punctuation.separator.delimiter.tsv
+#       ^ string.quoted.double.tsv
+```
+# <- punctuation.definition.raw.end.carve
+
+- ```csv
+  Plan,Seats
+  # <- meta.record.header.csv
+  #   ^ punctuation.separator.delimiter.csv
+  Team,"two, seats"
+  #    ^ punctuation.definition.string.begin.csv
+  #        ^ -punctuation.separator.delimiter.csv
+  ```
+  # <- punctuation.definition.raw.end.carve

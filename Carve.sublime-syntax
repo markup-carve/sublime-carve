@@ -493,6 +493,26 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
+    - match: '^((`|~)\2{2,})[ \t]*((?i:csv))(?![\w+#./-])(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        3: entity.name.type.language.carve
+        4: meta.code-fence.header.carve
+      embed: scope:text.csv.carve
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(\1\2*)\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^((`|~)\2{2,})[ \t]*((?i:tsv))(?![\w+#./-])(.*)$'
+      captures:
+        1: punctuation.definition.raw.begin.carve
+        3: entity.name.type.language.carve
+        4: meta.code-fence.header.carve
+      embed: scope:text.tsv.carve
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^(\1\2*)\s*$'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
     - match: '^((`|~)\2{2,})[ \t]*((?i:html|htm|xhtml))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
@@ -1080,6 +1100,36 @@ contexts:
         9: entity.name.type.language.carve
         10: meta.code-fence.header.carve
       embed: scope:source.toml
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:csv))(?![\w+#./-])(.*)$'
+      captures:
+        2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+        3: markup.list.numbered.carve punctuation.definition.list.begin.carve
+        4: markup.list.definition.carve punctuation.definition.list.begin.carve
+        5: meta.attributes.carve
+        6: constant.language.task-list.carve
+        7: punctuation.definition.raw.begin.carve
+        9: entity.name.type.language.carve
+        10: meta.code-fence.header.carve
+      embed: scope:text.csv.carve
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:tsv))(?![\w+#./-])(.*)$'
+      captures:
+        2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+        3: markup.list.numbered.carve punctuation.definition.list.begin.carve
+        4: markup.list.definition.carve punctuation.definition.list.begin.carve
+        5: meta.attributes.carve
+        6: constant.language.task-list.carve
+        7: punctuation.definition.raw.begin.carve
+        9: entity.name.type.language.carve
+        10: meta.code-fence.header.carve
+      embed: scope:text.tsv.carve
       embed_scope: markup.raw.block.fenced.code.carve
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
@@ -1850,6 +1900,26 @@ contexts:
         4: entity.name.type.language.carve
         5: meta.code-fence.header.carve
       embed: scope:source.toml
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:csv))(?![\w+#./-])(.*)$'
+      captures:
+        2: punctuation.definition.raw.begin.carve
+        4: entity.name.type.language.carve
+        5: meta.code-fence.header.carve
+      embed: scope:text.csv.carve
+      embed_scope: markup.raw.block.fenced.code.carve
+      escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
+      escape_captures:
+        1: punctuation.definition.raw.end.carve
+    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:tsv))(?![\w+#./-])(.*)$'
+      captures:
+        2: punctuation.definition.raw.begin.carve
+        4: entity.name.type.language.carve
+        5: meta.code-fence.header.carve
+      embed: scope:text.tsv.carve
       embed_scope: markup.raw.block.fenced.code.carve
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
