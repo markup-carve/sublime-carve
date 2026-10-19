@@ -1,0 +1,47 @@
+%YAML 1.2
+---
+name: CSV (Carve)
+hidden: true
+scope: text.csv.carve
+
+contexts:
+  main:
+    - match: '\n'
+      set: header
+  header:
+    - meta_scope: meta.record.header.csv
+    - match: '\n'
+      set: records
+    - include: header-fields
+  records:
+    - include: fields
+  header-fields:
+    - include: field-boundaries
+    - match: '[^,"\r\n]+'
+      scope: markup.heading.csv
+    - match: '"'
+      scope: invalid.illegal.quote-in-unquoted-field.csv
+  fields:
+    - include: field-boundaries
+    - match: '[^,"\r\n]+'
+    - match: '"'
+      scope: invalid.illegal.quote-in-unquoted-field.csv
+  field-boundaries:
+    - match: ','
+      scope: punctuation.separator.delimiter.csv
+    - match: '(?:^[ \t]*|(?<=,))(")'
+      captures:
+        1: punctuation.definition.string.begin.csv
+      push: quoted
+  quoted:
+    - meta_scope: string.quoted.double.csv
+    - match: '""'
+      scope: constant.character.escape.csv
+    - match: '"(?!")'
+      scope: punctuation.definition.string.end.csv
+      set: after-quote
+  after-quote:
+    - match: '[^,\r\n]+'
+      scope: invalid.illegal.text-after-quote.csv
+    - match: '(?=,|\n|$)'
+      pop: true
