@@ -1256,8 +1256,8 @@ para
 
 > - +
 # <- markup.quote.carve punctuation.definition.quote.carve
-# ^ punctuation.definition.list.begin.carve
-#   ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+# ^ markup.quote.carve punctuation.definition.list.begin.carve
+#   ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 
 - - b
 # <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve

@@ -2744,7 +2744,7 @@ contexts:
   quote-start:
     - meta_scope: markup.quote.carve
     - match: '(?=(?:> ?)*{{fb_item}}{{fb_any}}*\+[ \t]*$)'
-      set: first-block-chain
+      set: quote-first-block-chain
     - match: '(>)(?= |$)[ ]?'
       captures:
         1: punctuation.definition.quote.carve
@@ -2857,6 +2857,10 @@ contexts:
       captures:
         2: punctuation.definition.list.begin.carve
         3: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+  quote-first-block-chain:
+    - meta_scope: markup.quote.carve
+    - include: first-block-chain
 
   first-block-chain:
     - match: '[ \t]+'
