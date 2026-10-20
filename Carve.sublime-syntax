@@ -2692,6 +2692,11 @@ contexts:
     #
     # A FENCE INSIDE A QUOTE keeps its body verbatim. It closes on a fence line
     # behind the same markers, or where that quote ends.
+    - match: '^(>(?: >)*) (\+)[ \t]*$'
+      scope: markup.quote.carve markup.list.continuation.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: punctuation.definition.list.continuation.carve
     - match: '^([ \t]*>(?: [ \t]*>)*) [ \t]*((`|~)\3{2,})[^\n]*$'
       scope: markup.quote.carve markup.raw.block.carve
       push:
@@ -2761,9 +2766,9 @@ contexts:
 
   # ----- Lists + tasks + definition lists -----
   lists:
-    - match: '^(\s*)(\+)(\s*)$'
+    - match: '^(\+)[ \t]*$'
       captures:
-        2: punctuation.definition.list.continuation.carve
+        1: punctuation.definition.list.continuation.carve
       scope: markup.list.continuation.carve
     # A BULLET MAY BE GLUED TO AN ATTRIBUTE BLOCK, and then the required space
     # comes after the block, not after the marker - so `-{#x} item` and

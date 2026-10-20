@@ -1171,6 +1171,37 @@ a <https://x.test/*not*> autolink
 # <- markup.list.continuation.carve
 attached block
 
+- a
+  +
+# ^ -markup.list.continuation.carve
+
+- a
+	+
+#^ -markup.list.continuation.carve
+
+> +
+# ^ markup.list.continuation.carve
+> > +
+#   ^ markup.list.continuation.carve
+>  +
+#  ^ -markup.list.continuation.carve
+
+- +
+# ^ markup.list.unnumbered.carve
+- - +
+#   ^ markup.list.unnumbered.carve
+
+- a
+  - b
+  +
+# ^ -markup.list.continuation.carve
+  c
+
+```
++
+# <- -markup.list.continuation.carve
+```
+
 | a | b |
 | x | y |
 + more | z |
