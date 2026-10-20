@@ -1162,30 +1162,64 @@ a <https://x.test/*not*> autolink
 #                 ^^^^^ -markup.bold.carve
 #                 ^^^^^ markup.underline.link.carve
 
-# THE TWO `+` CONTINUATIONS. A lone `+` is the container marker; a `+` line
-# ending in a pipe is a table continuation row. The table rule used to match any
-# `+` line, and `tables` is included before `lists`, so it swallowed the list
-# form too (#36).
+# THE TWO `+` CONTINUATIONS. A `+` line ending in a pipe is a table
+# continuation row; a lone `+` is not (#36). A SEPARATE-LINE lone `+` is a
+# marker only when the next line starts a block at its column (CARVE-P9-031),
+# which a pattern cannot see, so it stays text at every column.
 - item
 +
-# <- markup.list.continuation.carve
+# <- -markup.list.continuation.carve -markup.table.continuation.carve
 attached block
 
 - a
+  - b
   +
 # ^ -markup.list.continuation.carve
+  > q
 
 - a
 	+
 #^ -markup.list.continuation.carve
 
+- a
++
+- b
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+
+# A lone `+` behind the quote prefix is a marker on the line that opens the
+# quote, glued or spaced, and text on a later line of the same quote.
 > +
-# ^ markup.list.continuation.carve
+# <- markup.quote.carve punctuation.definition.quote.carve
+# ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+flush
+
 > > +
 #   ^ markup.list.continuation.carve
+> b
+
+>+
+#^ markup.list.continuation.carve
+q
+
+>>+
+# ^ markup.list.continuation.carve
+q
+
+> q
+> +
+# ^ -markup.list.continuation.carve
+# <- markup.quote.carve punctuation.definition.quote.carve
+
+> - a
+>   - b
+> +
+# ^ -markup.list.continuation.carve
+
 >  +
 #  ^ -markup.list.continuation.carve
 
+# FIRST-BLOCK MARKERS: the opener is on the same line, so the `+` is a marker
+# whatever follows, and stacked openers of any kind count.
 - +
 # ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 - b
@@ -1193,6 +1227,36 @@ attached block
 #^ markup.list.unnumbered.carve
 #  ^ -markup.list.continuation.carve
 - - +
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+# ^ markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#   ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+- > +
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+# ^ punctuation.definition.quote.carve
+#   ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+> q
+
+1. - +
+# <- markup.list.numbered.carve punctuation.definition.list.begin.carve
+#  ^ markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#    ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+para
+
+- - [ ] +
+# ^ punctuation.definition.list.begin.carve
+#   ^^^ constant.language.task-list.carve
+#       ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+- a
+  - > +
+#   ^ punctuation.definition.quote.carve
+#     ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+  b
+
+> - +
+# <- markup.quote.carve punctuation.definition.quote.carve
+# ^ punctuation.definition.list.begin.carve
 #   ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
 
 - - b
@@ -1219,6 +1283,8 @@ attached block
 #  ^ -markup.list.continuation.carve
 1. + text
 #  ^^^^^^ -markup.list.continuation.carve
+1. [ ] +
+#      ^ -markup.list.continuation.carve
 
 :: term
 : +
@@ -1231,23 +1297,6 @@ attached block
 #     ^ meta.footnote.definition.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 [^b]: + text
 #     ^^^^^^ -markup.list.continuation.carve
-
-> +
-# ^ markup.quote.carve markup.list.continuation.carve
-> > +
-#   ^ markup.quote.carve markup.list.continuation.carve
-> > b
-# <- markup.quote.carve punctuation.definition.quote.carve
-#   ^ markup.quote.carve -markup.list.continuation.carve
-> b
-# <- markup.quote.carve
-# ^ -markup.list.continuation.carve
-
-- a
-  - b
-  +
-# ^ -markup.list.continuation.carve
-  c
 
 ```
 +

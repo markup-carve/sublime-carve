@@ -29,6 +29,11 @@ variables:
   # A line that opens a list item or a definition (see `list-item`). A glued
   # attribute block needs content after it, as in `lists`.
   list_item_line: '[ \t]*(?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.|::?)(?: +|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n]))(?![ \t]*$)'
+  # FIRST-BLOCK CONTINUATION MARKER (CARVE-P9-031): a lone `+` right after a
+  # block opener on the same line. An item opener ends with its separator run;
+  # a task box only follows a bullet, so `1. [ ] +` stays text.
+  fb_item: '(?:[-*] +(?:\[[ xX\-_>?]\] +)?|(?:[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +|: +|\[\^[^\]\n]+\]: +)'
+  fb_any: '(?:{{fb_item}}|> ?)'
   # A link label character: anything but a bracket or a newline, or one
   # nested bracket pair. Stopping at a bare `[` keeps a line of unclosed
   # brackets linear.
@@ -2692,11 +2697,32 @@ contexts:
     #
     # A FENCE INSIDE A QUOTE keeps its body verbatim. It closes on a fence line
     # behind the same markers, or where that quote ends.
-    - match: '^(>(?: >)*) (\+)[ \t]*$'
+    #
+    # A LONE `+` AFTER THE QUOTE PREFIX is the first-block marker only on the
+    # line that opens the quote; `>>+` and `>+` count, a second space does not.
+    # On a later quote line it is a separate-line marker, and whether it
+    # attaches depends on the NEXT line (CARVE-P9-031), which a pattern cannot
+    # see, so `quote-run` leaves it text.
+    - match: '^([ \t]*(?:> ?)+)(\+)[ \t]*$'
       scope: markup.quote.carve markup.list.continuation.carve
       captures:
         1: punctuation.definition.quote.carve
         2: punctuation.definition.list.continuation.carve
+      push: quote-run
+    - match: '^(?=[ \t]*>(?: |$))'
+      push: quote-run
+
+  # The lines of one quote, so a `>` line can tell it is not the first.
+  quote-run:
+    - match: '^(?![ \t]*(?:>(?: |$)|(?:> ?)+\+[ \t]*$))'
+      pop: true
+    - match: '^([ \t]*(?:> ?)+)\+[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+    - include: quote-lines
+
+  quote-lines:
     - match: '^([ \t]*>(?: [ \t]*>)*) [ \t]*((`|~)\3{2,})[^\n]*$'
       scope: markup.quote.carve markup.raw.block.carve
       push:
@@ -2717,6 +2743,8 @@ contexts:
   # inline content for the rest of the line.
   quote-start:
     - meta_scope: markup.quote.carve
+    - match: '(?=(?:> ?)*{{fb_item}}{{fb_any}}*\+[ \t]*$)'
+      set: first-block-chain
     - match: '(>)(?= |$)[ ]?'
       captures:
         1: punctuation.definition.quote.carve
@@ -2766,10 +2794,13 @@ contexts:
 
   # ----- Lists + tasks + definition lists -----
   lists:
-    - match: '^(\+)[ \t]*$'
-      captures:
-        1: punctuation.definition.list.continuation.carve
-      scope: markup.list.continuation.carve
+    # A SEPARATE-LINE `+` is a marker only at an open item's marker column (or
+    # right after a quote prefix) AND when the next line starts a block at that
+    # column (CARVE-P9-031). The next line is out of reach of a pattern, and
+    # `branch_point` needs Sublime Text 4, so the line stays text. It is
+    # consumed here so it cannot open a paragraph a following item could not
+    # interrupt.
+    - match: '^[ \t]*\+[ \t]*$'
     # A BULLET MAY BE GLUED TO AN ATTRIBUTE BLOCK, and then the required space
     # comes after the block, not after the marker - so `-{#x} item` and
     # `*{.c} item` got no marker colour on a line that IS a list item (#22). The
@@ -2787,14 +2818,10 @@ contexts:
     # so `- [-] dropped` and `- [>] deferred` are task items whose brackets used
     # to render as ordinary content (#23). Corpus 06-task-lists-2 uses four of
     # the others. The `-` is escaped so it is not read as a range.
-    # STACKED BULLETS (`- - +`): the second marker is left unscoped, as before;
-    # only the lone `+` takes the continuation scope. No rule scope, so the first
-    # marker keeps exactly the scopes the plain bullet rule below gives it.
-    - match: '^(([ \t]*)([-*]) +)(?:[-*] +)+(\+)(?=[ \t]*$)'
-      captures:
-        1: markup.list.unnumbered.carve
-        3: punctuation.definition.list.begin.carve
-        4: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+    # STACKED OPENERS (`- - +`, `- > +`, `1. - +`, `- - [ ] +`): the item opens
+    # on this line, so the `+` is a marker whatever follows.
+    - match: '^(?=[ \t]*{{fb_item}}{{fb_any}}+\+[ \t]*$)'
+      push: first-block-chain
     - match: '^([ \t]*)([-*])(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(\[[ xX\-_>?]\] +)?(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
       scope: markup.list.unnumbered.carve
       captures:
@@ -2830,6 +2857,36 @@ contexts:
       captures:
         2: punctuation.definition.list.begin.carve
         3: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+  first-block-chain:
+    - match: '[ \t]+'
+    - match: '(>) ?'
+      captures:
+        1: punctuation.definition.quote.carve
+    - match: '([-*]) +(?:(\[[ xX\-_>?]\]) +)?'
+      scope: markup.list.unnumbered.carve
+      captures:
+        1: punctuation.definition.list.begin.carve
+        2: constant.language.task-list.carve
+    - match: '([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +'
+      scope: markup.list.numbered.carve
+      captures:
+        1: punctuation.definition.list.begin.carve
+    - match: '(:) +'
+      scope: markup.list.definition.carve
+      captures:
+        1: punctuation.definition.list.begin.carve
+    - match: '(\[\^)([^\]\n]+)(\]:) +'
+      captures:
+        1: punctuation.definition.footnote.carve
+        2: constant.other.footnote.carve
+        3: punctuation.definition.footnote.carve
+    - match: '(\+)[ \t]*$'
+      captures:
+        1: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      pop: true
+    - match: '$'
+      pop: true
 
   # ----- Reference + abbreviation definitions -----
   definitions:
