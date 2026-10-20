@@ -1186,6 +1186,51 @@ attached block
 >  +
 #  ^ -markup.list.continuation.carve
 
+- +
+# ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+- b
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#^ markup.list.unnumbered.carve
+#  ^ -markup.list.continuation.carve
+- - +
+#   ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+- - b
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#   ^ -markup.list.continuation.carve
+- + text
+# ^^^^^^ -markup.list.continuation.carve
+1. +
+#  ^ markup.list.numbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+2. b
+# <- markup.list.numbered.carve
+#  ^ -markup.list.continuation.carve
+1. + text
+#  ^^^^^^ -markup.list.continuation.carve
+
+:: term
+: +
+# ^ markup.list.definition.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+: b
+# <- markup.list.definition.carve
+#  ^ -markup.list.continuation.carve
+
+[^a]: +
+#     ^ meta.footnote.definition.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+[^b]: + text
+#     ^^^^^^ -markup.list.continuation.carve
+
+> +
+# ^ markup.quote.carve markup.list.continuation.carve
+> > +
+#   ^ markup.quote.carve markup.list.continuation.carve
+> > b
+# <- markup.quote.carve punctuation.definition.quote.carve
+#   ^ markup.quote.carve -markup.list.continuation.carve
+> b
+# <- markup.quote.carve
+# ^ -markup.list.continuation.carve
+
 - a
   - b
   +

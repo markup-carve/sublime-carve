@@ -2787,11 +2787,20 @@ contexts:
     # so `- [-] dropped` and `- [>] deferred` are task items whose brackets used
     # to render as ordinary content (#23). Corpus 06-task-lists-2 uses four of
     # the others. The `-` is escaped so it is not read as a range.
-    - match: '^([ \t]*)([-*])(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(\[[ xX\-_>?]\] +)?(?![ \t]*$)'
+    # STACKED BULLETS (`- - +`): the second marker is left unscoped, as before;
+    # only the lone `+` takes the continuation scope. No rule scope, so the first
+    # marker keeps exactly the scopes the plain bullet rule below gives it.
+    - match: '^(([ \t]*)([-*]) +)(?:[-*] +)+(\+)(?=[ \t]*$)'
+      captures:
+        1: markup.list.unnumbered.carve
+        3: punctuation.definition.list.begin.carve
+        4: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+    - match: '^([ \t]*)([-*])(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(\[[ xX\-_>?]\] +)?(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
       scope: markup.list.unnumbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
         3: constant.language.task-list.carve
+        4: markup.list.continuation.carve punctuation.definition.list.continuation.carve
     # The BARE DOT is a marker on its own (carve#472): `.` continues an
     # ordered sequence, and is the only marker allowed to drop its value.
     #
@@ -2807,18 +2816,20 @@ contexts:
     # rather than skipped with `\{[^}]*\}` - a quoted value may hold a `}` and
     # may escape its own quote, so a short run rejects `1.{title="a}b"} item`,
     # which is a valid item (markup-carve/carve-grammars#85).
-    - match: '^([ \t]*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(?![ \t]*$)'
+    - match: '^([ \t]*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
       scope: markup.list.numbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
+        3: markup.list.continuation.carve punctuation.definition.list.continuation.carve
     - match: '^([ \t]*)(::) +(?![ \t]*$)'
       scope: markup.list.definition.term.carve
       captures:
         2: punctuation.definition.list.begin.carve
-    - match: '^([ \t]*)(:) +(?![ \t]*$)'
+    - match: '^([ \t]*)(:) +(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
       scope: markup.list.definition.carve
       captures:
         2: punctuation.definition.list.begin.carve
+        3: markup.list.continuation.carve punctuation.definition.list.continuation.carve
 
   # ----- Reference + abbreviation definitions -----
   definitions:
@@ -2836,6 +2847,9 @@ contexts:
         - meta_scope: meta.footnote.definition.carve
         - match: '$'
           pop: true
+        - match: '(?<=\]:)([ \t]+)(\+)(?=[ \t]*$)'
+          captures:
+            2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
         # The two comment contexts ahead of `inline`, the way `block-quotes`
         # does it: the shared context carries neither, so `{% ... %}` would be
         # read as an attribute block and a trailing `%%` would stay prose.
