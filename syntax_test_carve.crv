@@ -1186,11 +1186,6 @@ attached block
 >  +
 #  ^ -markup.list.continuation.carve
 
-- +
-# ^ markup.list.unnumbered.carve
-- - +
-#   ^ markup.list.unnumbered.carve
-
 - a
   - b
   +
