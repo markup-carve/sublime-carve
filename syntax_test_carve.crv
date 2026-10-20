@@ -1200,6 +1200,18 @@ attached block
 #   ^ -markup.list.continuation.carve
 - + text
 # ^^^^^^ -markup.list.continuation.carve
+
+- [ ] +
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#  ^^^ constant.language.task-list.carve
+#     ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+- [x] +
+#     ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+- b
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#  ^ -markup.list.continuation.carve
+- [ ] + text
+#     ^^^^^^ -markup.list.continuation.carve
 1. +
 #  ^ markup.list.numbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 2. b
