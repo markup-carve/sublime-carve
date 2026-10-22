@@ -2710,7 +2710,8 @@ contexts:
     # line that opens the quote, with a space after each `>` (`>+`, `>>+` and
     # `>> +` are no quote lines, markup-carve/carve#3421).
     # It needs flush text below it, quoted less deep (`cm-quote`). On a later
-    # quote line it is text unless a quoted item sits right above it.
+    # quote line it is text unless a quoted item as deep sits above it, with
+    # only blank quote lines that deep between (`quote-item-below-K`).
     - match: '^(?=[ \t]*(?:> ){3,}\+[ \t]*$)'
       push: cm-quote-3
     - match: '^(?=[ \t]*(?:> ){2}\+[ \t]*$)'
@@ -2737,6 +2738,14 @@ contexts:
     - include: quote-lines
 
   quote-lines:
+    # A quoted item K deep keeps watching: blank quote lines K deep may sit
+    # between it and a `+` behind the same K markers (`quote-item-below-K`).
+    - match: '^(?=[ \t]*> (?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +\S)'
+      push: quote-item-below-1
+    - match: '^(?=[ \t]*(?:> ){2}(?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +\S)'
+      push: quote-item-below-2
+    - match: '^(?=[ \t]*(?:> ){3}(?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +\S)'
+      push: quote-item-below-3
     - match: '^([ \t]*>(?: [ \t]*>)*) [ \t]*((`|~)\3{2,})[^\n]*$'
       scope: markup.quote.carve markup.raw.block.carve
       push:
@@ -2752,6 +2761,38 @@ contexts:
       captures:
         1: punctuation.definition.quote.carve
       push: quote-start
+
+  quote-line-open:
+    - match: '^[ \t]*(>)(?= |$)[ ]?'
+      captures:
+        1: punctuation.definition.quote.carve
+      set: quote-start
+    - match: '^'
+      pop: true
+
+  quote-item-below-1:
+    - match: '^(?=[ \t]*> (?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +\S|[ \t]*>[ \t]*$)'
+      push: quote-line-open
+    - match: '^(?=[ \t]*> \+[ \t]*$)'
+      set: cm-quoted-1
+    - match: '^'
+      pop: true
+
+  quote-item-below-2:
+    - match: '^(?=[ \t]*(?:> ){2}(?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +\S|[ \t]*>(?: >){1}[ \t]*$)'
+      push: quote-line-open
+    - match: '^(?=[ \t]*(?:> ){2}\+[ \t]*$)'
+      set: cm-quoted-2
+    - match: '^'
+      pop: true
+
+  quote-item-below-3:
+    - match: '^(?=[ \t]*(?:> ){3}(?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +\S|[ \t]*>(?: >){2}[ \t]*$)'
+      push: quote-line-open
+    - match: '^(?=[ \t]*(?:> ){3}\+[ \t]*$)'
+      set: cm-quoted-3
+    - match: '^'
+      pop: true
 
   quote-lazy-line:
     - meta_scope: markup.quote.carve
@@ -3018,6 +3059,69 @@ contexts:
       pop: 2
     - match: '^'
       fail: cm-quoted-item
+
+  # `> > +` behind a quoted item's K markers: a quoted block next, behind the
+  # same K markers at the same column.
+  cm-quoted-1:
+    - match: '^([ \t]*)(?=> \+[ \t]*$)'
+      branch_point: cm-quoted-1
+      branch: [cm-quoted-1-marker, cm-quoted-deep-text]
+    - match: '^'
+      pop: true
+
+  cm-quoted-1-marker:
+    - match: '(> )(\+)[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+    - match: '^(?=\1> (?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+      pop: 2
+    - match: '^'
+      fail: cm-quoted-1
+
+  cm-quoted-2:
+    - match: '^([ \t]*)(?=(?:> ){2}\+[ \t]*$)'
+      branch_point: cm-quoted-2
+      branch: [cm-quoted-2-marker, cm-quoted-deep-text]
+    - match: '^'
+      pop: true
+
+  cm-quoted-2-marker:
+    - match: '((?:> ){2})(\+)[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+    - match: '^(?=\1(?:> ){2}(?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+      pop: 2
+    - match: '^'
+      fail: cm-quoted-2
+
+  cm-quoted-3:
+    - match: '^([ \t]*)(?=(?:> ){3}\+[ \t]*$)'
+      branch_point: cm-quoted-3
+      branch: [cm-quoted-3-marker, cm-quoted-deep-text]
+    - match: '^'
+      pop: true
+
+  cm-quoted-3-marker:
+    - match: '((?:> ){3})(\+)[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+    - match: '^(?=\1(?:> ){3}(?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+      pop: 2
+    - match: '^'
+      fail: cm-quoted-3
+
+  cm-quoted-deep-text:
+    - match: '((?:> )+)\+[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+      pop: 2
 
   cm-quoted-text:
     - match: '^([ \t]*(?:> )+)\+[ \t]*$'

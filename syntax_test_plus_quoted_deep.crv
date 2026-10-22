@@ -1,0 +1,44 @@
+> > SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+A quoted item two deep owns a `> > +` below it, right below or after blank
+`> >` lines, when a quoted block two deep follows. This file's assertion token
+is `> >` so the assertion line is that block.
+
+> > - a
+> > +
+> > ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+> > b
+
+> > - a
+> >
+> > +
+> > ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+> > b
+
+> > - a
+> >
+> >
+> > +
+> > ^ markup.list.continuation.carve
+> > b
+
+> > 1. a
+> >
+> > +
+> > ^ markup.list.continuation.carve
+> > b
+
+A blank line one deep ends the item's watch, and a `> > +` below an item one
+deep is text.
+
+> > - a
+>
+> > +
+> > ^ -markup.list.continuation.carve
+> > b
+
+> - a
+>
+> > +
+> > ^ -markup.list.continuation.carve
+> > b

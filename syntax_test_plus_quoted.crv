@@ -59,3 +59,58 @@ A continuation marker after quote prefixes needs a space after each `>`
 > >+
    > <- -markup.list.continuation.carve
   > <- -punctuation.definition.quote.carve
+
+Blank quote lines as deep as a quoted item may sit between it and its `> +`.
+The block below has to sit behind the same markers at the same column, so an
+indented `  > x` (lazy text in the `+` paragraph) leaves the `+` as text.
+
+> - a
+>
+> +
+> ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+> b
+
+> - a
+>
+>
+> +
+> ^ markup.list.continuation.carve
+> b
+
+> - a
+>   
+> +
+> ^ markup.list.continuation.carve
+> b
+
+> 1. a
+>
+> +
+> ^ markup.list.continuation.carve
+> b
+
+> - a
+>
+> +
+  > <- -markup.list.continuation.carve
+  > <- markup.quote.carve
+
+> - a
+>
+> > +
+    > <- -markup.list.continuation.carve
+
+> > - a
+>
+> > +
+    > <- -markup.list.continuation.carve
+
+> > - a
+> >
+> +
+  > <- -markup.list.continuation.carve
+
+> > - a
+> >
+> > +
+    > <- -markup.list.continuation.carve
