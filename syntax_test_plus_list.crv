@@ -1,0 +1,22 @@
+- SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+A sibling item below a `+` refuses it, and a list is no first block for a
+footnote, a description or a quote. Each assertion line is a list item.
+
+- a
++
+- <- -markup.list.continuation.carve
+
+[^a]: +
+- <- -markup.list.continuation.carve
+
+:: t
+: a
++
+- <- markup.list.continuation.carve
+
+> +
+- <- -markup.list.continuation.carve
+
+- > +
+- <- -markup.list.continuation.carve

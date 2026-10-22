@@ -1,0 +1,18 @@
+> SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+A quoted item owns a `> +` right below it when a quoted block follows; a
+quote's first-line `> +` is text when the next line is quoted as deep.
+
+> - a
+> +
+  > <- markup.list.continuation.carve
+
+> - a
+>+
+ > <- -markup.list.continuation.carve
+
+> +
+  > <- -markup.list.continuation.carve
+
+> > +
+  > <- markup.list.continuation.carve

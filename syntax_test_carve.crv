@@ -1166,9 +1166,9 @@ a <https://x.test/*not*> autolink
 # THE TWO `+` CONTINUATIONS. A `+` line ending in a pipe is a table
 # continuation row; a lone `+` is not (#36). A SEPARATE-LINE lone `+` is a
 # marker at an open container's marker column when the next line starts a
-# block there (CARVE-P9-031). A pattern sees one line, so the column is read
-# from context and the next line is not: before a blank line, a sibling item
-# or the end, the engines refuse a `+` this still scopes as a marker.
+# block there (CARVE-P9-031). The assertion line below a `+` IS its next line,
+# so a `#` heading follows each case here; the files syntax_test_plus_*.crv
+# use an indented, a list and a quoted comment token for the other followers.
 - item
 +
 # <- markup.list.continuation.carve punctuation.definition.list.continuation.carve
@@ -1176,20 +1176,9 @@ attached block
 
 - a
   - b
-  +
-# ^ markup.list.continuation.carve
-  c
-
-- a
-  - b
 +
 # <- markup.list.continuation.carve
 para
-
-  - a
-  +
-# ^ markup.list.continuation.carve
-  b
 
 1. a
 +
@@ -1262,8 +1251,9 @@ b
 # <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
 
 # A lone `+` behind the quote prefix is a marker on the line that opens the
-# quote, glued or spaced, and text on a later line of the same quote unless a
-# quoted item sits right above it.
+# quote, and text on a later line of the same quote unless a quoted item sits
+# right above it. Each `>` takes its space: `>+`, `>>+`, `> >+` and `>> +` are
+# no quote lines at all, so they are plain text.
 > +
 # <- markup.quote.carve punctuation.definition.quote.carve
 # ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
@@ -1274,28 +1264,25 @@ flush
 > b
 
 >+
-#^ markup.list.continuation.carve
+# <- -markup.quote.carve -punctuation.definition.quote.carve
+#^ -markup.list.continuation.carve
 q
 
 >>+
-# ^ markup.list.continuation.carve
+# ^ -markup.list.continuation.carve -markup.quote.carve
+q
+
+> >+
+#  ^ -markup.list.continuation.carve
+
+>> +
+#  ^ -markup.list.continuation.carve -markup.quote.carve
 q
 
 > q
 > +
 # ^ -markup.list.continuation.carve
 # <- markup.quote.carve punctuation.definition.quote.carve
-
-> - a
-> +
-# <- markup.quote.carve punctuation.definition.quote.carve
-# ^ markup.list.continuation.carve
-> para
-
-> - a
->+
-#^ markup.list.continuation.carve
-> para
 
 >  +
 #  ^ -markup.list.continuation.carve
