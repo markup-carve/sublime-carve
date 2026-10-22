@@ -40,7 +40,7 @@ variables:
   lbl: '(?:[^\[\]\n]|\[[^\[\]\n]*\])'
   # A line that ends a paragraph: every block opener except a list marker and
   # a caption, which do not interrupt one.
-  block_interrupt: '(?:#{1,6} +\S|[ \t]*(?:>(?: |$)|`{3,}|~{3,}|:{3,}|::[ \t]+\S|\|.*\|[ \t]*$|%%|\{[^\n]*\}[ \t]*$|(?:-{3,}|\*{3,}|_{3,})[ \t]*$|\*?\[\^?[^\]\n]+\]:[ \t]))'
+  block_interrupt: '(?:#{1,6} +\S|[ \t]*(?:>(?: |$)|>(?:> ?)*\+[ \t]*$|`{3,}|~{3,}|:{3,}|::[ \t]+\S|\|.*\|[ \t]*$|%%|\{[^\n]*\}[ \t]*$|(?:-{3,}|\*{3,}|_{3,})[ \t]*$|\*?\[\^?[^\]\n]+\]:[ \t]))'
   # The front matter body ends at a column-0 line no YAML mapping starts (no
   # key, comment, sequence or flow opener), unless it holds only a scalar.
   # Ported from carve-grammars' TextMate rule.
@@ -99,6 +99,10 @@ contexts:
   list-item:
     - match: '^[ \t]*\n'
       set: list-item-gap
+    # A `+` at column 0 sits at the open list's marker column (CARVE-P9-031).
+    - match: '^(\+)[ \t]*$'
+      captures:
+        1: markup.list.continuation.carve punctuation.definition.list.continuation.carve
     - match: '^(?=\S)(?!{{list_item_line}})(?={{block_interrupt}}|[ \t]*\^ +\S)'
       pop: true
     - match: '^(?=[^ \t\n])(?!{{list_item_line}})(?!\+[ \t]*$|\+.*\|[ \t]*$)'
@@ -109,9 +113,9 @@ contexts:
 
   list-item-gap:
     - match: '^[ \t]*\n'
-    - match: '^(?=\S)(?!{{list_item_line}})'
+    - match: '^(?=\S)(?!{{list_item_line}})(?!\+[ \t]*$)'
       pop: true
-    - match: '^(?=[ \t]|{{list_item_line}})'
+    - match: '^(?=[ \t]|{{list_item_line}}|\+[ \t]*$)'
       set: list-item
 
   lazy-continuation:
@@ -2714,6 +2718,14 @@ contexts:
 
   # The lines of one quote, so a `>` line can tell it is not the first.
   quote-run:
+    # A `+` at column 0 below a quote line is at the quote's marker column.
+    - match: '^(\+)[ \t]*$'
+      captures:
+        1: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      pop: true
+    # A colon line right below a quote is its lazy text, not a description.
+    - match: '^(?=[ \t]*: +\S)'
+      set: quote-lazy-line
     - match: '^(?![ \t]*(?:>(?: |$)|(?:> ?)+\+[ \t]*$))'
       pop: true
     - match: '^([ \t]*(?:> ?)+)\+[ \t]*$'
@@ -2739,6 +2751,34 @@ contexts:
         1: punctuation.definition.quote.carve
       push: quote-start
 
+  quote-lazy-line:
+    - meta_scope: markup.quote.carve
+    - match: '$'
+      pop: true
+    - include: paragraph-inline
+
+  # The line below a quoted item: `> +` is that item's marker.
+  quote-item-next-line:
+    - match: '^([ \t]*> ?)(\+)[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      pop: true
+    - match: '^'
+      pop: true
+
+  # The line below a quoted term or description: `> : d` describes it.
+  quote-dl-next-line:
+    - match: '^([ \t]*>) (:)(?= +\S)'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: punctuation.definition.list.begin.carve
+      set: [quote-dl-next-line, quote-line]
+    - match: '^'
+      pop: true
+
   # The start of a quote's content: a nested marker, or a block shape, or
   # inline content for the rest of the line.
   quote-start:
@@ -2756,11 +2796,13 @@ contexts:
       scope: markup.list.carve
       captures:
         1: punctuation.definition.list.begin.carve
-      set: quote-line
-    - match: '(::?)(?= +\S)'
+      set: [quote-item-next-line, quote-line]
+    # Only a term opens a definition list in a quote; a `:` line describes it
+    # on the lines right below (`quote-dl-next-line`) and is text elsewhere.
+    - match: '(::)(?= +\S)'
       captures:
         1: punctuation.definition.list.begin.carve
-      set: quote-line
+      set: [quote-dl-next-line, quote-line]
     - match: '(?=\|.*\|[ \t]*$)'
       set: quote-table-row
     - match: '(:::+)(?: +([^\s{]+))?'
@@ -2794,12 +2836,12 @@ contexts:
 
   # ----- Lists + tasks + definition lists -----
   lists:
-    # A SEPARATE-LINE `+` is a marker only at an open item's marker column (or
-    # right after a quote prefix) AND when the next line starts a block at that
-    # column (CARVE-P9-031). The next line is out of reach of a pattern, and
-    # `branch_point` needs Sublime Text 4, so the line stays text. It is
-    # consumed here so it cannot open a paragraph a following item could not
-    # interrupt.
+    # A SEPARATE-LINE `+` is a marker at an open item's marker column when the
+    # next line starts a block there (CARVE-P9-031). A pattern sees one line,
+    # so the column is read from context: column 0 in `list-item`, and an
+    # item's own column on the line right below it (`item-next-line`). Any
+    # other lone `+` is consumed here as text, so it cannot open a paragraph a
+    # following item could not interrupt.
     - match: '^[ \t]*\+[ \t]*$'
     # A BULLET MAY BE GLUED TO AN ATTRIBUTE BLOCK, and then the required space
     # comes after the block, not after the marker - so `-{#x} item` and
@@ -2828,6 +2870,7 @@ contexts:
         2: punctuation.definition.list.begin.carve
         3: constant.language.task-list.carve
         4: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      push: item-next-line
     # The BARE DOT is a marker on its own (carve#472): `.` continues an
     # ordered sequence, and is the only marker allowed to drop its value.
     #
@@ -2848,6 +2891,7 @@ contexts:
       captures:
         2: punctuation.definition.list.begin.carve
         3: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      push: item-next-line
     - match: '^([ \t]*)(::) +(?![ \t]*$)'
       scope: markup.list.definition.term.carve
       captures:
@@ -2857,6 +2901,18 @@ contexts:
       captures:
         2: punctuation.definition.list.begin.carve
         3: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      push: item-next-line
+
+  # The rest of an item's line, then one look at the next line: a `+` at the
+  # item's own column is its marker (`\1` is the item's indentation).
+  item-next-line:
+    - match: '^(\1)(\+)[ \t]*$'
+      captures:
+        2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      pop: true
+    - match: '^'
+      pop: true
+    - include: paragraph-inline
 
   quote-first-block-chain:
     - meta_scope: markup.quote.carve
@@ -2892,6 +2948,15 @@ contexts:
     - match: '$'
       pop: true
 
+  # A `+` at column 0 right below a footnote line attaches the next block.
+  footnote-next-line:
+    - match: '^(\+)[ \t]*$'
+      captures:
+        1: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      pop: true
+    - match: '^'
+      pop: true
+
   # ----- Reference + abbreviation definitions -----
   definitions:
     # A FOOTNOTE DEFINITION IS NOT A LINK REFERENCE DEFINITION, and it has to be
@@ -2907,7 +2972,7 @@ contexts:
       push:
         - meta_scope: meta.footnote.definition.carve
         - match: '$'
-          pop: true
+          set: footnote-next-line
         - match: '(?<=\]:)([ \t]+)(\+)(?=[ \t]*$)'
           captures:
             2: markup.list.continuation.carve punctuation.definition.list.continuation.carve

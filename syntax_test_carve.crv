@@ -1164,22 +1164,96 @@ a <https://x.test/*not*> autolink
 
 # THE TWO `+` CONTINUATIONS. A `+` line ending in a pipe is a table
 # continuation row; a lone `+` is not (#36). A SEPARATE-LINE lone `+` is a
-# marker only when the next line starts a block at its column (CARVE-P9-031),
-# which a pattern cannot see, so it stays text at every column.
+# marker at an open container's marker column when the next line starts a
+# block there (CARVE-P9-031). A pattern sees one line, so the column is read
+# from context and the next line is not: before a blank line, a sibling item
+# or the end, the engines refuse a `+` this still scopes as a marker.
 - item
 +
-# <- -markup.list.continuation.carve -markup.table.continuation.carve
+# <- markup.list.continuation.carve punctuation.definition.list.continuation.carve
 attached block
 
 - a
   - b
   +
+# ^ markup.list.continuation.carve
+  c
+
+- a
+  - b
++
+# <- markup.list.continuation.carve
+para
+
+  - a
+  +
+# ^ markup.list.continuation.carve
+  b
+
+1. a
++
+# <- markup.list.continuation.carve
+b
+
+- a
+
++
+# <- markup.list.continuation.carve
+b
+
+- a
+lazy
++
+# <- markup.list.continuation.carve
+b
+
+:: t
+: a
++
+# <- markup.list.continuation.carve
+- b
+
+[^a]: x
++
+# <- markup.list.continuation.carve
+- b
+
+> quoted
++
+# <- markup.list.continuation.carve
+> attached
+
+# At a column that no open item's marker sits at, the `+` is text.
+- a
+  +
 # ^ -markup.list.continuation.carve
-  > q
+  b
+
+- a
+    +
+#   ^ -markup.list.continuation.carve
+    b
 
 - a
 	+
 #^ -markup.list.continuation.carve
+
+para
++
+# <- -markup.list.continuation.carve
+x
+
+para
+
++
+# <- -markup.list.continuation.carve
+b
+
+text
+- a
++
+# <- -markup.list.continuation.carve
+b
 
 - a
 +
@@ -1187,7 +1261,8 @@ attached block
 # <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
 
 # A lone `+` behind the quote prefix is a marker on the line that opens the
-# quote, glued or spaced, and text on a later line of the same quote.
+# quote, glued or spaced, and text on a later line of the same quote unless a
+# quoted item sits right above it.
 > +
 # <- markup.quote.carve punctuation.definition.quote.carve
 # ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
@@ -1211,12 +1286,36 @@ q
 # <- markup.quote.carve punctuation.definition.quote.carve
 
 > - a
->   - b
 > +
-# ^ -markup.list.continuation.carve
+# <- markup.quote.carve punctuation.definition.quote.carve
+# ^ markup.list.continuation.carve
+> para
+
+> - a
+>+
+#^ markup.list.continuation.carve
+> para
 
 >  +
 #  ^ -markup.list.continuation.carve
+
+# A COLON LINE in a quote describes only a quoted term right above it. A lazy
+# colon line below a quote is the quote's text (markup-carve/carve#3493).
+> :: t
+> : d
+# ^ markup.quote.carve punctuation.definition.list.begin.carve
+
+> :  d
+# ^ -punctuation.definition.list.begin.carve
+
+> :  d
+   :  b
+#  ^ -punctuation.definition.list.begin.carve
+#  ^ markup.quote.carve
+
+> a
+: b
+# <- -punctuation.definition.list.begin.carve
 
 # FIRST-BLOCK MARKERS: the opener is on the same line, so the `+` is a marker
 # whatever follows, and stacked openers of any kind count.
