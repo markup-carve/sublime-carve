@@ -33,6 +33,7 @@ A continuation marker after quote prefixes needs a space after each `>`
 >>+
   > <- -markup.list.continuation.carve
   > <- -markup.quote.carve
+ > <- -markup.quote.carve
 > <- -punctuation.definition.quote.carve
 
 > > - a
@@ -40,6 +41,7 @@ A continuation marker after quote prefixes needs a space after each `>`
 >> +
    > <- -markup.list.continuation.carve
    > <- -markup.quote.carve
+ > <- -markup.quote.carve
 > <- -punctuation.definition.quote.carve
 
 > > - a
