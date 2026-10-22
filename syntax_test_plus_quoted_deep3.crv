@@ -1,0 +1,9 @@
+> > > SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+A quoted item three deep owns a `> > > +` after blank `> > >` lines.
+
+> > > - a
+> > >
+> > > +
+> > > ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+> > > b
