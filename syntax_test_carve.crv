@@ -317,6 +317,7 @@ An escaped \* star.
 # <- punctuation.definition.list.begin.carve
 #^ punctuation.definition.list.begin.carve
 
+:: Term one
 :  A definition.
 # <- punctuation.definition.list.begin.carve
 
@@ -1317,6 +1318,18 @@ q
 : b
 # <- -punctuation.definition.list.begin.carve
 
+: lone
+# <- -punctuation.definition.list.begin.carve
+
+: +
+# ^ -markup.list.continuation.carve
+flush
+
+:: t
+
+: d
+# <- markup.list.definition.carve punctuation.definition.list.begin.carve
+
 # FIRST-BLOCK MARKERS: the opener is on the same line, so the `+` is a marker
 # whatever follows, and stacked openers of any kind count.
 - +
@@ -1388,6 +1401,9 @@ para
 :: term
 : +
 # ^ markup.list.definition.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+:: term
+: +
 : b
 # <- markup.list.definition.carve
 #  ^ -markup.list.continuation.carve

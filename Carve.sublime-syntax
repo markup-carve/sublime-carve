@@ -80,6 +80,10 @@ contexts:
     - include: inline
 
   document:
+    # A `:` line with no term open above it is paragraph text; below a term
+    # `list-item` is already open and reads it as a description.
+    - match: '^(?=[ \t]*: +\S)'
+      push: paragraph
     - match: '^(?={{list_item_line}})'
       push: list-item
     - include: body
