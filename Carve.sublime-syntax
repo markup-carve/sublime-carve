@@ -2707,7 +2707,8 @@ contexts:
     # behind the same markers, or where that quote ends.
     #
     # A LONE `+` AFTER THE QUOTE PREFIX is the first-block marker only on the
-    # line that opens the quote; `>>+` and `>+` count, a second space does not.
+    # line that opens the quote, with a space after each `>` (`>+`, `>>+` and
+    # `>> +` are no quote lines, markup-carve/carve#3421).
     # It needs flush text below it, quoted less deep (`cm-quote`). On a later
     # quote line it is text unless a quoted item sits right above it.
     - match: '^(?=[ \t]*(?:> ){3,}\+[ \t]*$)'
