@@ -1,0 +1,55 @@
+x SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+x A `+` attaches the next block when that block starts at its own column. Each
+x assertion line below is the line after the `+`, so where it starts decides.
+
+- a
+  - b
+  +
+  x <- markup.list.continuation.carve
+
+  - a
+  +
+  x <- markup.list.continuation.carve
+
+- a
++
+x <- markup.list.continuation.carve
+
+:: t
+: a
++
+x <- markup.list.continuation.carve
+
+x The content column, a deeper or shallower follower, and no open item refuse.
+
+- a
+  +
+  x <- -markup.list.continuation.carve
+
+- a
+  - b
+  +
+x <- -markup.list.continuation.carve
+
+- a
++
+  x <- -markup.list.continuation.carve
+
+para
++
+x <- -markup.list.continuation.carve
+
+x A first-block `[^a]: +` or `> +` needs a flush follower.
+
+[^a]: +
+  x   ^ -markup.list.continuation.carve
+
+[^a]: +
+x     ^ markup.list.continuation.carve
+
+> +
+x ^ markup.list.continuation.carve
+
+> +
+  x <- -markup.list.continuation.carve

@@ -1,6 +1,6 @@
 %YAML 1.2
 ---
-# Carve syntax for Sublime Text 3/4.
+# Carve syntax for Sublime Text 4, build 4050 or later (`branch_point`).
 # Authored from the maintained TextMate grammar (scope text.carve):
 #   vscode-carve/syntaxes/carve.tmLanguage.json
 # Scope names mirror that grammar so existing color schemes light it up.
@@ -29,6 +29,13 @@ variables:
   # A line that opens a list item or a definition (see `list-item`). A glued
   # attribute block needs content after it, as in `lists`.
   list_item_line: '[ \t]*(?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.|::?)(?: +|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n]))(?![ \t]*$)'
+  # FIRST-BLOCK CONTINUATION MARKER (CARVE-P9-031): a lone `+` right after a
+  # block opener on the same line. An item opener ends with its separator run;
+  # a task box only follows a bullet, so `1. [ ] +` stays text.
+  fb_item: '(?:[-*] +(?:\[[ xX\-_>?]\] +)?|(?:[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +|: +|\[\^[^\]\n]+\]: +)'
+  fb_any: '(?:{{fb_item}}|> )'
+  # A list marker at the start of what follows it, for the line below a `+`.
+  cm_marker: '(?:[-*]|[0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)(?: |$)'
   # A link label character: anything but a bracket or a newline, or one
   # nested bracket pair. Stopping at a bare `[` keeps a line of unclosed
   # brackets linear.
@@ -75,6 +82,10 @@ contexts:
     - include: inline
 
   document:
+    # A `:` line with no term open above it is paragraph text; below a term
+    # `list-item` is already open and reads it as a description.
+    - match: '^(?=[ \t]*: +\S)'
+      push: paragraph
     - match: '^(?={{list_item_line}})'
       push: list-item
     - include: body
@@ -94,6 +105,9 @@ contexts:
   list-item:
     - match: '^[ \t]*\n'
       set: list-item-gap
+    # A `+` at column 0 sits at the open list's marker column (CARVE-P9-031).
+    - match: '^(?=\+[ \t]*$)'
+      push: cm-item
     - match: '^(?=\S)(?!{{list_item_line}})(?={{block_interrupt}}|[ \t]*\^ +\S)'
       pop: true
     - match: '^(?=[^ \t\n])(?!{{list_item_line}})(?!\+[ \t]*$|\+.*\|[ \t]*$)'
@@ -104,9 +118,9 @@ contexts:
 
   list-item-gap:
     - match: '^[ \t]*\n'
-    - match: '^(?=\S)(?!{{list_item_line}})'
+    - match: '^(?=\S)(?!{{list_item_line}})(?!\+[ \t]*$)'
       pop: true
-    - match: '^(?=[ \t]|{{list_item_line}})'
+    - match: '^(?=[ \t]|{{list_item_line}}|\+[ \t]*$)'
       set: list-item
 
   lazy-continuation:
@@ -281,8 +295,7 @@ contexts:
     # NO CLOSER IN SIGHT IS A THEMATIC BREAK, and a pattern cannot look ahead
     # for one. So the YAML body also ends at the first column-0 line no YAML
     # mapping starts, and the rest of the document stays Carve instead of
-    # turning into YAML. (`branch_point` could re-read the opener as a break,
-    # but it needs Sublime Text 4, and this package supports 3.)
+    # turning into YAML. (`branch_point` could re-read the opener as a break.)
     - match: '\A(---)[ \t]*(yaml|yml)?[ \t]*$'
       captures:
         1: punctuation.definition.frontmatter.begin.carve
@@ -2692,6 +2705,37 @@ contexts:
     #
     # A FENCE INSIDE A QUOTE keeps its body verbatim. It closes on a fence line
     # behind the same markers, or where that quote ends.
+    #
+    # A LONE `+` AFTER THE QUOTE PREFIX is the first-block marker only on the
+    # line that opens the quote; `>>+` and `>+` count, a second space does not.
+    # It needs flush text below it, quoted less deep (`cm-quote`). On a later
+    # quote line it is text unless a quoted item sits right above it.
+    - match: '^(?=[ \t]*(?:> ){3,}\+[ \t]*$)'
+      push: cm-quote-3
+    - match: '^(?=[ \t]*(?:> ){2}\+[ \t]*$)'
+      push: cm-quote-2
+    - match: '^(?=[ \t]*> \+[ \t]*$)'
+      push: cm-quote-1
+    - match: '^(?=[ \t]*>(?: |$))'
+      push: quote-run
+
+  # The lines of one quote, so a `>` line can tell it is not the first.
+  quote-run:
+    # A `+` at column 0 below a quote line is at the quote's marker column.
+    - match: '^(?=\+[ \t]*$)'
+      set: cm-any
+    # A colon line right below a quote is its lazy text, not a description.
+    - match: '^(?=[ \t]*: +\S)'
+      set: quote-lazy-line
+    - match: '^(?![ \t]*(?:>(?: |$)|(?:> )+\+[ \t]*$))'
+      pop: true
+    - match: '^([ \t]*(?:> )+)\+[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+    - include: quote-lines
+
+  quote-lines:
     - match: '^([ \t]*>(?: [ \t]*>)*) [ \t]*((`|~)\3{2,})[^\n]*$'
       scope: markup.quote.carve markup.raw.block.carve
       push:
@@ -2708,10 +2752,36 @@ contexts:
         1: punctuation.definition.quote.carve
       push: quote-start
 
+  quote-lazy-line:
+    - meta_scope: markup.quote.carve
+    - match: '$'
+      pop: true
+    - include: paragraph-inline
+
+  # The line below a quoted item: `> +` is that item's marker.
+  quote-item-next-line:
+    - match: '^(?=[ \t]*> \+[ \t]*$)'
+      set: cm-quoted-item
+    - match: '^'
+      pop: true
+
+  # The line below a quoted term or description: `> : d` describes it.
+  quote-dl-next-line:
+    - match: '^([ \t]*>) (:)(?= +\S)'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: punctuation.definition.list.begin.carve
+      set: [quote-dl-next-line, quote-line]
+    - match: '^'
+      pop: true
+
   # The start of a quote's content: a nested marker, or a block shape, or
   # inline content for the rest of the line.
   quote-start:
     - meta_scope: markup.quote.carve
+    - match: '(?=(?:> )*{{fb_item}}{{fb_any}}*\+[ \t]*$)'
+      set: quote-first-block-chain
     - match: '(>)(?= |$)[ ]?'
       captures:
         1: punctuation.definition.quote.carve
@@ -2723,11 +2793,13 @@ contexts:
       scope: markup.list.carve
       captures:
         1: punctuation.definition.list.begin.carve
-      set: quote-line
-    - match: '(::?)(?= +\S)'
+      set: [quote-item-next-line, quote-line]
+    # Only a term opens a definition list in a quote; a `:` line describes it
+    # on the lines right below (`quote-dl-next-line`) and is text elsewhere.
+    - match: '(::)(?= +\S)'
       captures:
         1: punctuation.definition.list.begin.carve
-      set: quote-line
+      set: [quote-dl-next-line, quote-line]
     - match: '(?=\|.*\|[ \t]*$)'
       set: quote-table-row
     - match: '(:::+)(?: +([^\s{]+))?'
@@ -2761,10 +2833,13 @@ contexts:
 
   # ----- Lists + tasks + definition lists -----
   lists:
-    - match: '^(\s*)(\+)(\s*)$'
-      captures:
-        2: punctuation.definition.list.continuation.carve
-      scope: markup.list.continuation.carve
+    # A SEPARATE-LINE `+` is a marker at an open item's marker column when the
+    # next line starts a block there (CARVE-P9-031). A pattern sees one line,
+    # so the column is read from context: column 0 in `list-item`, and an
+    # item's own column on the line right below it (`item-next-line`). Any
+    # other lone `+` is consumed here as text, so it cannot open a paragraph a
+    # following item could not interrupt.
+    - match: '^[ \t]*\+[ \t]*$'
     # A BULLET MAY BE GLUED TO AN ATTRIBUTE BLOCK, and then the required space
     # comes after the block, not after the marker - so `-{#x} item` and
     # `*{.c} item` got no marker colour on a line that IS a list item (#22). The
@@ -2782,11 +2857,19 @@ contexts:
     # so `- [-] dropped` and `- [>] deferred` are task items whose brackets used
     # to render as ordinary content (#23). Corpus 06-task-lists-2 uses four of
     # the others. The `-` is escaped so it is not read as a range.
-    - match: '^([ \t]*)([-*])(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(\[[ xX\-_>?]\] +)?(?![ \t]*$)'
+    # STACKED OPENERS (`- - +`, `- > +`, `1. - +`, `- - [ ] +`): the item opens
+    # on this line, so the `+` is a marker whatever follows.
+    - match: '^(?=[ \t]*{{fb_item}}{{fb_any}}*> \+[ \t]*$)'
+      push: cm-chain-quote
+    - match: '^(?=[ \t]*{{fb_item}}{{fb_any}}+\+[ \t]*$)'
+      push: first-block-chain
+    - match: '^([ \t]*)([-*])(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(\[[ xX\-_>?]\] +)?(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
       scope: markup.list.unnumbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
         3: constant.language.task-list.carve
+        4: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      push: item-next-line
     # The BARE DOT is a marker on its own (carve#472): `.` continues an
     # ordered sequence, and is the only marker allowed to drop its value.
     #
@@ -2802,18 +2885,303 @@ contexts:
     # rather than skipped with `\{[^}]*\}` - a quoted value may hold a `}` and
     # may escape its own quote, so a short run rejects `1.{title="a}b"} item`,
     # which is a valid item (markup-carve/carve-grammars#85).
-    - match: '^([ \t]*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(?![ \t]*$)'
+    - match: '^([ \t]*)([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
       scope: markup.list.numbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
+        3: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      push: item-next-line
     - match: '^([ \t]*)(::) +(?![ \t]*$)'
       scope: markup.list.definition.term.carve
       captures:
         2: punctuation.definition.list.begin.carve
-    - match: '^([ \t]*)(:) +(?![ \t]*$)'
+    - match: '^(?=[ \t]*: +\+[ \t]*$)'
+      push: cm-description
+    - match: '^([ \t]*)(:) +(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
       scope: markup.list.definition.carve
       captures:
         2: punctuation.definition.list.begin.carve
+        3: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      push: description-next-line
+
+  # The rest of an item's line, then one look at the next line: a `+` at the
+  # item's own column is its marker (`\1` is the item's indentation).
+  item-next-line:
+    - match: '^(?!\1\+[ \t]*$)'
+      pop: true
+    - match: '^'
+      set: cm-item
+    - include: paragraph-inline
+
+  description-next-line:
+    - match: '^(?!\1\+[ \t]*$)'
+      pop: true
+    - match: '^'
+      set: cm-any
+    - include: paragraph-inline
+
+  quote-first-block-chain:
+    - meta_scope: markup.quote.carve
+    - include: first-block-chain
+
+  first-block-chain:
+    - include: first-block-openers
+    - match: '(\+)[ \t]*$'
+      captures:
+        1: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      pop: true
+    - match: '$'
+      pop: true
+
+  first-block-openers:
+    - match: '[ \t]+'
+    - match: '(>) '
+      captures:
+        1: punctuation.definition.quote.carve
+    - match: '([-*]) +(?:(\[[ xX\-_>?]\]) +)?'
+      scope: markup.list.unnumbered.carve
+      captures:
+        1: punctuation.definition.list.begin.carve
+        2: constant.language.task-list.carve
+    - match: '([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.) +'
+      scope: markup.list.numbered.carve
+      captures:
+        1: punctuation.definition.list.begin.carve
+    - match: '(:) +'
+      scope: markup.list.definition.carve
+      captures:
+        1: punctuation.definition.list.begin.carve
+    - match: '(\[\^)([^\]\n]+)(\]:) +'
+      captures:
+        1: punctuation.definition.footnote.carve
+        2: constant.other.footnote.carve
+        3: punctuation.definition.footnote.carve
+
+  # ----- The lone `+`, decided by the line below it -----
+  # A `+` that attaches nothing is text (CARVE-P9-031), and what it attaches is
+  # the next line. Each `cm-*` context tries the marker reading first and
+  # fails back to text from the one following line, so a rewind never reaches
+  # further than that line. A `+` on the last line keeps the marker reading.
+
+  # At an item's column: a block at that column next, not a sibling item.
+  cm-item:
+    - match: '^([ \t]*)(?=\+[ \t]*$)'
+      branch_point: cm-item
+      branch: [cm-item-marker, cm-text]
+    - match: '^'
+      pop: true
+
+  cm-item-marker:
+    - match: '\+'
+      scope: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+    - match: '^(?=\1(?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+      pop: 2
+    - match: '^'
+      fail: cm-item
+
+  # At a description's, footnote's or quote's column: any block there next.
+  cm-any:
+    - match: '^([ \t]*)(?=\+[ \t]*$)'
+      branch_point: cm-any
+      branch: [cm-any-marker, cm-text]
+    - match: '^'
+      pop: true
+
+  cm-any-marker:
+    - match: '\+'
+      scope: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+    - match: '^(?=\1[^ \t\n])'
+      pop: 2
+    - match: '^'
+      fail: cm-any
+
+  cm-text:
+    - match: '\+[ \t]*$'
+      pop: 2
+
+  # `> +` below a quoted item: a quoted block at the item's column next.
+  cm-quoted-item:
+    - match: '^(?=[ \t]*> \+[ \t]*$)'
+      branch_point: cm-quoted-item
+      branch: [cm-quoted-item-marker, cm-quoted-text]
+    - match: '^'
+      pop: true
+
+  cm-quoted-item-marker:
+    - match: '^([ \t]*> )(\+)[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+    - match: '^(?=[ \t]*> (?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+      pop: 2
+    - match: '^'
+      fail: cm-quoted-item
+
+  cm-quoted-text:
+    - match: '^([ \t]*(?:> )+)\+[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+      pop: 2
+
+  # The first line of a quote K deep: flush text next that is not a list,
+  # quoted less deep than K (three or more count as three).
+  cm-quote-1:
+    - match: '^(?=[ \t]*(?:> )+\+[ \t]*$)'
+      branch_point: cm-quote-1
+      branch: [cm-quote-1-marker, cm-quote-text]
+    - match: '^'
+      pop: true
+
+  cm-quote-1-marker:
+    - match: '^([ \t]*(?:> )+)(\+)[ \t]*$'
+      scope: markup.quote.carve markup.list.continuation.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: punctuation.definition.list.continuation.carve
+    - match: '^(?!(?:[ \t]*>(?: |$)){1})(?=(?:[ \t]*>(?: |$))*(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
+      pop: 2
+    - match: '^'
+      fail: cm-quote-1
+
+  cm-quote-2:
+    - match: '^(?=[ \t]*(?:> )+\+[ \t]*$)'
+      branch_point: cm-quote-2
+      branch: [cm-quote-2-marker, cm-quote-text]
+    - match: '^'
+      pop: true
+
+  cm-quote-2-marker:
+    - match: '^([ \t]*(?:> )+)(\+)[ \t]*$'
+      scope: markup.quote.carve markup.list.continuation.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: punctuation.definition.list.continuation.carve
+    - match: '^(?!(?:[ \t]*>(?: |$)){2})(?=(?:[ \t]*>(?: |$))*(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
+      pop: 2
+    - match: '^'
+      fail: cm-quote-2
+
+  cm-quote-3:
+    - match: '^(?=[ \t]*(?:> )+\+[ \t]*$)'
+      branch_point: cm-quote-3
+      branch: [cm-quote-3-marker, cm-quote-text]
+    - match: '^'
+      pop: true
+
+  cm-quote-3-marker:
+    - match: '^([ \t]*(?:> )+)(\+)[ \t]*$'
+      scope: markup.quote.carve markup.list.continuation.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: punctuation.definition.list.continuation.carve
+    - match: '^(?!(?:[ \t]*>(?: |$)){3})(?=(?:[ \t]*>(?: |$))*(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
+      pop: 2
+    - match: '^'
+      fail: cm-quote-3
+
+  cm-quote-text:
+    - match: '^([ \t]*(?:> )+)\+[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+      set: quote-run
+
+  # `- > +` and other chains that end in a quote marker: flush text next.
+  cm-chain-quote:
+    - match: '^(?=[ \t]*\S)'
+      branch_point: cm-chain-quote
+      branch: [cm-chain-quote-marker, cm-chain-quote-text]
+    - match: '^'
+      pop: true
+
+  cm-chain-quote-marker:
+    - include: first-block-openers
+    - match: '(\+)[ \t]*$'
+      captures:
+        1: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      set: cm-chain-quote-next
+
+  cm-chain-quote-next:
+    - match: '^(?![ \t])(?!>(?: |$))(?!{{cm_marker}})(?=\S)'
+      pop: 2
+    - match: '^'
+      fail: cm-chain-quote
+
+  cm-chain-quote-text:
+    - include: first-block-openers
+    - match: '\+[ \t]*$'
+      pop: 2
+
+  # `: +` below a term: anything but a blank line or a column-0 list next.
+  cm-description:
+    - match: '^(?=[ \t]*:)'
+      branch_point: cm-description
+      branch: [cm-description-marker, cm-description-text]
+    - match: '^'
+      pop: true
+
+  cm-description-marker:
+    - match: '^([ \t]*)(:) +(\+)[ \t]*$'
+      scope: markup.list.definition.carve
+      captures:
+        2: punctuation.definition.list.begin.carve
+        3: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      set: cm-description-next
+
+  cm-description-next:
+    - match: '^(?={{cm_marker}}|[ \t]*$)'
+      fail: cm-description
+    - match: '^'
+      pop: 2
+
+  cm-description-text:
+    - match: '^([ \t]*)(:) +\+[ \t]*$'
+      scope: markup.list.definition.carve
+      captures:
+        2: punctuation.definition.list.begin.carve
+      pop: 2
+
+  # `[^a]: +`: flush text next that is not a list.
+  cm-footnote:
+    - match: '^(?=\s*\[\^)'
+      branch_point: cm-footnote
+      branch: [cm-footnote-marker, cm-footnote-text]
+    - match: '^'
+      pop: true
+
+  cm-footnote-marker:
+    - match: '^\s*(\[\^)([^\]]+)(\]:)[ \t]+(\+)[ \t]*$'
+      scope: meta.footnote.definition.carve
+      captures:
+        1: punctuation.definition.footnote.carve
+        2: constant.other.footnote.carve
+        3: punctuation.definition.footnote.carve
+        4: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      set: cm-footnote-next
+
+  cm-footnote-next:
+    - match: '^(?![ \t])(?!{{cm_marker}})(?=\S)'
+      pop: 2
+    - match: '^'
+      fail: cm-footnote
+
+  cm-footnote-text:
+    - match: '^\s*(\[\^)([^\]]+)(\]:)[ \t]+\+[ \t]*$'
+      scope: meta.footnote.definition.carve
+      captures:
+        1: punctuation.definition.footnote.carve
+        2: constant.other.footnote.carve
+        3: punctuation.definition.footnote.carve
+      pop: 2
+
+  # A `+` at column 0 right below a footnote line attaches the next block.
+  footnote-next-line:
+    - match: '^(?=\+[ \t]*$)'
+      set: cm-any
+    - match: '^'
+      pop: true
 
   # ----- Reference + abbreviation definitions -----
   definitions:
@@ -2822,6 +3190,8 @@ contexts:
     # accepts the leading `^`, so `[^fn]: text` matched it and every footnote
     # definition in a document was coloured as a link reference whose body was a
     # URL. The body is inline content, not a destination.
+    - match: '^(?=\s*\[\^[^\]]+\]:[ \t]+\+[ \t]*$)'
+      push: cm-footnote
     - match: '^\s*(\[\^)([^\]]+)(\]:)(?=[ \t])'
       captures:
         1: punctuation.definition.footnote.carve
@@ -2830,7 +3200,10 @@ contexts:
       push:
         - meta_scope: meta.footnote.definition.carve
         - match: '$'
-          pop: true
+          set: footnote-next-line
+        - match: '(?<=\]:)([ \t]+)(\+)(?=[ \t]*$)'
+          captures:
+            2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
         # The two comment contexts ahead of `inline`, the way `block-quotes`
         # does it: the shared context carries neither, so `{% ... %}` would be
         # read as an attribute block and a trailing `%%` would stay prose.

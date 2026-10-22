@@ -317,6 +317,7 @@ An escaped \* star.
 # <- punctuation.definition.list.begin.carve
 #^ punctuation.definition.list.begin.carve
 
+:: Term one
 :  A definition.
 # <- punctuation.definition.list.begin.carve
 
@@ -1162,14 +1163,255 @@ a <https://x.test/*not*> autolink
 #                 ^^^^^ -markup.bold.carve
 #                 ^^^^^ markup.underline.link.carve
 
-# THE TWO `+` CONTINUATIONS. A lone `+` is the container marker; a `+` line
-# ending in a pipe is a table continuation row. The table rule used to match any
-# `+` line, and `tables` is included before `lists`, so it swallowed the list
-# form too (#36).
+# THE TWO `+` CONTINUATIONS. A `+` line ending in a pipe is a table
+# continuation row; a lone `+` is not (#36). A SEPARATE-LINE lone `+` is a
+# marker at an open container's marker column when the next line starts a
+# block there (CARVE-P9-031). The assertion line below a `+` IS its next line,
+# so a `#` heading follows each case here; the files syntax_test_plus_*.crv
+# use an indented, a list and a quoted comment token for the other followers.
 - item
 +
-# <- markup.list.continuation.carve
+# <- markup.list.continuation.carve punctuation.definition.list.continuation.carve
 attached block
+
+- a
+  - b
++
+# <- markup.list.continuation.carve
+para
+
+1. a
++
+# <- markup.list.continuation.carve
+b
+
+- a
+
++
+# <- markup.list.continuation.carve
+b
+
+- a
+lazy
++
+# <- markup.list.continuation.carve
+b
+
+:: t
+: a
++
+# <- markup.list.continuation.carve
+- b
+
+[^a]: x
++
+# <- markup.list.continuation.carve
+- b
+
+> quoted
++
+# <- markup.list.continuation.carve
+> attached
+
+# At a column that no open item's marker sits at, the `+` is text.
+- a
+  +
+# ^ -markup.list.continuation.carve
+  b
+
+- a
+    +
+#   ^ -markup.list.continuation.carve
+    b
+
+- a
+	+
+#^ -markup.list.continuation.carve
+
+para
++
+# <- -markup.list.continuation.carve
+x
+
+para
+
++
+# <- -markup.list.continuation.carve
+b
+
+text
+- a
++
+# <- -markup.list.continuation.carve
+b
+
+- a
++
+- b
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+
+# A lone `+` behind the quote prefix is a marker on the line that opens the
+# quote, and text on a later line of the same quote unless a quoted item sits
+# right above it. Each `>` takes its space: `>+`, `>>+`, `> >+` and `>> +` are
+# no quote lines at all, so they are plain text.
+> +
+# <- markup.quote.carve punctuation.definition.quote.carve
+# ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+flush
+
+> > +
+#   ^ markup.list.continuation.carve
+> b
+
+>+
+# <- -markup.quote.carve -punctuation.definition.quote.carve
+#^ -markup.list.continuation.carve
+q
+
+>>+
+# ^ -markup.list.continuation.carve -markup.quote.carve
+q
+
+> >+
+#  ^ -markup.list.continuation.carve
+
+>> +
+#  ^ -markup.list.continuation.carve -markup.quote.carve
+q
+
+> q
+> +
+# ^ -markup.list.continuation.carve
+# <- markup.quote.carve punctuation.definition.quote.carve
+
+>  +
+#  ^ -markup.list.continuation.carve
+
+# A refused first-line `> +` leaves nothing open behind its quote.
+> +
+> q
+>x
+
+- item
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+
+# A COLON LINE in a quote describes only a quoted term right above it. A lazy
+# colon line below a quote is the quote's text (markup-carve/carve#3493).
+> :: t
+> : d
+# ^ markup.quote.carve punctuation.definition.list.begin.carve
+
+> :  d
+# ^ -punctuation.definition.list.begin.carve
+
+> :  d
+   :  b
+#  ^ -punctuation.definition.list.begin.carve
+#  ^ markup.quote.carve
+
+> a
+: b
+# <- -punctuation.definition.list.begin.carve
+
+: lone
+# <- -punctuation.definition.list.begin.carve
+
+: +
+# ^ -markup.list.continuation.carve
+flush
+
+:: t
+
+: d
+# <- markup.list.definition.carve punctuation.definition.list.begin.carve
+
+# FIRST-BLOCK MARKERS: the opener is on the same line, so the `+` is a marker
+# whatever follows, and stacked openers of any kind count.
+- +
+# ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+- b
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#^ markup.list.unnumbered.carve
+#  ^ -markup.list.continuation.carve
+- - +
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+# ^ markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#   ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+- > +
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+# ^ punctuation.definition.quote.carve
+#   ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+> q
+
+1. - +
+# <- markup.list.numbered.carve punctuation.definition.list.begin.carve
+#  ^ markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#    ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+para
+
+- - [ ] +
+# ^ punctuation.definition.list.begin.carve
+#   ^^^ constant.language.task-list.carve
+#       ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+- a
+  - > +
+#   ^ punctuation.definition.quote.carve
+#     ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
+  b
+
+> - +
+# <- markup.quote.carve punctuation.definition.quote.carve
+# ^ markup.quote.carve punctuation.definition.list.begin.carve
+#   ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+- - b
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#   ^ -markup.list.continuation.carve
+- + text
+# ^^^^^^ -markup.list.continuation.carve
+
+- [ ] +
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#  ^^^ constant.language.task-list.carve
+#     ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+- [x] +
+#     ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+- b
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+#  ^ -markup.list.continuation.carve
+- [ ] + text
+#     ^^^^^^ -markup.list.continuation.carve
+1. +
+#  ^ markup.list.numbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+2. b
+# <- markup.list.numbered.carve
+#  ^ -markup.list.continuation.carve
+1. + text
+#  ^^^^^^ -markup.list.continuation.carve
+1. [ ] +
+#      ^ -markup.list.continuation.carve
+
+:: term
+: +
+# ^ markup.list.definition.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+
+:: term
+: +
+: b
+# <- markup.list.definition.carve
+#  ^ -markup.list.continuation.carve
+
+[^a]: +
+#     ^ meta.footnote.definition.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
+[^b]: + text
+#     ^^^^^^ -markup.list.continuation.carve
+
+```
++
+# <- -markup.list.continuation.carve
+```
 
 | a | b |
 | x | y |

@@ -1,7 +1,9 @@
 # Carve for Sublime Text
 
 Syntax highlighting for the [Carve](https://github.com/markup-carve/carve)
-markup language in Sublime Text 3 and 4.
+markup language in Sublime Text 4, build 4050 or later. Sublime Text 3 is not
+supported: the syntax reads the line after a lone `+` with `branch_point`,
+which arrived in build 4050.
 
 Files with a `.crv` extension are highlighted automatically.
 

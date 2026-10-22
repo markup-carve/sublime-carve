@@ -4,3 +4,4 @@
 .gitattributes export-ignore
 syntax_test_carve.crv export-ignore
 .gitignore export-ignore
+syntax_test_plus_*.crv export-ignore

@@ -1,0 +1,16 @@
+Carve 0.1.11
+============
+
+Breaking
+  - Sublime Text 4, build 4050 or later, is required. Sublime Text 3
+    cannot load this syntax any more: a lone + is now highlighted as a
+    continuation marker only when the line below it attaches, and
+    reading that line needs a feature Sublime Text 3 lacks.
+    On Sublime Text 3, keep Carve 0.1.10.
+
+Fixes
+  - A lone + is a marker at an open item's, description's, footnote's or
+    quote's column when a block follows there, and text before a blank
+    line, a sibling item, or at the item's content column.
+  - >+, >>+, > >+ and >> + are plain text, not quote lines.
+  - A colon line with no term above it is text, in a quote or out of it.
