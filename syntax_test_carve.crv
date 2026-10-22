@@ -1287,6 +1287,14 @@ q
 >  +
 #  ^ -markup.list.continuation.carve
 
+# A refused first-line `> +` leaves nothing open behind its quote.
+> +
+> q
+>x
+
+- item
+# <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
+
 # A COLON LINE in a quote describes only a quoted term right above it. A lazy
 # colon line below a quote is the quote's text (markup-carve/carve#3493).
 > :: t

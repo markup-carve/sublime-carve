@@ -2965,7 +2965,7 @@ contexts:
 
   # At an item's column: a block at that column next, not a sibling item.
   cm-item:
-    - match: '^([ \t]*)(?=\+)'
+    - match: '^([ \t]*)(?=\+[ \t]*$)'
       branch_point: cm-item
       branch: [cm-item-marker, cm-text]
     - match: '^'
@@ -2981,7 +2981,7 @@ contexts:
 
   # At a description's, footnote's or quote's column: any block there next.
   cm-any:
-    - match: '^([ \t]*)(?=\+)'
+    - match: '^([ \t]*)(?=\+[ \t]*$)'
       branch_point: cm-any
       branch: [cm-any-marker, cm-text]
     - match: '^'
@@ -3001,7 +3001,7 @@ contexts:
 
   # `> +` below a quoted item: a quoted block at the item's column next.
   cm-quoted-item:
-    - match: '^(?=[ \t]*>)'
+    - match: '^(?=[ \t]*> \+[ \t]*$)'
       branch_point: cm-quoted-item
       branch: [cm-quoted-item-marker, cm-quoted-text]
     - match: '^'
@@ -3028,7 +3028,7 @@ contexts:
   # The first line of a quote K deep: flush text next that is not a list,
   # quoted less deep than K (three or more count as three).
   cm-quote-1:
-    - match: '^(?=[ \t]*>)'
+    - match: '^(?=[ \t]*(?:> )+\+[ \t]*$)'
       branch_point: cm-quote-1
       branch: [cm-quote-1-marker, cm-quote-text]
     - match: '^'
@@ -3046,7 +3046,7 @@ contexts:
       fail: cm-quote-1
 
   cm-quote-2:
-    - match: '^(?=[ \t]*>)'
+    - match: '^(?=[ \t]*(?:> )+\+[ \t]*$)'
       branch_point: cm-quote-2
       branch: [cm-quote-2-marker, cm-quote-text]
     - match: '^'
@@ -3064,7 +3064,7 @@ contexts:
       fail: cm-quote-2
 
   cm-quote-3:
-    - match: '^(?=[ \t]*>)'
+    - match: '^(?=[ \t]*(?:> )+\+[ \t]*$)'
       branch_point: cm-quote-3
       branch: [cm-quote-3-marker, cm-quote-text]
     - match: '^'
@@ -3114,7 +3114,7 @@ contexts:
     - match: '\+[ \t]*$'
       pop: 2
 
-  # `: +` below a term: anything but a column-0 list next.
+  # `: +` below a term: anything but a blank line or a column-0 list next.
   cm-description:
     - match: '^(?=[ \t]*:)'
       branch_point: cm-description
@@ -3131,7 +3131,7 @@ contexts:
       set: cm-description-next
 
   cm-description-next:
-    - match: '^(?={{cm_marker}})'
+    - match: '^(?={{cm_marker}}|[ \t]*$)'
       fail: cm-description
     - match: '^'
       pop: 2
