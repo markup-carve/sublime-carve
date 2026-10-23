@@ -109,7 +109,8 @@ or `cargo install carve-lang`). Configure in
 ```json
 {
     "carve_binary": "carve",
-    "carve_format_on_save": false
+    "carve_format_on_save": false,
+    "carve_lint_include_root": "project"
 }
 ```
 
@@ -125,6 +126,24 @@ newer than 0.1.7.
 
 With a `.crv` file open, **Tools > Build** (`ctrl+b`) runs `carve lint` and the
 reported problems are clickable, because carve prints `file:line:column`.
+This lint build runs the `carve_binary` setting; the other variants run `carve`
+from PATH.
+
+Lint follows `{{ path }}` includes within an include root. A problem inside an
+included file names that file, so it is clickable too, and ends with the chain
+that included it, such as `(included from main.crv:5:1)`. The
+`carve_lint_include_root` setting picks the root:
+
+| Value | Include root |
+|---|---|
+| `"project"` (default) | The deepest project folder that contains the file, or the file's own directory when no project folder does |
+| `"file_dir"` | The file's own directory |
+| `false` | None: includes are not followed |
+| `"/abs/path"` | That directory |
+
+Following includes needs carve-js 0.1.13 or carve-rs 0.1.11 or later. With an
+older `carve`, the build lints without them and prints a one-line notice.
+
 **Tools > Build With...** offers the other variants: lint the whole project,
 `carve fmt --check`, `carve fmt -w`, render HTML to stdout or to a file, and an
 ANSI terminal preview.

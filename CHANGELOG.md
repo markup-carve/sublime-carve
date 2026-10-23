@@ -9,6 +9,19 @@ Releases before 0.1.8 are described on the
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-10-23
+
+### Improvements
+
+- The Lint build follows `{{ path }}` includes: it passes `--include-root`
+  (the deepest project folder holding the file, else the file's directory),
+  and findings in included files are clickable and show their include chain.
+  The new `carve_lint_include_root` setting picks the root or turns this off.
+  Needs carve-js 0.1.13 or carve-rs 0.1.11; an older `carve` lints as before
+  with a one-line notice.
+- The Lint build runs the CLI set in `carve_binary`, like the format and
+  import commands.
+
 ## [0.1.11] - 2026-10-23
 
 ### Breaking

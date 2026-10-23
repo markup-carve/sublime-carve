@@ -63,6 +63,30 @@ jobs:
       - name: The vendored fence-language table still matches carve-grammars
         run: ./tools/check-fence-languages-drift.sh
 
+  lint_build:
+    name: Lint build include root
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # One CLI with `lint --include-root` and one from before it, so both the
+      # include chain and the fallback run against a real carve.
+      - name: Install a current and an older carve CLI
+        run: |
+          npm install --prefix "$RUNNER_TEMP/carve-new" @markup-carve/carve@0.1.13
+          npm install --prefix "$RUNNER_TEMP/carve-old" @markup-carve/carve@0.1.12
+      - name: Run the lint build tests
+        env:
+          CARVE_LINT_NEW: ${{ runner.temp }}/carve-new/node_modules/.bin/carve
+          CARVE_LINT_OLD: ${{ runner.temp }}/carve-old/node_modules/.bin/carve
+        run: python3 -B tests/test_lint_include_root.py -v
+
   validate:
     name: Validate Sublime syntax YAML
     runs-on: ubuntu-latest
