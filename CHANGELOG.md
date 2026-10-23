@@ -32,7 +32,7 @@ Releases before 0.1.8 are described on the
   quote (#84).
 - A first-block `+` after a quoted chain such as `> - > +` is text when a list
   or a blank line follows, and a `+` at column 0 below an item's indented
-  quote is read at the item's column, so a list next leaves it text (PR_NUM).
+  quote is read at the item's column, so a list next leaves it text (#85).
 - The **Lint Project** build works on Windows (#79, #81).
 
 ### Added
