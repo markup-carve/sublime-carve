@@ -21,6 +21,8 @@ Releases before 0.1.8 are described on the
   with a one-line notice (#87).
 - The Lint build runs the CLI set in `carve_binary`, like the format and
   import commands (#87).
+- The Lint Project build follows includes too, with the folder being linted
+  as the include root, and also runs `carve_binary`.
 
 ## [0.1.11] - 2026-10-23
 
