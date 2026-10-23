@@ -2,6 +2,7 @@
 
 > - > +
 -     ^ -markup.list.continuation.carve
+-     ^ markup.quote.carve
 
 1. ordered
   > > quote
