@@ -14,15 +14,11 @@
 
 	"variants": [
 		{
+			// Every .crv under the project folder, with the same include root
+			// rules as the default build (see "carve_lint_include_root").
 			"name": "Lint Project",
-			"target": "exec",
-			"shell_cmd": "carve lint $(find . -name '*.crv' -print)",
-			"working_dir": "$folder",
-			// cmd.exe has no $(...) and its find searches text. Lint each file
-			// and exit 1 if any of them failed, not only the last one.
-			"windows": {
-				"shell_cmd": "cmd /v:on /c \"set e=0& (for /r . %f in (*.crv) do @carve lint \"%f\" || set e=1)& exit !e!\""
-			}
+			"project": true,
+			"working_dir": "$folder"
 		},
 		{
 			"name": "Format (check only)",

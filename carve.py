@@ -392,15 +392,47 @@ def lint_command(command, file_path, root, supported):
     return shell_join(command + ["lint", file_path]), os.path.dirname(file_path)
 
 
+def project_root(value, folder):
+    """The include root for a project-wide lint of `folder`, plus a notice.
+
+    One run covers every file, so "project" and "file_dir" both mean the
+    folder being linted.
+    """
+    if value is False or value is None:
+        return None, None
+    if value is True or value in ("project", "file_dir"):
+        return folder, None
+    return resolve_include_root(value, os.path.join(folder, "_"), [folder])
+
+
+def project_lint_command(command, folder, root, supported, windows=os.name == "nt"):
+    """Lint every .crv under `folder`, from `folder`; exit 1 if any file fails."""
+    argv = command + ["lint"]
+    if root is not None and supported:
+        argv += ["--include-root", root]
+    if windows:
+        # cmd.exe has no $(...) and its find searches text, so loop per file.
+        return (
+            'cmd /v:on /c "set e=0& (for /r . %%f in (*.crv) do @%s \"%%f\" || set e=1)& exit !e!"'
+            % shell_join(argv, windows=True),
+            folder,
+        )
+    # The shell outlives find so Sublime sees the exit code once output ends.
+    return "find . -name '*.crv' -exec %s {} +; exit $?" % shell_join(argv, windows=False), folder
+
+
 class CarveLintCommand(ExecCommand):
-    """The Lint build: `carve lint`, following includes within a root."""
+    """The Lint builds: `carve lint`, following includes within a root.
+
+    With `project`, every .crv under the build's working_dir ($folder).
+    """
 
     # Build options passed on to exec; shell_cmd, cmd and working_dir are ours.
     FORWARDED = ("env", "path", "encoding", "quiet", "word_wrap", "syntax")
 
     pending = 0
 
-    def run(self, kill=False, file_regex=LINT_FILE_REGEX, **kwargs):
+    def run(self, kill=False, file_regex=LINT_FILE_REGEX, project=False, working_dir="", **kwargs):
         # A cancel, or a newer build, drops a launch still waiting on its probe.
         self.pending += 1
         if kill:
@@ -408,20 +440,41 @@ class CarveLintCommand(ExecCommand):
 
         view = self.window.active_view()
         file_path = view.file_name() if view else None
-        if not file_path:
+        if project:
+            # $folder is empty, or left unexpanded, when no folder is open.
+            if working_dir.startswith("$"):
+                working_dir = ""
+            folder = working_dir or (os.path.dirname(file_path) if file_path else "")
+            if not folder:
+                sublime.status_message("Carve: open a folder to lint the project")
+                return
+        elif not file_path:
             sublime.status_message("Carve: save the file before linting it")
             return
 
         command = carve_command(carve_binary(view))
         value = setting(view, "carve_lint_include_root", "project")
-        root, notice = resolve_include_root(value, file_path, self.window.folders())
+        if project:
+            root, notice = project_root(value, folder)
+
+            def build(supported):
+                return project_lint_command(command, folder, root, supported)
+        else:
+            root, notice = resolve_include_root(value, file_path, self.window.folders())
+
+            def build(supported):
+                return lint_command(command, file_path, root, supported)
+
         options = {key: kwargs[key] for key in self.FORWARDED if key in kwargs}
         options["file_regex"] = file_regex
         if root is None:
-            self.launch(self.pending, command, file_path, None, False, notice, options)
+            self.launch(self.pending, build, None, False, notice, options)
             return
 
-        env = build_env(kwargs.get("env"), kwargs.get("path", ""), view.settings().get("build_env"))
+        settings = view.settings() if view else None
+        env = build_env(
+            kwargs.get("env"), kwargs.get("path", ""), settings.get("build_env") if settings else None
+        )
 
         # The first probe of a CLI starts a process, so keep it off the UI thread.
         ticket = self.pending
@@ -429,17 +482,17 @@ class CarveLintCommand(ExecCommand):
         def probe():
             supported = supports_include_root(command, root, env)
             sublime.set_timeout(
-                lambda: self.launch(ticket, command, file_path, root, supported, notice, options), 0
+                lambda: self.launch(ticket, build, root, supported, notice, options), 0
             )
 
         sublime.set_timeout_async(probe, 0)
 
-    def launch(self, ticket, command, file_path, root, supported, notice, options):
+    def launch(self, ticket, build, root, supported, notice, options):
         if ticket != self.pending:
             return
         if root is not None and supported is False:
             notice = (notice or "") + INCLUDE_ROOT_NOTICE
-        shell_cmd, working_dir = lint_command(command, file_path, root, supported)
+        shell_cmd, working_dir = build(supported)
         super().run(shell_cmd=shell_cmd, working_dir=working_dir, **options)
         if notice and self.output_view is not None:
             self.output_view.run_command("append", {"characters": notice, "force": True})

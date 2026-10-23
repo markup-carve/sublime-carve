@@ -11,3 +11,5 @@ Improvements
   - Following includes needs carve-js 0.1.13 or carve-rs 0.1.11. With
     an older carve the build lints as before and prints a notice.
   - The Lint build runs the CLI set in carve_binary.
+  - The Lint Project build follows includes too, with the project
+    folder as the include root, and also runs carve_binary.

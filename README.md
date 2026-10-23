@@ -126,7 +126,7 @@ newer than 0.1.7.
 
 With a `.crv` file open, **Tools > Build** (`ctrl+b`) runs `carve lint` and the
 reported problems are clickable, because carve prints `file:line:column`.
-This lint build runs the `carve_binary` setting; the other variants run `carve`
+The lint builds run the `carve_binary` setting; the other variants run `carve`
 from PATH.
 
 Lint follows `{{ path }}` includes within an include root. A problem inside an
@@ -140,6 +140,10 @@ that included it, such as `(included from main.crv:5:1)`. The
 | `"file_dir"` | The file's own directory |
 | `false` | None: includes are not followed |
 | `"/abs/path"` | That directory |
+
+**Lint Project** (in **Tools > Build With...**) lints every `.crv` file under
+the project folder with the same setting. One run covers the whole folder, so
+there `"project"` and `"file_dir"` both mean the folder being linted.
 
 Following includes needs carve-js 0.1.13 or carve-rs 0.1.11 or later. With an
 older `carve`, the build lints without them and prints a one-line notice.

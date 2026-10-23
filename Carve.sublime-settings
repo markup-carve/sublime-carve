@@ -8,14 +8,16 @@
 	// Off by default: formatting on save should be an explicit choice.
 	"carve_format_on_save": false,
 
-	// The include root the Lint build passes to `carve lint --include-root`,
-	// so lint follows {{ path }} includes inside it and reports findings in
-	// the included files with their include chain.
+	// The include root the Lint and Lint Project builds pass to
+	// `carve lint --include-root`, so lint follows {{ path }} includes inside
+	// it and reports findings in the included files with their include chain.
 	//   "project"   the deepest project folder that holds the file, else the
 	//               file's own directory
 	//   "file_dir"  the file's own directory
 	//   false       no include root: includes are not followed
 	//   "/abs/dir"  an explicit absolute directory
+	// Lint Project lints one folder in a single run, so there "project" and
+	// "file_dir" both mean the folder being linted.
 	// A carve CLI older than carve-js 0.1.13 or carve-rs 0.1.11 has no
 	// `lint --include-root`; the build then lints without it and says so.
 	"carve_lint_include_root": "project"
