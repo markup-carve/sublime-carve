@@ -28,6 +28,8 @@ Releases before 0.1.8 are described on the
 - A quoted item's `+` is scoped after blank quote lines and two or three
   quotes deep (#80).
 - A quote's first-line `+` followed by an indented quote line stays text (#83).
+- An indented `> +` outside a list item is text, since that line opens no
+  quote (#84).
 - The **Lint Project** build works on Windows (#79, #81).
 
 ### Added

@@ -53,3 +53,25 @@ x ^ markup.list.continuation.carve
 
 > +
   x <- -markup.list.continuation.carve
+
+x An indented `>` line outside a list item opens no quote, so its `+` is text
+x whatever follows (spec row 630-10). Under a list item it stays a marker.
+
+  > +
+x   ^ -markup.list.continuation.carve
+
+ > > +
+x    ^ -markup.list.continuation.carve
+
+::: note
+  > +
+x   ^ -markup.list.continuation.carve
+:::
+
+[^a]: a
+  > +
+x   ^ -markup.list.continuation.carve
+
+- a
+  > +
+x   ^ markup.list.continuation.carve
