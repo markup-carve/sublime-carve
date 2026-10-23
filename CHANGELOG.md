@@ -18,9 +18,9 @@ Releases before 0.1.8 are described on the
   and findings in included files are clickable and show their include chain.
   The new `carve_lint_include_root` setting picks the root or turns this off.
   Needs carve-js 0.1.13 or carve-rs 0.1.11; an older `carve` lints as before
-  with a one-line notice.
+  with a one-line notice (#87).
 - The Lint build runs the CLI set in `carve_binary`, like the format and
-  import commands.
+  import commands (#87).
 
 ## [0.1.11] - 2026-10-23
 
