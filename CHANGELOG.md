@@ -35,7 +35,7 @@ Releases before 0.1.8 are described on the
   quote is read at the item's column, so a list next leaves it text (#85).
 - A top-level indented `>` line is paragraph text, and so is a `+` below it.
   Under a footnote, an indented `> +` is a marker when a block follows at the
-  quote's column (PR_NUM).
+  quote's column (#86).
 - The **Lint Project** build works on Windows (#79, #81).
 
 ### Added
