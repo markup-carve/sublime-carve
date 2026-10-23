@@ -82,6 +82,11 @@ contexts:
     - include: inline
 
   document:
+    # An indented `>` line outside a list item opens no quote, so its lone `+`
+    # is paragraph text (spec row 630-10). Under a footnote the engines take it
+    # as a marker only with an indented follower, which `cm-quote` refuses.
+    - match: '^(?=[ \t]+(?:> )+\+[ \t]*$)'
+      push: paragraph
     # A `:` line with no term open above it is paragraph text; below a term
     # `list-item` is already open and reads it as a description.
     - match: '^(?=[ \t]*: +\S)'
