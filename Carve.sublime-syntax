@@ -2709,7 +2709,8 @@ contexts:
     # A LONE `+` AFTER THE QUOTE PREFIX is the first-block marker only on the
     # line that opens the quote, with a space after each `>` (`>+`, `>>+` and
     # `>> +` are no quote lines, markup-carve/carve#3421).
-    # It needs flush text below it, quoted less deep (`cm-quote`). On a later
+    # It needs flush text below it, quoted less deep with its markers at column
+    # 0 (`cm-quote`): an indented follower is refused (markup-carve/carve#3529). On a later
     # quote line it is text unless a quoted item as deep sits above it, with
     # only blank quote lines that deep between (`quote-item-below-K`).
     - match: '^(?=[ \t]*(?:> ){3,}\+[ \t]*$)'
@@ -3145,7 +3146,7 @@ contexts:
       captures:
         1: punctuation.definition.quote.carve
         2: punctuation.definition.list.continuation.carve
-    - match: '^(?!(?:[ \t]*>(?: |$)){1})(?=(?:[ \t]*>(?: |$))*(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
+    - match: '^(?!(?:>(?: |$)){1})(?=(?:>(?: |$))*(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
       pop: 2
     - match: '^'
       fail: cm-quote-1
@@ -3163,7 +3164,7 @@ contexts:
       captures:
         1: punctuation.definition.quote.carve
         2: punctuation.definition.list.continuation.carve
-    - match: '^(?!(?:[ \t]*>(?: |$)){2})(?=(?:[ \t]*>(?: |$))*(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
+    - match: '^(?!(?:>(?: |$)){2})(?=(?:>(?: |$))*(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
       pop: 2
     - match: '^'
       fail: cm-quote-2
@@ -3181,7 +3182,7 @@ contexts:
       captures:
         1: punctuation.definition.quote.carve
         2: punctuation.definition.list.continuation.carve
-    - match: '^(?!(?:[ \t]*>(?: |$)){3})(?=(?:[ \t]*>(?: |$))*(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
+    - match: '^(?!(?:>(?: |$)){3})(?=(?:>(?: |$))*(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
       pop: 2
     - match: '^'
       fail: cm-quote-3
