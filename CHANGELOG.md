@@ -9,6 +9,31 @@ Releases before 0.1.8 are described on the
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-10-23
+
+### Breaking
+
+- Sublime Text 4, build 4050 or later, is required. The continuation-marker
+  rule reads the line below a lone `+`, which needs `branch_point`/`fail`
+  from build 4050. On Sublime Text 3, keep Carve 0.1.10 (#77).
+
+### Fixed
+
+- A lone `+` is a continuation marker only when the next line attaches at the
+  open item's, description's, footnote's or quote's column. Before a blank
+  line, a sibling item or at the item's content column it is text (#77).
+- Glued quote prefixes `>+`, `>>+`, `> >+` and `>> +` are text, not quote
+  lines or markers; `> +` and `> > +` stay markers (#77, #78).
+- A colon line with no term above it is text, in a quote or out of it (#77).
+- A quoted item's `+` is scoped after blank quote lines and two or three
+  quotes deep (#80).
+- The **Lint Project** build works on Windows (#79, #81).
+
+### Added
+
+- `csv` and `tsv` fence bodies are highlighted: separators, quoted and
+  unquoted fields, doubled quotes and the header row (#75, #76).
+
 ## [0.1.10] - 2026-10-15
 
 ### Fixed

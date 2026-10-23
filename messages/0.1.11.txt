@@ -14,3 +14,8 @@ Fixes
     line, a sibling item, or at the item's content column.
   - >+, >>+, > >+ and >> + are plain text, not quote lines.
   - A colon line with no term above it is text, in a quote or out of it.
+  - The Lint Project build works on Windows.
+
+Improvements
+  - csv and tsv fence bodies are highlighted: separators, quoted
+    and unquoted fields, and the header row.
