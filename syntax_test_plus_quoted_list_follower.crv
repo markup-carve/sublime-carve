@@ -1,0 +1,7 @@
+> - SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+> - > +
+> -   ^ -markup.list.continuation.carve
+
+> > - > +
+> -     ^ -markup.list.continuation.carve

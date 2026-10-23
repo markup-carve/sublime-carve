@@ -75,3 +75,15 @@ x   ^ -markup.list.continuation.carve
 - a
   > +
 x   ^ markup.list.continuation.carve
+
+x A chain ending in a quote marker inside a quote takes a non-list block at
+x column 0 (spec row 655), and a `+` at column 0 below an item's indented
+x quote is at the item's column (spec row 635).
+
+> - > +
+x     ^ markup.list.continuation.carve
+
+1. a
+  > > q
++
+x <- markup.list.continuation.carve

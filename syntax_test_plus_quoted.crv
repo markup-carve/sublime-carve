@@ -123,3 +123,6 @@ indented `  > x` (lazy text in the `+` paragraph) leaves the `+` as text.
 > >
 > > +
     > <- -markup.list.continuation.carve
+
+> - > +
+>     ^ markup.list.continuation.carve
