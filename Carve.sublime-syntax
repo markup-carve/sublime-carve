@@ -82,11 +82,13 @@ contexts:
     - include: inline
 
   document:
-    # An indented `>` line outside a list item opens no quote, so its lone `+`
-    # is paragraph text (spec row 630-10). Under a footnote the engines take it
-    # as a marker only with an indented follower, which `cm-quote` refuses.
-    - match: '^(?=[ \t]+(?:> )+\+[ \t]*$)'
+    # An indented `>` line outside a list item or footnote opens no quote: it
+    # is paragraph text, and so is a `+` below it (spec row 630-10).
+    - match: '^(?=[ \t]+>(?: |$))'
       push: paragraph
+    - include: document-blocks
+
+  document-blocks:
     # A `:` line with no term open above it is paragraph text; below a term
     # `list-item` is already open and reads it as a description.
     - match: '^(?=[ \t]*: +\S)'
@@ -3322,9 +3324,38 @@ contexts:
   # A `+` at column 0 right below a footnote line attaches the next block.
   footnote-next-line:
     - match: '^(?=\+[ \t]*$)'
-      set: cm-any
+      set: [footnote-body, cm-any]
     - match: '^'
+      set: footnote-body
+
+  # A footnote's indented lines, where an indented quote is a quote.
+  footnote-body:
+    - match: '^(?=[^ \t\n])'
       pop: true
+    - match: '^([ \t]+)(?=> \+[ \t]*$)'
+      branch_point: fn-quote
+      branch: [fn-quote-marker, fn-quote-text]
+    - include: document-blocks
+
+  # `  > +` in a footnote: a block at the quote's own column next, not a list
+  # or a quote line.
+  fn-quote-marker:
+    - match: '(>) (\+)[ \t]*$'
+      scope: markup.quote.carve markup.list.continuation.carve
+      captures:
+        1: punctuation.definition.quote.carve
+        2: punctuation.definition.list.continuation.carve
+    - match: '^(?=\1(?![ \t])(?!>(?: |$))(?!{{cm_marker}})\S)'
+      pop: 1
+    - match: '^'
+      fail: fn-quote
+
+  fn-quote-text:
+    - match: '(>) \+[ \t]*$'
+      scope: markup.quote.carve
+      captures:
+        1: punctuation.definition.quote.carve
+      pop: 1
 
   # ----- Reference + abbreviation definitions -----
   definitions:
@@ -3334,7 +3365,7 @@ contexts:
     # definition in a document was coloured as a link reference whose body was a
     # URL. The body is inline content, not a destination.
     - match: '^(?=\s*\[\^[^\]]+\]:[ \t]+\+[ \t]*$)'
-      push: cm-footnote
+      push: [footnote-body, cm-footnote]
     - match: '^\s*(\[\^)([^\]]+)(\]:)(?=[ \t])'
       captures:
         1: punctuation.definition.footnote.carve
