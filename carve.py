@@ -11,12 +11,18 @@ cannot do:
 All commands are opt-in; nothing here runs on its own.
 """
 
+import json
 import os
 import re
+import shlex
+import shutil
+import signal
 import subprocess
+import sys
 
 import sublime
 import sublime_plugin
+from Default.exec import ExecCommand
 
 SETTINGS_FILE = "Carve.sublime-settings"
 
@@ -257,6 +263,202 @@ class CarveImportCommand(sublime_plugin.WindowCommand):
 
     def is_visible(self, paths=None):
         return self.is_enabled(paths)
+
+
+# Lint reports `file:line:col rule - message`. A finding in an included file
+# names that file relative to the include root and ends with its include chain.
+LINT_FILE_REGEX = r"^(.+?):([0-9]+):([0-9]+) (.*)$"
+INCLUDE_ROOT_NOTICE = (
+    "Carve: this carve CLI has no `lint --include-root`, so includes are not "
+    "followed (carve-js 0.1.13 or carve-rs 0.1.11 and later have it).\n"
+)
+
+_include_root_support = {}
+
+
+def _inside(path, folder):
+    # No os.path.commonpath: plugins without .python-version run on Python 3.3.
+    path = os.path.normcase(os.path.normpath(path))
+    folder = os.path.normcase(os.path.normpath(folder)).rstrip(os.sep)
+    return path.startswith(folder + os.sep)
+
+
+def resolve_include_root(value, file_path, folders):
+    """The `--include-root` for a lint run, or None to pass no flag.
+
+    Returns (root, notice); notice is a line for the build panel or None.
+    """
+    file_dir = os.path.dirname(file_path)
+    if value is False or value is None:
+        return None, None
+    if value == "file_dir":
+        return file_dir, None
+    if value is True or value == "project":
+        containing = [f for f in folders if _inside(file_path, f)]
+        return (max(containing, key=len) if containing else file_dir), None
+    if isinstance(value, str):
+        root = os.path.expanduser(value)
+        if os.path.isabs(root) and os.path.isdir(root):
+            return root, None
+    notice = (
+        "Carve: carve_lint_include_root %s is not \"project\", \"file_dir\", "
+        "false or an existing absolute directory; using \"project\".\n"
+        % json.dumps(value)
+    )
+    return resolve_include_root("project", file_path, folders)[0], notice
+
+
+def shell_join(argv, windows=os.name == "nt"):
+    if not windows:
+        return " ".join(shlex.quote(arg) for arg in argv)
+    # cmd.exe splits on an unquoted & or |, so quote every argument. A path
+    # cannot hold `"`; a trailing backslash would escape the closing quote.
+    return " ".join('"%s"' % (arg + "." if arg.endswith("\\") else arg) for arg in argv)
+
+
+def shell_argv(shell_cmd):
+    """Run a command line the way Sublime's exec runs a build's shell_cmd.
+
+    On macOS that is a login shell, so the PATH a GUI-launched Sublime lacks
+    (npm or cargo globals) is the same for the probe as for the build.
+    """
+    if sys.platform == "darwin":
+        return ["/usr/bin/env", "bash", "-l", "-c", shell_cmd], False
+    if os.name == "nt":
+        return shell_cmd, True
+    return ["/usr/bin/env", "bash", "-c", shell_cmd], False
+
+
+def build_env(env=None, path="", view_env=None):
+    """The environment Sublime's exec gives a build, so the probe sees it too."""
+    merged = os.environ.copy()
+    if path:
+        merged["PATH"] = os.path.expandvars(path)
+    merged.update(env or {})
+    merged.update(view_env or {})
+    return {key: os.path.expandvars(value) for key, value in merged.items()}
+
+
+def supports_include_root(command, root, env=None):
+    """Whether `carve lint` accepts `--include-root`.
+
+    Probed by running it on empty input: carve-js lists `--include-root` under
+    render in its help before lint took it, so the help text cannot tell.
+    """
+    env = env if env is not None else os.environ.copy()
+    exe = shutil.which(command[0], path=env.get("PATH"))
+    try:
+        stamp = os.path.getmtime(exe) if exe else None
+    except OSError:
+        stamp = None
+    key = (tuple(command), stamp, env.get("PATH"))
+    if key not in _include_root_support:
+        argv, shell = shell_argv(shell_join(command + ["lint", "--include-root", root]))
+        try:
+            proc = subprocess.Popen(
+                argv,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=shell,
+                env=env,
+                startupinfo=_startupinfo(),
+                start_new_session=os.name != "nt",
+            )
+        except OSError:
+            return None
+        try:
+            proc.communicate(b"", timeout=15)
+        except subprocess.TimeoutExpired:
+            _kill_tree(proc)
+            try:
+                proc.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
+            return None
+        supported = proc.returncode == 0
+        _include_root_support[key] = supported
+    return _include_root_support[key]
+
+
+def lint_command(command, file_path, root, supported):
+    """The lint shell command and its working directory.
+
+    An included file is reported relative to the include root, so the root is
+    the working directory the result regex resolves paths against.
+    """
+    if root is not None and supported:
+        return shell_join(command + ["lint", "--include-root", root, file_path]), root
+    return shell_join(command + ["lint", file_path]), os.path.dirname(file_path)
+
+
+class CarveLintCommand(ExecCommand):
+    """The Lint build: `carve lint`, following includes within a root."""
+
+    # Build options passed on to exec; shell_cmd, cmd and working_dir are ours.
+    FORWARDED = ("env", "path", "encoding", "quiet", "word_wrap", "syntax")
+
+    pending = 0
+
+    def run(self, kill=False, file_regex=LINT_FILE_REGEX, **kwargs):
+        # A cancel, or a newer build, drops a launch still waiting on its probe.
+        self.pending += 1
+        if kill:
+            return super().run(kill=True)
+
+        view = self.window.active_view()
+        file_path = view.file_name() if view else None
+        if not file_path:
+            sublime.status_message("Carve: save the file before linting it")
+            return
+
+        command = carve_command(carve_binary(view))
+        value = setting(view, "carve_lint_include_root", "project")
+        root, notice = resolve_include_root(value, file_path, self.window.folders())
+        options = {key: kwargs[key] for key in self.FORWARDED if key in kwargs}
+        options["file_regex"] = file_regex
+        if root is None:
+            self.launch(self.pending, command, file_path, None, False, notice, options)
+            return
+
+        env = build_env(kwargs.get("env"), kwargs.get("path", ""), view.settings().get("build_env"))
+
+        # The first probe of a CLI starts a process, so keep it off the UI thread.
+        ticket = self.pending
+
+        def probe():
+            supported = supports_include_root(command, root, env)
+            sublime.set_timeout(
+                lambda: self.launch(ticket, command, file_path, root, supported, notice, options), 0
+            )
+
+        sublime.set_timeout_async(probe, 0)
+
+    def launch(self, ticket, command, file_path, root, supported, notice, options):
+        if ticket != self.pending:
+            return
+        if root is not None and supported is False:
+            notice = (notice or "") + INCLUDE_ROOT_NOTICE
+        shell_cmd, working_dir = lint_command(command, file_path, root, supported)
+        super().run(shell_cmd=shell_cmd, working_dir=working_dir, **options)
+        if notice and self.output_view is not None:
+            self.output_view.run_command("append", {"characters": notice, "force": True})
+
+
+def _kill_tree(proc):
+    """Kill a probe and the carve it started, not only the shell around it."""
+    try:
+        if os.name == "nt":
+            subprocess.call(
+                ["taskkill", "/T", "/F", "/PID", str(proc.pid)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                startupinfo=_startupinfo(),
+            )
+        else:
+            os.killpg(proc.pid, signal.SIGKILL)
+    except OSError:
+        proc.kill()
 
 
 def _startupinfo():

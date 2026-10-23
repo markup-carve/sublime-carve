@@ -1,18 +1,21 @@
 {
 	// Requires the `carve` CLI on PATH:
 	//   npm install -g @markup-carve/carve   (or cargo install carve-lang)
-	// Default (ctrl+b / cmd+b) lints the current file; results are clickable
-	// because carve reports `file:line:column`.
+	// Default (ctrl+b / cmd+b) lints the current file and the files it
+	// includes (see "carve_lint_include_root"); results are clickable because
+	// carve reports `file:line:column`.
 	"selector": "text.carve",
 	"file_patterns": ["*.crv"],
 
-	"shell_cmd": "carve lint \"$file\"",
+	"target": "carve_lint",
+	"cancel": {"kill": true},
 	"file_regex": "^(.+?):([0-9]+):([0-9]+) (.*)$",
 	"working_dir": "$file_path",
 
 	"variants": [
 		{
 			"name": "Lint Project",
+			"target": "exec",
 			"shell_cmd": "carve lint $(find . -name '*.crv' -print)",
 			"working_dir": "$folder",
 			// cmd.exe has no $(...) and its find searches text. Lint each file
@@ -23,22 +26,27 @@
 		},
 		{
 			"name": "Format (check only)",
+			"target": "exec",
 			"shell_cmd": "carve fmt --check \"$file\""
 		},
 		{
 			"name": "Format (write file)",
+			"target": "exec",
 			"shell_cmd": "carve fmt -w \"$file\""
 		},
 		{
 			"name": "Render HTML to stdout",
+			"target": "exec",
 			"shell_cmd": "carve --html \"$file\""
 		},
 		{
 			"name": "Render HTML to file",
+			"target": "exec",
 			"shell_cmd": "carve --html \"$file\" > \"${file_base_name}.html\""
 		},
 		{
 			"name": "Render ANSI preview",
+			"target": "exec",
 			"shell_cmd": "carve --ansi \"$file\""
 		}
 	]

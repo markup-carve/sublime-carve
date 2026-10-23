@@ -1,0 +1,13 @@
+Carve 0.1.12
+============
+
+Improvements
+  - The Lint build (ctrl+b / cmd+b) follows {{ path }} includes. It
+    lints within the deepest project folder that holds the file, or the
+    file's own directory, and a problem in an included file opens that
+    file and shows the chain that included it.
+  - New setting carve_lint_include_root: "project" (default),
+    "file_dir", false (do not follow includes) or an absolute directory.
+  - Following includes needs carve-js 0.1.13 or carve-rs 0.1.11. With
+    an older carve the build lints as before and prints a notice.
+  - The Lint build runs the CLI set in carve_binary.
