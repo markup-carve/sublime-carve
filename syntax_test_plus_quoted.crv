@@ -15,7 +15,16 @@ quote's first-line `> +` is text when the next line is quoted as deep.
   > <- -markup.list.continuation.carve
 
 > > +
-  > <- markup.list.continuation.carve
+> <- markup.list.continuation.carve
+
+A follower whose quote markers are indented is refused (markup-carve/carve#3529).
+
+> > +
+  > <- -markup.list.continuation.carve
+
+- a
+  > > +
+    > <- -markup.list.continuation.carve
 
 A continuation marker after quote prefixes needs a space after each `>`
 (markup-carve/carve#3421). `>+`, `>>+` and `>> +` are no quote lines, and
