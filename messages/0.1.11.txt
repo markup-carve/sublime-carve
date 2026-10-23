@@ -14,6 +14,8 @@ Fixes
     line, a sibling item, or at the item's content column.
   - >+, >>+, > >+ and >> + are plain text, not quote lines.
   - A colon line with no term above it is text, in a quote or out of it.
+  - An indented > + outside a list item is text, since that line opens
+    no quote.
   - The Lint Project build works on Windows.
 
 Improvements

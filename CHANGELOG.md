@@ -29,7 +29,7 @@ Releases before 0.1.8 are described on the
   quotes deep (#80).
 - A quote's first-line `+` followed by an indented quote line stays text (#83).
 - An indented `> +` outside a list item is text, since that line opens no
-  quote (PR_NUM).
+  quote (#84).
 - The **Lint Project** build works on Windows (#79, #81).
 
 ### Added
