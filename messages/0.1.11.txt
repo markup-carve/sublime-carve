@@ -16,6 +16,9 @@ Fixes
   - A colon line with no term above it is text, in a quote or out of it.
   - An indented > + outside a list item is text, since that line opens
     no quote.
+  - A + after a quoted chain such as > - > + is text when a list or a
+    blank line follows, and so is a + at column 0 below an item's
+    indented quote when a list follows.
   - The Lint Project build works on Windows.
 
 Improvements

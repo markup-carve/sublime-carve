@@ -1,0 +1,15 @@
+- SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+> - > +
+-     ^ -markup.list.continuation.carve
+-     ^ markup.quote.carve
+
+1. ordered
+  > > quote
++
+- <- -markup.list.continuation.carve
+
+- a
+  > q
++
+- <- -markup.list.continuation.carve

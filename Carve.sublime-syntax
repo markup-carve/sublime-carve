@@ -117,9 +117,18 @@ contexts:
       pop: true
     - match: '^(?=[^ \t\n])(?!{{list_item_line}})(?!\+[ \t]*$|\+.*\|[ \t]*$)'
       push: lazy-continuation
+    # A `+` at column 0 below an indented quote is at the item's column, not
+    # the quote's, so a list next refuses it (spec row 635-3).
+    - match: '^(?=[ \t]+>(?: |$))(?![ \t]*(?:> )+\+[ \t]*$)'
+      push: quote-run-in-item
     - include: code-blocks-on-a-marker-line
     - include: code-blocks-at-a-body-column
     - include: body
+
+  quote-run-in-item:
+    - match: '^(?=\+[ \t]*$)'
+      set: cm-item
+    - include: quote-run
 
   list-item-gap:
     - match: '^[ \t]*\n'
@@ -2828,6 +2837,11 @@ contexts:
   # inline content for the rest of the line.
   quote-start:
     - meta_scope: markup.quote.carve
+    # A chain ending in a quote marker (`> - > +`) refuses a list or a blank
+    # line next, quoted or not (spec rows 652, 655).
+    - match: '(?=(?:> )*{{fb_item}}{{fb_any}}*> \+[ \t]*$)'
+      branch_point: quote-chain-quote
+      branch: [quote-chain-quote-marker, quote-chain-quote-text]
     - match: '(?=(?:> )*{{fb_item}}{{fb_any}}*\+[ \t]*$)'
       set: quote-first-block-chain
     - match: '(>)(?= |$)[ ]?'
@@ -2967,6 +2981,24 @@ contexts:
     - match: '^'
       set: cm-any
     - include: paragraph-inline
+
+  quote-chain-quote-marker:
+    - include: first-block-openers
+    - match: '(\+)[ \t]*$'
+      captures:
+        1: markup.list.continuation.carve punctuation.definition.list.continuation.carve
+      set: quote-chain-quote-next
+
+  quote-chain-quote-next:
+    - match: '^(?![ \t]*$)(?![ \t]*(?:>[ \t]*)*{{cm_marker}})'
+      pop: 2
+    - match: '^'
+      fail: quote-chain-quote
+
+  quote-chain-quote-text:
+    - include: first-block-openers
+    - match: '\+[ \t]*$'
+      pop: 2
 
   quote-first-block-chain:
     - meta_scope: markup.quote.carve
