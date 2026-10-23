@@ -87,3 +87,31 @@ x     ^ markup.list.continuation.carve
   > > q
 +
 x <- markup.list.continuation.carve
+
+x Below a top-level indented `>` line, which is paragraph text, a `+` is
+x text too; under a footnote the same lines are a quote and a marker.
+
+  > q
++
+x <- -markup.list.continuation.carve
+
+  > q
+x ^ -markup.quote.carve
+
+[^a]: a
+  > q
++
+x <- markup.list.continuation.carve
+
+[^a]: a
+  > q
+x ^ markup.quote.carve
+
+[^a]: a
+  > +
+  x ^ markup.list.continuation.carve
+
+[^a]: a
+
+  > +
+  x ^ markup.list.continuation.carve
