@@ -14,7 +14,12 @@
 		{
 			"name": "Lint Project",
 			"shell_cmd": "carve lint $(find . -name '*.crv' -print)",
-			"working_dir": "$folder"
+			"working_dir": "$folder",
+			// cmd.exe has no $(...) and its find searches text. Lint each file
+			// and exit 1 if any of them failed, not only the last one.
+			"windows": {
+				"shell_cmd": "cmd /v:on /c \"set e=0& (for /r . %f in (*.crv) do @carve lint \"%f\" || set e=1)& exit !e!\""
+			}
 		},
 		{
 			"name": "Format (check only)",
