@@ -43,7 +43,7 @@ DOC_ESCAPE = r"^(\1\2*)\s*$"
 # task) come first, so the fence is group 7 and its character group 8. The
 # attribute block is spelled as `lists` spells it: a quoted value may hold `}`.
 MARKER_LINE = (
-    r"^([ \t]*)(?:([-*])|([0-9]+[.)]|[A-Za-z][.)]|[ivxlcdm]+[.)]|[IVXLCDM]+[.)]|\.)|(:))"
+    r"^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))"
     r"""(\{(?:"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|[^}"'\n])*\})?"""
     r" +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*"
 )

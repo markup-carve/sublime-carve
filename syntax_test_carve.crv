@@ -25,6 +25,39 @@ A ==highlight== and {^sup^} and {,sub,} done.
 #                                 ^^^ markup.subscript.carve
 #                                    ^^ punctuation.definition.subscript.carve
 
+# The `=` of a comparison neither opens nor closes a highlight (carve#4197).
+
+x =y z<= w
+# ^ -punctuation.definition.highlight.carve
+#      ^ -markup.highlight.carve
+
+x =!== y
+# ^ punctuation.definition.highlight.carve
+#  ^^ markup.highlight.carve
+#    ^ punctuation.definition.highlight.carve
+
+x =a != b= y
+# ^ punctuation.definition.highlight.carve
+#        ^ punctuation.definition.highlight.carve
+
+a !=b= c
+#  ^ -punctuation.definition.highlight.carve
+#    ^ -punctuation.definition.highlight.carve
+
+x =a<=>b= y
+# ^ punctuation.definition.highlight.carve
+#    ^ punctuation.definition.highlight.carve
+#       ^ -punctuation.definition.highlight.carve
+
+x =<== y
+# ^ punctuation.definition.highlight.carve
+#   ^ punctuation.definition.highlight.carve
+
+x =a = b= y
+# ^ punctuation.definition.highlight.carve
+#   ^ markup.highlight.carve
+#       ^ punctuation.definition.highlight.carve
+
 Inline `code span` works.
 #      ^ punctuation.definition.raw.carve
 #       ^^^^^^^^^ markup.raw.inline.content.carve
@@ -153,6 +186,12 @@ Wide fence !``a ` b`` keeps its inner backtick.
 A mention @alice and tag #topic here.
 #         ^ punctuation.definition.mention.carve
 #                        ^ punctuation.definition.tag.carve
+
+Issue #123 and @5 stay text, #v2 and @a1 do not.
+#     ^ -punctuation.definition.tag.carve
+#              ^ -punctuation.definition.mention.carve
+#                            ^ punctuation.definition.tag.carve
+#                                    ^ punctuation.definition.mention.carve
 
 See {{ chapters/intro.crv#intro }} here.
 #   ^^ punctuation.definition.directive.begin.carve
@@ -312,6 +351,43 @@ An escaped \* star.
 #    ^^ punctuation.separator.table.delimiter.carve
 #      ^ keyword.operator.table.alignment.carve
 #       ^ punctuation.separator.table.carve
+
+|={>} Qty |= Name |
+#^ keyword.operator.table.header.carve
+# ^ punctuation.definition.attributes.begin.carve
+#  ^ keyword.operator.table.alignment.carve
+#   ^ punctuation.definition.attributes.end.carve
+#     ^^^ -keyword.operator.table.alignment.carve
+
+|{> .num} 12.50 |{?v} y |{<^} z |
+# <- punctuation.separator.table.carve
+#^ punctuation.definition.attributes.begin.carve
+# ^ keyword.operator.table.alignment.carve
+#   ^^^^ entity.other.attribute-name.class.carve
+#       ^ punctuation.definition.attributes.end.carve
+#                 ^^ keyword.operator.table.alignment.carve
+#                         ^^ keyword.operator.table.alignment.carve
+
+|={<} |={~~} m |
+#  ^ keyword.operator.table.alignment.carve
+#        ^^ keyword.operator.table.alignment.carve
+
+|{~ x ~} | {>} y |{>}z |
+# ^ -keyword.operator.table.alignment.carve
+#           ^ -keyword.operator.table.alignment.carve
+#                  ^ -keyword.operator.table.alignment.carve
+
+|=> Qty |=< |
+#^ keyword.operator.table.header.carve
+# ^ keyword.operator.table.alignment.carve
+#         ^ keyword.operator.table.alignment.carve
+
+|<^ 1 |> 2 | < |^ x |
+#^^ keyword.operator.table.alignment.carve
+#      ^ keyword.operator.table.alignment.carve
+#            ^ keyword.operator.table.colspan.carve
+#             ^ -keyword.operator.table.alignment.carve
+#               ^ -keyword.operator.table.alignment.carve
 
 :: Term one
 # <- punctuation.definition.list.begin.carve
@@ -738,6 +814,19 @@ visible after the wide fence
 ___
 # <- meta.separator.thematic-break.carve
 
+- - -
+# <- meta.separator.thematic-break.carve
+# <- -punctuation.definition.list.begin.carve
+
+* * * *
+# <- meta.separator.thematic-break.carve
+
+*  *  *
+# <- -meta.separator.thematic-break.carve
+
+_ _ _
+# <- -meta.separator.thematic-break.carve
+
 # ----- Math span containment -----
 
 Unclosed math $`oops does not leak.
@@ -860,23 +949,38 @@ Reactions :+1: and :-1: still parse.
 # `[ivxlcdmIVXLCDM]` class matched any mixture, so `Vim.` and `Mix.` - the shape
 # of a word starting a sentence - coloured as markers. `mix.` IS a marker (1009),
 # so the fix is the case split, not a rule against multi-letter runs.
-iv. a lower-case roman marker
+iv.  a lower-case roman marker
 # <- punctuation.definition.list.begin.carve
-IV. an upper-case roman marker
+IV.  an upper-case roman marker
 # <- punctuation.definition.list.begin.carve
-ivx. a longer lower-case run
+ivx.  a longer lower-case run
 # <- punctuation.definition.list.begin.carve
-IVX. a longer upper-case run
+IVX.  a longer upper-case run
 # <- punctuation.definition.list.begin.carve
-mix. a word made only of roman letters is still a marker
+mix.  a word made only of roman letters is still a marker
 # <- punctuation.definition.list.begin.carve
-Vim. mixed case is prose
+Vim.  mixed case is prose
 # <- -punctuation.definition.list.begin.carve
-Mix. mixed case is prose
+Mix.  mixed case is prose
 # <- -punctuation.definition.list.begin.carve
 Ix. two letters, mixed case, prose
 # <- -punctuation.definition.list.begin.carve
 Note. an ordinary sentence start is prose
+# <- -punctuation.definition.list.begin.carve
+
+# A LETTER OR ROMAN MARKER WITH A DOT NEEDS TWO SPACES (carve#4828), so
+# initials stay prose. A `)` marker and a digit marker keep one space.
+J. R. R. Tolkien wrote it
+# <- -punctuation.definition.list.begin.carve
+iv. one space is prose
+# <- -punctuation.definition.list.begin.carve
+a.  alpha
+# <- punctuation.definition.list.begin.carve
+a) alpha
+# <- punctuation.definition.list.begin.carve
+a.{.c}  alpha
+# <- punctuation.definition.list.begin.carve
+a.{.c} alpha
 # <- -punctuation.definition.list.begin.carve
 
 # MARKER REQUIRES CONTENT PAST THE ATTRIBUTE BLOCK
@@ -2024,6 +2128,21 @@ a --> b ==> c => d
 # ^^^ constant.character.typography.carve
 #       ^^^ constant.character.typography.carve
 #             ^^ -constant.character.typography.carve
+
+x->y a<-b <-> (c) (r) (tm)
+#^^ -constant.character.typography.carve
+#     ^^ -constant.character.typography.carve
+#         ^^^ -constant.character.typography.carve
+#             ^^^ -constant.character.typography.carve
+#                 ^^^ -constant.character.typography.carve
+#                     ^^^^ constant.character.typography.carve
+
+a--->b <---> c
+#^^^ constant.character.typography.carve
+#   ^ -constant.character.typography.carve
+#      ^ -constant.character.typography.carve
+#       ^^^ constant.character.typography.carve
+#          ^ -constant.character.typography.carve
 
 a `code
 span` b
