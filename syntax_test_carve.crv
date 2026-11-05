@@ -982,6 +982,8 @@ a.{.c}  alpha
 # <- punctuation.definition.list.begin.carve
 a.{.c} alpha
 # <- -punctuation.definition.list.begin.carve
+a.{title="a}b"}  alpha
+# <- punctuation.definition.list.begin.carve
 
 # MARKER REQUIRES CONTENT PAST THE ATTRIBUTE BLOCK
 # (markup-carve/carve-grammars#85). The guard was `(?= |\{)`, so an empty block

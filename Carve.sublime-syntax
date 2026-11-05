@@ -28,7 +28,7 @@ variables:
   email_autolink: '<[\p{L}0-9\-_.+]+@(?:[\p{L}0-9\-_]+\.)+\p{L}+>'
   # A letter or roman marker with a dot needs two spaces before its content
   # (carve#4828); with `)` one space is enough.
-  alpha_marker: '(?:[A-Za-z]|[ivxlcdm]+|[IVXLCDM]+)(?:\)|\.(?= {2}|\{[^}\n]*\} {2}))'
+  alpha_marker: '(?:[A-Za-z]|[ivxlcdm]+|[IVXLCDM]+)(?:\)|\.(?= {2}|\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\} {2}))'
   # A line that opens a list item or a definition (see `list-item`). A glued
   # attribute block needs content after it, as in `lists`.
   list_item_line: '[ \t]*(?:[-*]|[0-9]+[.)]|{{alpha_marker}}|\.|::?)(?: +|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n]))(?![ \t]*$)'
