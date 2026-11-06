@@ -33,14 +33,16 @@ This package is authored from the maintained Carve TextMate grammar
   bare `::: figure` composite-figure opener, the `::: |` line block and the
   `::: \` local hard-break block
 - Block and inline attributes (`{#id .class key="val"}`)
-- Tables with `|`, `|=` header rows, `^` rowspan, `<` colspan, and GFM
-  `|---|` delimiter rows
+- Tables with `|`, `|=` header rows, `^` rowspan, `<` colspan, braced cell
+  alignment (`|={>}`, `|{<^}`, `|{> .num}`; the glued 0.1.13 `|=>` still
+  reads), and GFM `|---|` delimiter rows
 - Footnotes: references (`[^id]`), inline notes (`^[text]`) and definitions
   (`[^id]: body`), whose body is inline content rather than a destination
 - Hard line breaks (a trailing `\`)
 - Math: inline `$`..`` `` ` ``, display `$$`..`` `` ` ``, and ```` ```math ```` fences
 - Frontmatter (`---`, `---toml`, `---json`), highlighted with the declared
-  format's own syntax
+  format's own syntax; a first-line `---` with no closer runs to the end of the
+  document
 - Mentions (`@name`), tags (`#tag`), symbols (`:smile:`)
 - Critic markup (`{+ins+}`, `{-del-}`, `{~a~>b~}`, `{#comment#}`)
 - Line comments (`%%`), trailing comments, block comments (`%%%`) and
