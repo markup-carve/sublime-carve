@@ -144,7 +144,9 @@ specific executable, set the `carve.pdf` keys in the `settings` block of
 }
 ```
 
-Both keys are optional. A failed export shows the tool's error output.
+Set only the key you need: a configured `crv2pdfPath` is always used, and
+`browserPath` applies only when no `crv2pdf` is found. A failed export shows
+the tool's error output.
 
 ## Build system
 
