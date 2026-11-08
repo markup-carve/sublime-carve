@@ -116,13 +116,37 @@ or `cargo install carve-lang`). Configure in
 }
 ```
 
-## Export to Markdown or HTML
+## Export to Markdown, HTML or PDF
 
 Exporting goes the other way and comes from the language server, not this
 package. Install [sublime-carve-lsp](https://github.com/markup-carve/sublime-carve-lsp)
-and the **Export as Markdown** and **Export as HTML** code actions write
-`notes.md` or `notes.html` next to `notes.crv`. They need a carve-lsp release
-newer than 0.1.7.
+and run **LSP: Source Action** from the command palette on a `.crv` file:
+
+- **Export as Markdown** and **Export as HTML** write `notes.md` or
+  `notes.html` next to `notes.crv`. They need a carve-lsp release newer than
+  0.1.7.
+- **Export as PDF** writes `notes.pdf` and needs carve-lsp after 0.1.15.
+
+The server writes the PDF itself. It uses `crv2pdf` from
+[carve-pdf](https://github.com/markup-carve/carve-pdf) when that is on `PATH`
+(clone it and run `make install`); that gives the better page layout.
+Otherwise it prints the rendered HTML with an installed Chrome, Chromium or
+Edge in headless mode. Neither tool comes with carve-lsp. To point at a
+specific executable, set the `carve.pdf` keys in the `settings` block of
+**Preferences > Package Settings > LSP > Servers > LSP-carve**:
+
+```json
+{
+    "settings": {
+        "carve.pdf.crv2pdfPath": "/path/to/crv2pdf",
+        "carve.pdf.browserPath": "/path/to/chromium"
+    }
+}
+```
+
+Set only the key you need: a configured `crv2pdfPath` is always used, and
+`browserPath` applies only when no `crv2pdf` is found. A failed export shows
+the tool's error output.
 
 ## Build system
 
