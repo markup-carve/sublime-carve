@@ -1,0 +1,11 @@
+Carve 0.1.13
+============
+
+Improvements
+  - The syntax follows the Carve 0.1.14 readings: front matter without a
+    closer runs to the end of the document, braced cell alignment
+    (|={>}, |{<^}) is scoped as table alignment, a letter or roman dot
+    marker needs two spaces, - - - is a thematic break, mention and tag
+    names need an ASCII letter, and ->, <-, (c) and (r) are text.
+  - Export as PDF from carve-lsp is documented, with the
+    carve.pdf.crv2pdfPath and carve.pdf.browserPath settings.
