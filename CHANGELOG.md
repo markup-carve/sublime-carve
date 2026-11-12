@@ -9,6 +9,18 @@ Releases before 0.1.8 are described on the
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-11-12
+
+### Improvements
+
+- The syntax follows the Carve 0.1.14 readings: a first-line `---` without a
+  closer is front matter to the end of the document; braced cell alignment
+  (`|={>}`, `|{<^}`, `|{> .num}`) is scoped as table alignment, and the
+  deprecated glued `|=>` prefix still is; a letter or roman dot marker needs
+  two spaces; `- - -` and `* * *` are thematic breaks; mention and tag names
+  need an ASCII letter; `->`, `<-`, `<->`, `(c)` and `(r)` are text; and the
+  `=` of `!=`, `<=` and `>=` neither opens nor closes a highlight (#92).
+
 ## [0.1.12] - 2026-10-23
 
 ### Improvements
