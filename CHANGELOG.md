@@ -9,7 +9,7 @@ Releases before 0.1.8 are described on the
 
 ## [Unreleased]
 
-## [0.1.13] - 2026-11-11
+## [0.1.13] - 2026-11-12
 
 ### Improvements
 
@@ -20,8 +20,6 @@ Releases before 0.1.8 are described on the
   two spaces; `- - -` and `* * *` are thematic breaks; mention and tag names
   need an ASCII letter; `->`, `<-`, `<->`, `(c)` and `(r)` are text; and the
   `=` of `!=`, `<=` and `>=` neither opens nor closes a highlight (#92).
-- The guide documents the carve-lsp Export as PDF action and its
-  `carve.pdf.crv2pdfPath` and `carve.pdf.browserPath` settings (#94).
 
 ## [0.1.12] - 2026-10-23
 

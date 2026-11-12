@@ -7,5 +7,3 @@ Improvements
     (|={>}, |{<^}) is scoped as table alignment, a letter or roman dot
     marker needs two spaces, - - - is a thematic break, mention and tag
     names need an ASCII letter, and ->, <-, (c) and (r) are text.
-  - Export as PDF from carve-lsp is documented, with the
-    carve.pdf.crv2pdfPath and carve.pdf.browserPath settings.

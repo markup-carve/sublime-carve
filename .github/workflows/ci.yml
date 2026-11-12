@@ -79,7 +79,7 @@ jobs:
       # include chain and the fallback run against a real carve.
       - name: Install a current and an older carve CLI
         run: |
-          npm install --prefix "$RUNNER_TEMP/carve-new" @markup-carve/carve@0.1.13
+          npm install --prefix "$RUNNER_TEMP/carve-new" @markup-carve/carve@0.1.16
           npm install --prefix "$RUNNER_TEMP/carve-old" @markup-carve/carve@0.1.12
       - name: Run the lint build tests
         env:
