@@ -5,7 +5,6 @@ quote's first-line `> +` is text when the next line is quoted as deep.
 
 > - a
 > +
-  > <- markup.list.continuation.carve
 
 > - a
 >+
@@ -15,7 +14,6 @@ quote's first-line `> +` is text when the next line is quoted as deep.
   > <- -markup.list.continuation.carve
 
 > > +
-> <- markup.list.continuation.carve
 
 A follower whose quote markers are indented is refused (markup-carve/carve#3529).
 
@@ -76,26 +74,22 @@ indented `  > x` (lazy text in the `+` paragraph) leaves the `+` as text.
 > - a
 >
 > +
-> ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 > b
 
 > - a
 >
 >
 > +
-> ^ markup.list.continuation.carve
 > b
 
 > - a
 >   
 > +
-> ^ markup.list.continuation.carve
 > b
 
 > 1. a
 >
 > +
-> ^ markup.list.continuation.carve
 > b
 
 > - a
@@ -125,4 +119,3 @@ indented `  > x` (lazy text in the `+` paragraph) leaves the `+` as text.
     > <- -markup.list.continuation.carve
 
 > - > +
->     ^ markup.quote.carve markup.list.continuation.carve

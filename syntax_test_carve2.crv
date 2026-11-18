@@ -1,0 +1,78 @@
+# SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+# Carve 0.2 source changes, from markup-carve/carve next2 spec/0.2/UPGRADING.md.
+
+= Equals heading (U-101)
+# <- markup.heading.carve punctuation.definition.heading.carve
+# ^^^^^^^^^^^^^^ entity.name.section.carve
+
+ = Indented heading (C2-B-001)
+#^ markup.heading.carve punctuation.definition.heading.carve
+
+Some text
+= Not a heading (U-001)
+# <- -markup.heading.carve
+> Not a quote (U-002)
+# <- -markup.quote.carve
+- not a list item (U-012)
+# <- -punctuation.definition.list.begin.carve
+| a | b |
+# <- markup.table.row.carve
+
+***
+# <- meta.separator.thematic-break.carve
+
+---
+# <- -meta.separator.thematic-break.carve
+
+___
+# <- -meta.separator.thematic-break.carve
+
+~~~
+# <- -punctuation.definition.raw.begin.carve
+text after a tilde run stays text (U-116)
+# <- -markup.raw.block.fenced.code.carve
+~~~
+
+An _underlined_ word, a ~struck~ word and a =marked= word are text (U-065 to U-067).
+#   ^^^^^^^^^^^^ -markup.underline.text.carve
+#                       ^^^^^^^^ -markup.strikethrough.carve
+#                                       ^^^^^^^^ -markup.highlight.carve
+
+Braced {_underline_}, {~strike~} and {=highlight=} keep their scopes.
+#      ^^^^^^^^^^^^^ markup.underline.carve
+#                     ^^^^^^^^^^ markup.strikethrough.carve
+#                                    ^^^^^^^^^^^^^ markup.highlight.carve
+
+{~old~>new~}
+# <- markup.strikethrough.carve
+#     ^^^^^ -markup.inserted.carve
+
+|=< a |={<} b |=c |
+# ^ -keyword.operator.table.alignment.carve
+#        ^ keyword.operator.table.alignment.carve
+#              ^ -keyword.operator.table.header.carve
+
+|---|--:|
+#^^^ -punctuation.separator.table.delimiter.carve
+#     ^ -keyword.operator.table.alignment.carve
+
+- item
++
+# <- -markup.list.continuation.carve
+
+a. one space after a letter marker (U-103)
+# <- punctuation.definition.list.begin.carve
+
+%%%
+hidden
+%%% visible?
+# <- comment.block.carve
+still hidden (U-050)
+# <- comment.block.carve
+%%%
+
+- a
+
+  [r]: /u
+# ^ -meta.link.reference.definition.carve

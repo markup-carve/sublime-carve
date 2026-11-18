@@ -12,9 +12,9 @@ This package is authored from the maintained Carve TextMate grammar
 
 ## Features
 
-- Headings (`#` ... `######`)
-- Inline mnemonics: `/italic/`, `*bold*`, `_underline_`, `~strike~`,
-  `=highlight=` (single `=`), `{^sup^}`, `{,sub,}`, `` `code` ``
+- Headings (`#` ... `######` and `=` ... `======`)
+- Inline mnemonics: `/italic/`, `*bold*`, `{_underline_}`, `{~strike~}`,
+  `{=highlight=}`, `{^sup^}`, `{,sub,}`, `` `code` ``
 - Links, autolinks (`<https://...>`, `<a@b.com>`), reference and
   cross-reference links, inline spans
 - Images in all three forms: `![alt](src)`, `![alt][ref]` and `![alt][]`
@@ -44,7 +44,7 @@ This package is authored from the maintained Carve TextMate grammar
   format's own syntax; a first-line `---` with no closer runs to the end of the
   document
 - Mentions (`@name`), tags (`#tag`), symbols (`:smile:`)
-- Critic markup (`{+ins+}`, `{-del-}`, `{~a~>b~}`, `{#comment#}`)
+- Critic markup (`{+ins+}`, `{-del-}`, `{#comment#}`)
 - Line comments (`%%`), trailing comments, block comments (`%%%`) and
   delimited inline comments (`{% ... %}`)
 - Every verbatim payload stays verbatim: nothing inside a code block, raw

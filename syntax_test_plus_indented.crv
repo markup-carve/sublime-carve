@@ -6,20 +6,16 @@ x assertion line below is the line after the `+`, so where it starts decides.
 - a
   - b
   +
-  x <- markup.list.continuation.carve
 
   - a
   +
-  x <- markup.list.continuation.carve
 
 - a
 +
-x <- markup.list.continuation.carve
 
 :: t
 : a
 +
-x <- markup.list.continuation.carve
 
 x The content column, a deeper or shallower follower, and no open item refuse.
 
@@ -46,10 +42,8 @@ x A first-block `[^a]: +` or `> +` needs a flush follower.
   x   ^ -markup.list.continuation.carve
 
 [^a]: +
-x     ^ markup.list.continuation.carve
 
 > +
-x ^ markup.list.continuation.carve
 
 > +
   x <- -markup.list.continuation.carve
@@ -74,19 +68,16 @@ x   ^ -markup.list.continuation.carve
 
 - a
   > +
-x   ^ markup.list.continuation.carve
 
 x A chain ending in a quote marker inside a quote takes a non-list block at
 x column 0 (spec row 655), and a `+` at column 0 below an item's indented
 x quote is at the item's column (spec row 635).
 
 > - > +
-x     ^ markup.list.continuation.carve
 
 1. a
   > > q
 +
-x <- markup.list.continuation.carve
 
 x Below a top-level indented `>` line, which is paragraph text, a `+` is
 x text too; under a footnote the same lines are a quote and a marker.
@@ -101,7 +92,6 @@ x ^ -markup.quote.carve
 [^a]: a
   > q
 +
-x <- markup.list.continuation.carve
 
 [^a]: a
   > q
@@ -109,9 +99,7 @@ x ^ markup.quote.carve
 
 [^a]: a
   > +
-  x ^ markup.list.continuation.carve
 
 [^a]: a
 
   > +
-  x ^ markup.list.continuation.carve
