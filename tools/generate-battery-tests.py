@@ -69,6 +69,10 @@ def render():
         if src.startswith("#") or "\t" in src or src == "^ cap":
             skipped.append(src)
             continue
+        # A blank line keeps each shape its own block: in Carve 0.2 a marker line
+        # directly below text is paragraph text (U-001 to U-013).
+        if covered:
+            out.append("")
         if shape.get("why"):
             out.append("# " + shape["why"])
         out.append(src)

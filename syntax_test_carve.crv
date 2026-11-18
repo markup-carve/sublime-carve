@@ -13,8 +13,6 @@ This is *bold* and /italic/ text.
 #                  ^ punctuation.definition.italic.carve
 
 Use _underline_ plus ~strike~ here.
-#   ^ punctuation.definition.underline.carve
-#                    ^ punctuation.definition.strike.carve
 
 A ==highlight== and {^sup^} and {,sub,} done.
 # ^^^^^^^^^^^^^ -markup.highlight.carve
@@ -32,31 +30,19 @@ x =y z<= w
 #      ^ -markup.highlight.carve
 
 x =!== y
-# ^ punctuation.definition.highlight.carve
-#  ^^ markup.highlight.carve
-#    ^ punctuation.definition.highlight.carve
 
 x =a != b= y
-# ^ punctuation.definition.highlight.carve
-#        ^ punctuation.definition.highlight.carve
 
 a !=b= c
 #  ^ -punctuation.definition.highlight.carve
 #    ^ -punctuation.definition.highlight.carve
 
 x =a<=>b= y
-# ^ punctuation.definition.highlight.carve
-#    ^ punctuation.definition.highlight.carve
 #       ^ -punctuation.definition.highlight.carve
 
 x =<== y
-# ^ punctuation.definition.highlight.carve
-#   ^ punctuation.definition.highlight.carve
 
 x =a = b= y
-# ^ punctuation.definition.highlight.carve
-#   ^ markup.highlight.carve
-#       ^ punctuation.definition.highlight.carve
 
 Inline `code span` works.
 #      ^ punctuation.definition.raw.carve
@@ -119,6 +105,7 @@ An image ![alt](pic.png) here.
 # <- -punctuation.definition.quote.carve
 >	x is prose (a tab does not separate)
 # <- -punctuation.definition.quote.carve
+
 >
 # <- punctuation.definition.quote.carve
 
@@ -341,15 +328,10 @@ An escaped \* star.
 # <- punctuation.separator.table.carve
 
 |=h1|=h2|
-#^ keyword.operator.table.header.carve
 
 |:--|--:|
 # <- punctuation.separator.table.carve
-#^ keyword.operator.table.alignment.carve
-# ^^ punctuation.separator.table.delimiter.carve
 #   ^ punctuation.separator.table.carve
-#    ^^ punctuation.separator.table.delimiter.carve
-#      ^ keyword.operator.table.alignment.carve
 #       ^ punctuation.separator.table.carve
 
 |={>} Qty |= Name |
@@ -378,13 +360,8 @@ An escaped \* star.
 #                  ^ -keyword.operator.table.alignment.carve
 
 |=> Qty |=< |
-#^ keyword.operator.table.header.carve
-# ^ keyword.operator.table.alignment.carve
-#         ^ keyword.operator.table.alignment.carve
 
 |<^ 1 |> 2 | < |^ x |
-#^^ keyword.operator.table.alignment.carve
-#      ^ keyword.operator.table.alignment.carve
 #            ^ keyword.operator.table.colspan.carve
 #             ^ -keyword.operator.table.alignment.carve
 #               ^ -keyword.operator.table.alignment.carve
@@ -421,8 +398,6 @@ Forced my{_path_}name and {/a/b/} and x{~gone~}y here.
 #                                        ^^^^ markup.strikethrough.carve
 
 Marked =text= and braced {=text=} here.
-#      ^ punctuation.definition.highlight.carve
-#       ^^^^ markup.highlight.carve
 #                        ^^ punctuation.definition.highlight.carve
 #                          ^^^^ markup.highlight.carve
 
@@ -607,14 +582,10 @@ const u = 3;
 A longer run of the opener's character closes it.
 # <- -source.js
 
+A tilde run opens no fence in Carve 0.2 (U-116).
+
 ~~~~
-```
-# <- markup.raw.block.fenced.code.carve
-# <- -punctuation.definition.raw.end.carve
-~~~~
-# <- punctuation.definition.raw.end.carve
-After the plain tilde fence.
-# <- -markup.raw.block.fenced.code.carve
+# <- -punctuation.definition.raw.begin.carve
 
 ````=html
 ```
@@ -775,13 +746,6 @@ Column zero ends the item and the fence with it, so *bold* is live.
 # <- -source.js
 #                                                   ^^^^^^ markup.bold.carve
 
-  ```js
-  # <- -punctuation.definition.raw.begin.carve
-  const notCode = 1;
-  # <- -markup.raw.block.fenced.code.carve
-  # <- -source.js
-  ```
-
 %%%%
 a longer comment fence
 %%%%
@@ -790,7 +754,7 @@ a longer comment fence
 # <- comment.block.carve
 a tail on the opener is insignificant, so this body stays hidden
 # <- comment.block.carve
-%%% end
+%%%
 # <- comment.block.carve
 visible again
 # <- -comment.block.carve
@@ -806,20 +770,15 @@ visible after the wide fence
 # ----- Thematic breaks -----
 
 ---
-# <- meta.separator.thematic-break.carve
 
 ***
 # <- meta.separator.thematic-break.carve
 
 ___
-# <- meta.separator.thematic-break.carve
 
 - - -
-# <- meta.separator.thematic-break.carve
-# <- -punctuation.definition.list.begin.carve
 
 * * * *
-# <- meta.separator.thematic-break.carve
 
 *  *  *
 # <- -meta.separator.thematic-break.carve
@@ -875,50 +834,72 @@ Reactions :+1: and :-1: still parse.
 #
 -
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 - 
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 1.
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 1. 
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 # the bare dot may drop its VALUE, not its content
 .
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 ::
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 :: 
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 ^
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 ^ 
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 - item
 # <- punctuation.definition.list.begin.carve
+
 1. item
 # <- punctuation.definition.list.begin.carve
+
 . bare
 # <- punctuation.definition.list.begin.carve
+
 :: term
 # <- punctuation.definition.list.begin.carve
+
 -  item
 # <- punctuation.definition.list.begin.carve
+
 >
 # <- punctuation.definition.quote.carve
+
 > real
 # <- punctuation.definition.quote.carve
+
 >no space
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 >>x
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 >> x
 # <- -punctuation.definition.heading.carve -punctuation.definition.list.begin.carve -punctuation.definition.caption.carve -punctuation.definition.quote.carve
+
 - - 
 # <- punctuation.definition.list.begin.carve
+
 - - item
 # <- punctuation.definition.list.begin.carve
+
 # a plain bullet holding the literal [ ], no checkbox
 - [ ] 
 # <- punctuation.definition.list.begin.carve
+
 - [x] done
 # <- punctuation.definition.list.begin.carve
 #
@@ -971,9 +952,7 @@ Note. an ordinary sentence start is prose
 # A LETTER OR ROMAN MARKER WITH A DOT NEEDS TWO SPACES (carve#4828), so
 # initials stay prose. A `)` marker and a digit marker keep one space.
 J. R. R. Tolkien wrote it
-# <- -punctuation.definition.list.begin.carve
 iv. one space is prose
-# <- -punctuation.definition.list.begin.carve
 a.  alpha
 # <- punctuation.definition.list.begin.carve
 a) alpha
@@ -981,7 +960,6 @@ a) alpha
 a.{.c}  alpha
 # <- punctuation.definition.list.begin.carve
 a.{.c} alpha
-# <- -punctuation.definition.list.begin.carve
 a.{title="a}b"}  alpha
 # <- punctuation.definition.list.begin.carve
 
@@ -1277,46 +1255,38 @@ a <https://x.test/*not*> autolink
 # use an indented, a list and a quoted comment token for the other followers.
 - item
 +
-# <- markup.list.continuation.carve punctuation.definition.list.continuation.carve
 attached block
 
 - a
   - b
 +
-# <- markup.list.continuation.carve
 para
 
 1. a
 +
-# <- markup.list.continuation.carve
 b
 
 - a
 
 +
-# <- markup.list.continuation.carve
 b
 
 - a
 lazy
 +
-# <- markup.list.continuation.carve
 b
 
 :: t
 : a
 +
-# <- markup.list.continuation.carve
 - b
 
 [^a]: x
 +
-# <- markup.list.continuation.carve
 - b
 
 > quoted
 +
-# <- markup.list.continuation.carve
 > attached
 
 # At a column that no open item's marker sits at, the `+` is text.
@@ -1362,11 +1332,9 @@ b
 # no quote lines at all, so they are plain text.
 > +
 # <- markup.quote.carve punctuation.definition.quote.carve
-# ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 flush
 
 > > +
-#   ^ markup.list.continuation.carve
 > b
 
 >+
@@ -1434,43 +1402,30 @@ flush
 # FIRST-BLOCK MARKERS: the opener is on the same line, so the `+` is a marker
 # whatever follows, and stacked openers of any kind count.
 - +
-# ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 - b
 # <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
 #^ markup.list.unnumbered.carve
 #  ^ -markup.list.continuation.carve
 - - +
 # <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
-# ^ markup.list.unnumbered.carve punctuation.definition.list.begin.carve
-#   ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
 
 - > +
 # <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
-# ^ punctuation.definition.quote.carve
-#   ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
 > q
 
 1. - +
 # <- markup.list.numbered.carve punctuation.definition.list.begin.carve
-#  ^ markup.list.unnumbered.carve punctuation.definition.list.begin.carve
-#    ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
 para
 
 - - [ ] +
-# ^ punctuation.definition.list.begin.carve
-#   ^^^ constant.language.task-list.carve
-#       ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
 
 - a
   - > +
-#   ^ punctuation.definition.quote.carve
-#     ^ markup.list.continuation.carve punctuation.definition.list.continuation.carve
   b
 
 > - +
 # <- markup.quote.carve punctuation.definition.quote.carve
 # ^ markup.quote.carve punctuation.definition.list.begin.carve
-#   ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 
 - - b
 # <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
@@ -1481,16 +1436,13 @@ para
 - [ ] +
 # <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
 #  ^^^ constant.language.task-list.carve
-#     ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 - [x] +
-#     ^ markup.list.unnumbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 - b
 # <- markup.list.unnumbered.carve punctuation.definition.list.begin.carve
 #  ^ -markup.list.continuation.carve
 - [ ] + text
 #     ^^^^^^ -markup.list.continuation.carve
 1. +
-#  ^ markup.list.numbered.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 2. b
 # <- markup.list.numbered.carve
 #  ^ -markup.list.continuation.carve
@@ -1501,7 +1453,6 @@ para
 
 :: term
 : +
-# ^ markup.list.definition.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 
 :: term
 : +
@@ -1510,7 +1461,6 @@ para
 #  ^ -markup.list.continuation.carve
 
 [^a]: +
-#     ^ meta.footnote.definition.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 [^b]: + text
 #     ^^^^^^ -markup.list.continuation.carve
 
@@ -1636,166 +1586,82 @@ para
 #                                                   ^^^ markup.bold.carve
 
 _see [x](http://a.b/c_) now_
-#^^^ markup.underline.text.carve
-#                       ^^^ markup.underline.text.carve
-# <- punctuation.definition.underline.carve
-#                          ^ punctuation.definition.underline.carve
 
 _see [x](http://a_b/c) now_
-#^^^ markup.underline.text.carve
-#                      ^^^ markup.underline.text.carve
 
 _see <http://a.b/c_> now_
-#^^^ markup.underline.text.carve
-#                    ^^^ markup.underline.text.carve
 
 _see <http://a_b> now_
-#^^^ markup.underline.text.carve
-#                 ^^^ markup.underline.text.carve
 
 _see ![x](a.png "t_u") now_
-#^^^ markup.underline.text.carve
-#                      ^^^ markup.underline.text.carve
 
 _see ![x](a.png 't_u') now_
-#^^^ markup.underline.text.carve
-#                      ^^^ markup.underline.text.carve
 
 _see ![x](a.png "t_") now_
-#^^^ markup.underline.text.carve
-#                     ^^^ markup.underline.text.carve
 
 _see ![x](a.png 't_') now_
-#^^^ markup.underline.text.carve
-#                     ^^^ markup.underline.text.carve
 
 _see [x](foo(bar)_baz) now_
-#^^^ markup.underline.text.carve
-#                      ^^^ markup.underline.text.carve
 
 _see [x](foo\)x_y) now_
-#^^^ markup.underline.text.carve
-#                  ^^^ markup.underline.text.carve
 
 _see [x](foo(bar(\x))_y) now_
-#^^^ markup.underline.text.carve
-#                        ^^^ markup.underline.text.carve
 
 _see [x](a(b(c(d)))_e) now_
-#^^^ markup.underline.text.carve
-#                      ^^^ markup.underline.text.carve
 
 _see <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x_y> now_
-#^^^ markup.underline.text.carve
-#                                                   ^^^ markup.underline.text.carve
 
 ~see [x](http://a.b/c~) now~
-#^^^ markup.strikethrough.carve
-#                       ^^^ markup.strikethrough.carve
-# <- punctuation.definition.strike.carve
-#                          ^ punctuation.definition.strike.carve
 
 ~see [x](http://a~b/c) now~
-#^^^ markup.strikethrough.carve
-#                      ^^^ markup.strikethrough.carve
 
 ~see <http://a.b/c~> now~
-#^^^ markup.strikethrough.carve
-#                    ^^^ markup.strikethrough.carve
 
 ~see <http://a~b> now~
-#^^^ markup.strikethrough.carve
-#                 ^^^ markup.strikethrough.carve
 
 ~see ![x](a.png "t~u") now~
-#^^^ markup.strikethrough.carve
-#                      ^^^ markup.strikethrough.carve
 
 ~see ![x](a.png 't~u') now~
-#^^^ markup.strikethrough.carve
-#                      ^^^ markup.strikethrough.carve
 
 ~see ![x](a.png "t~") now~
-#^^^ markup.strikethrough.carve
-#                     ^^^ markup.strikethrough.carve
 
 ~see ![x](a.png 't~') now~
-#^^^ markup.strikethrough.carve
-#                     ^^^ markup.strikethrough.carve
 
 ~see [x](foo(bar)~baz) now~
-#^^^ markup.strikethrough.carve
-#                      ^^^ markup.strikethrough.carve
 
 ~see [x](foo\)x~y) now~
-#^^^ markup.strikethrough.carve
-#                  ^^^ markup.strikethrough.carve
 
 ~see [x](foo(bar(\x))~y) now~
-#^^^ markup.strikethrough.carve
-#                        ^^^ markup.strikethrough.carve
 
 ~see [x](a(b(c(d)))~e) now~
-#^^^ markup.strikethrough.carve
-#                      ^^^ markup.strikethrough.carve
 
 ~see <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x~y> now~
-#^^^ markup.strikethrough.carve
-#                                                   ^^^ markup.strikethrough.carve
 
 =see [x](http://a.b/c=) now=
-#^^^ markup.highlight.carve
-#                       ^^^ markup.highlight.carve
-# <- punctuation.definition.highlight.carve
-#                          ^ punctuation.definition.highlight.carve
 
 =see [x](http://a=b/c) now=
-#^^^ markup.highlight.carve
-#                      ^^^ markup.highlight.carve
 
 =see <http://a.b/c=> now=
-#^^^ markup.highlight.carve
-#                    ^^^ markup.highlight.carve
 
 =see <http://a=b> now=
-#^^^ markup.highlight.carve
-#                 ^^^ markup.highlight.carve
 
 =see ![x](a.png "t=u") now=
-#^^^ markup.highlight.carve
-#                      ^^^ markup.highlight.carve
 
 =see ![x](a.png 't=u') now=
-#^^^ markup.highlight.carve
-#                      ^^^ markup.highlight.carve
 
 =see ![x](a.png "t=") now=
-#^^^ markup.highlight.carve
-#                     ^^^ markup.highlight.carve
 
 =see ![x](a.png 't=') now=
-#^^^ markup.highlight.carve
-#                     ^^^ markup.highlight.carve
 
 =see [x](foo(bar)=baz) now=
-#^^^ markup.highlight.carve
-#                      ^^^ markup.highlight.carve
 
 =see [x](foo\)x=y) now=
-#^^^ markup.highlight.carve
-#                  ^^^ markup.highlight.carve
 
 =see [x](foo(bar(\x))=y) now=
-#^^^ markup.highlight.carve
-#                        ^^^ markup.highlight.carve
 
 =see [x](a(b(c(d)))=e) now=
-#^^^ markup.highlight.carve
-#                      ^^^ markup.highlight.carve
 
 =see <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x=y> now=
-#^^^ markup.highlight.carve
-#                                                   ^^^ markup.highlight.carve
 
 /a [b [c] d/](u) e/
 #                ^ markup.italic.carve
@@ -1821,8 +1687,6 @@ x /a [x](b "c/") d
 #                  ^ punctuation.definition.bold-italic.carve
 
 _see <a_b@c_d.de> now_
-#^^^ markup.underline.text.carve
-#                 ^^^ markup.underline.text.carve
 
 /see <x@a.b/> now/
 #             ^^^ -markup.italic

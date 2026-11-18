@@ -13,7 +13,6 @@ footnote, a description or a quote. Each assertion line is a list item.
 :: t
 : a
 +
-- <- markup.list.continuation.carve
 
 > +
 - <- -markup.list.continuation.carve

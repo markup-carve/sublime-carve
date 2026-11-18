@@ -6,26 +6,22 @@ is `> >` so the assertion line is that block.
 
 > > - a
 > > +
-> > ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 > > b
 
 > > - a
 > >
 > > +
-> > ^ markup.quote.carve markup.list.continuation.carve punctuation.definition.list.continuation.carve
 > > b
 
 > > - a
 > >
 > >
 > > +
-> > ^ markup.list.continuation.carve
 > > b
 
 > > 1. a
 > >
 > > +
-> > ^ markup.list.continuation.carve
 > > b
 
 A blank line one deep ends the item's watch, and a `> > +` below an item one
