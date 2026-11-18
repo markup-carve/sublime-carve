@@ -952,6 +952,8 @@ Note. an ordinary sentence start is prose
 # A LETTER OR ROMAN MARKER WITH A DOT NEEDS TWO SPACES (carve#4828), so
 # initials stay prose. A `)` marker and a digit marker keep one space.
 J. R. R. Tolkien wrote it
+# <- -punctuation.definition.list.begin.carve
+
 iv. one space is prose
 a.  alpha
 # <- punctuation.definition.list.begin.carve
