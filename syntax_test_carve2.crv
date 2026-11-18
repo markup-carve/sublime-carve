@@ -76,3 +76,30 @@ still hidden (U-050)
 
   [r]: /u
 # ^ -meta.link.reference.definition.carve
+
+J. R. R. Tolkien wrote it (U-030, C2-B-040)
+# <- -punctuation.definition.list.begin.carve
+
+II. Background
+# <- -punctuation.definition.list.begin.carve
+
+A.{.c} x
+# <- -punctuation.definition.list.begin.carve
+
+A.  Smith
+# <- punctuation.definition.list.begin.carve
+
+IV.  four
+# <- punctuation.definition.list.begin.carve
+
+iv. four
+# <- punctuation.definition.list.begin.carve
+
+A) one
+# <- punctuation.definition.list.begin.carve
+
+A.{.c}  x
+# <- punctuation.definition.list.begin.carve
+
+a.{.c} x
+# <- punctuation.definition.list.begin.carve

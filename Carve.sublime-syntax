@@ -26,8 +26,9 @@ variables:
   link_dest: '(?>\\[()\\]|[^ \t\n()]|(?<parens>\((?>\\[()\\]|[^ \t\n()]|\g<parens>)*\)))*'
   url_autolink: '<[a-zA-Z][a-zA-Z0-9+.\-]*:(?:[a-zA-Z0-9\-._~:/?#\[\]@!$&''()*+,;=%]|[^\p{ASCII}\x{80}-\x{9F}\p{Z}\p{Cf}])+>'
   email_autolink: '<[\p{L}0-9\-_.+]+@(?:[\p{L}0-9\-_]+\.)+\p{L}+>'
-  # A letter or roman marker takes one space before its content (U-103).
-  alpha_marker: '(?:[A-Za-z]|[ivxlcdm]+|[IVXLCDM]+)(?:\)|\.(?= |\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\} ))'
+  # A letter or roman marker takes one space before its content (U-103), an
+  # uppercase one with a dot two, so `J. R. R. Tolkien` is text (C2-B-040).
+  alpha_marker: '(?:(?:[A-Za-z]|[ivxlcdm]+|[IVXLCDM]+)\)|(?:[a-z]|[ivxlcdm]+)\.(?= |\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\} )|(?:[A-Z]|[IVXLCDM]+)\.(?=  |\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}  ))'
   # A line that opens a list item or a definition (see `list-item`). A glued
   # attribute block needs content after it, as in `lists`.
   list_item_line: '[ \t]*(?:[-*]|[0-9]+[.)]|{{alpha_marker}}|\.|::?)(?: +|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n]))(?![ \t]*$)'
