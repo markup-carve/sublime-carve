@@ -1,9 +1,0 @@
-> > > SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
-
-A `> > > +` after blank `> > >` lines is quote text in Carve 0.2 (U-016).
-
-> > > - a
-> > >
-> > > +
-> > > ^ markup.quote.carve -punctuation.definition.list.continuation.carve
-> > > b
