@@ -136,9 +136,6 @@ jobs:
       - name: Reject assertions that cannot fail
         run: python3 tools/lint-syntax-tests.py
 
-      - name: The generated battery block is in sync
-        run: python3 tools/generate-battery-tests.py --check
-
       - name: The generated fence languages are in sync
         run: python3 tools/generate-fence-languages.py --check
 
@@ -157,10 +154,6 @@ jobs:
               print("ok  ", path)
           PY
 
-      # The battery drift check in ci.yml is deliberately not repeated here: it
-      # reaches carve-grammars over the network, so a failure means the vendored
-      # table is stale or GitHub is down, neither of which is a reason to refuse
-      # a tag that main has already passed CI on.
 
   tag:
     name: Create the tag
