@@ -53,6 +53,8 @@ jobs:
       # GitHub is down), not that the syntax is wrong.
       - name: The vendored fence-language table still matches carve-grammars
         run: ./tools/check-fence-languages-drift.sh
+        env:
+          CARVE_GRAMMARS_REV: 79511c4ba461cb0696e0400132da9eef414147e0
 
   validate:
     name: Validate Sublime syntax YAML
