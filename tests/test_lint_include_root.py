@@ -322,8 +322,9 @@ class WithIncludeRoot(unittest.TestCase):
             expected = {os.path.join(tmp, p) for p in ("docs/parts/a.crv", "docs/parts/b.crv", "shared/s.crv")}
             self.assertEqual(files, expected, out)
             nested = [m for m in hits if m.group(1).endswith("b.crv")]
-            # The 0.2 CLI does not print the include chain yet (markup-carve/carve-js#5215).
             self.assertTrue(nested, out)
+            self.assertIn("(included from ", nested[0].string)
+            self.assertIn(" > docs/parts/a.crv:3:1)", nested[0].string)
 
 
     def test_the_probe_finds_the_cli_on_the_build_path(self):
