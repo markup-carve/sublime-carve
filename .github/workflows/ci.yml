@@ -54,7 +54,7 @@ jobs:
       - name: The vendored fence-language table still matches carve-grammars
         run: ./tools/check-fence-languages-drift.sh
         env:
-          CARVE_GRAMMARS_REV: 79511c4ba461cb0696e0400132da9eef414147e0
+          CARVE_GRAMMARS_REV: 6621ad191d8eddbbb931f6b9e608e6829633c3a2
 
   lint_build:
     name: Lint build include root
