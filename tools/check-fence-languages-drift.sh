@@ -13,7 +13,10 @@ upstream="${CARVE_GRAMMARS_DIR:-}"
 if [[ -z "$upstream" ]]; then
   work="$(mktemp -d)"
   trap 'rm -rf "$work"' EXIT
-  git clone --quiet --depth 1 https://github.com/markup-carve/carve-grammars "$work/cg"
+  rev="${CARVE_GRAMMARS_REV:-main}"
+  git init --quiet "$work/cg"
+  git -C "$work/cg" fetch --quiet --depth 1 https://github.com/markup-carve/carve-grammars "$rev"
+  git -C "$work/cg" checkout --quiet FETCH_HEAD
   upstream="$work/cg"
 fi
 

@@ -26,9 +26,9 @@ variables:
   link_dest: '(?>\\[()\\]|[^ \t\n()]|(?<parens>\((?>\\[()\\]|[^ \t\n()]|\g<parens>)*\)))*'
   url_autolink: '<[a-zA-Z][a-zA-Z0-9+.\-]*:(?:[a-zA-Z0-9\-._~:/?#\[\]@!$&''()*+,;=%]|[^\p{ASCII}\x{80}-\x{9F}\p{Z}\p{Cf}])+>'
   email_autolink: '<[\p{L}0-9\-_.+]+@(?:[\p{L}0-9\-_]+\.)+\p{L}+>'
-  # A letter or roman marker with a dot needs two spaces before its content
-  # (carve#4828); with `)` one space is enough.
-  alpha_marker: '(?:[A-Za-z]|[ivxlcdm]+|[IVXLCDM]+)(?:\)|\.(?= {2}|\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\} {2}))'
+  # A letter or roman marker takes one space before its content (U-103), an
+  # uppercase one with a dot two, so `J. R. R. Tolkien` is text (C2-B-040).
+  alpha_marker: '(?:(?:[A-Za-z]|[ivxlcdm]+|[IVXLCDM]+)\)|(?:[a-z]|[ivxlcdm]+)\.(?= |\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\} )|(?:[A-Z]|[IVXLCDM]+)\.(?=  |\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}  ))'
   # A line that opens a list item or a definition (see `list-item`). A glued
   # attribute block needs content after it, as in `lists`.
   list_item_line: '[ \t]*(?:[-*]|[0-9]+[.)]|{{alpha_marker}}|\.|::?)(?: +|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n]))(?![ \t]*$)'
@@ -43,11 +43,12 @@ variables:
   # nested bracket pair. Stopping at a bare `[` keeps a line of unclosed
   # brackets linear.
   lbl: '(?:[^\[\]\n]|\[[^\[\]\n]*\])'
-  # A `-` or `*` run may space its markers with single spaces (carve#4814).
-  thematic_run: '(?:-{3,}|\*{3,}|_{3,}|-(?: -){2,}|\*(?: \*){2,})'
-  # A line that ends a paragraph: every block opener except a list marker and
-  # a caption, which do not interrupt one.
-  block_interrupt: '(?:#{1,6} +\S|[ \t]*(?:>(?: |$)|`{3,}|~{3,}|:{3,}|::[ \t]+\S|\|.*\|[ \t]*$|%%|\{[^\n]*\}[ \t]*$|{{thematic_run}}[ \t]*$|\*?\[\^?[^\]\n]+\]:[ \t]))'
+  # Only a contiguous star run is a break in 0.2 (U-044, U-045).
+  thematic_run: '\*{3,}'
+  # A line that ends a paragraph in 0.2 (C2-B-012, U-001 to U-013): a fence, a
+  # colon fence, a table row, a comment fence, a region marker or a break. A
+  # heading, quote, term, attribute or definition line below prose is text.
+  block_interrupt: '(?:[ \t]*(?:`{3,}|:{3,}|\|.*\|[ \t]*$|%{3,}|%%[ \t]*#(?:region|endregion)\b|{{thematic_run}}[ \t]*$))'
   # Cell alignment: a horizontal symbol, optionally a vertical one, or `?` and
   # a vertical one (carve#5091 D3).
   cell_alignment: '(?:[<>~][\^~v]?|\?[\^~v])'
@@ -120,30 +121,30 @@ contexts:
     - match: '^[ \t]*\n'
       set: list-item-gap
     # A `+` at column 0 sits at the open list's marker column (CARVE-P9-031).
-    - match: '^(?=\+[ \t]*$)'
+    - match: '^(?=(?!))'
       push: cm-item
     - match: '^(?=\S)(?!{{list_item_line}})(?={{block_interrupt}}|[ \t]*\^ +\S)'
       pop: true
-    - match: '^(?=[^ \t\n])(?!{{list_item_line}})(?!\+[ \t]*$|\+.*\|[ \t]*$)'
+    - match: '^(?=[^ \t\n])(?!{{list_item_line}})(?!(?!)|\+.*\|[ \t]*$)'
       push: lazy-continuation
     # A `+` at column 0 below an indented quote is at the item's column, not
     # the quote's, so a list next refuses it (spec row 635-3).
-    - match: '^(?=[ \t]+>(?: |$))(?![ \t]*(?:> )+\+[ \t]*$)'
+    - match: '^(?=[ \t]+>(?: |$))(?![ \t]*(?:> )+(?!))'
       push: quote-run-in-item
     - include: code-blocks-on-a-marker-line
     - include: code-blocks-at-a-body-column
     - include: body
 
   quote-run-in-item:
-    - match: '^(?=\+[ \t]*$)'
+    - match: '^(?=(?!))'
       set: cm-item
     - include: quote-run
 
   list-item-gap:
     - match: '^[ \t]*\n'
-    - match: '^(?=\S)(?!{{list_item_line}})(?!\+[ \t]*$)'
+    - match: '^(?=\S)(?!{{list_item_line}})(?!(?!))'
       pop: true
-    - match: '^(?=[ \t]|{{list_item_line}}|\+[ \t]*$)'
+    - match: '^(?=[ \t]|{{list_item_line}}|(?!))'
       set: list-item
 
   lazy-continuation:
@@ -356,7 +357,7 @@ contexts:
         1: punctuation.definition.comment.carve
       push:
         - meta_scope: comment.block.carve
-        - match: '^\s*(\1)(?!%)[^\n]*$'
+        - match: '^\s*(\1)(?!%)[ \t]*$'
           captures:
             1: punctuation.definition.comment.carve
           pop: true
@@ -399,7 +400,7 @@ contexts:
         1: punctuation.definition.thematic-break.carve
 
   headings:
-    - match: '^(#{1,6})( +)(?![ \t]*$)'
+    - match: '^[ \t]*(#{1,6}|={1,6})( +)(?![ \t]*$)'
       scope: markup.heading.carve
       captures:
         1: punctuation.definition.heading.carve
@@ -435,7 +436,7 @@ contexts:
     # or longer, so a sample may hold shorter or other-character fences.
     # --- BEGIN GENERATED FENCE LANGUAGES (tools/generate-fence-languages.py) ---
     # Do not edit by hand: change tools/fence-languages.json and run the script.
-    - match: '^((`|~)\2{2,})[ \t]*((?i:carve|crv))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:carve|crv))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -447,7 +448,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:js|javascript|mjs|cjs|node))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:js|javascript|mjs|cjs|node))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -457,7 +458,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:jsx))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:jsx))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -467,7 +468,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:ts|typescript|mts|cts))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:ts|typescript|mts|cts))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -477,7 +478,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:tsx))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:tsx))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -487,7 +488,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:json|json5))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:json|json5))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -497,7 +498,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:jsonc))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:jsonc))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -507,7 +508,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:yaml|yml))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:yaml|yml))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -517,7 +518,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:toml))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:toml))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -527,7 +528,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:csv))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:csv))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -537,7 +538,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:tsv))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:tsv))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -547,7 +548,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:html|htm|xhtml))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:html|htm|xhtml))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -557,7 +558,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:xml|svg|xsd))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:xml|svg|xsd))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -567,7 +568,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:xsl|xslt))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:xsl|xslt))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -577,7 +578,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:css))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:css))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -587,7 +588,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:php))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:php))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -597,7 +598,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:python|py|py3))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:python|py|py3))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -607,7 +608,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:ruby|rb))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:ruby|rb))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -617,7 +618,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:rust|rs))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:rust|rs))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -627,7 +628,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:go|golang))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:go|golang))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -637,7 +638,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:java))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:java))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -647,7 +648,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:c|h))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:c|h))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -657,7 +658,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:cpp|c\+\+|cxx|cc|hpp))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:cpp|c\+\+|cxx|cc|hpp))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -667,7 +668,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:cs|csharp|c#))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:cs|csharp|c#))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -677,7 +678,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:objc|objectivec|objective-c))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:objc|objectivec|objective-c))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -687,7 +688,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:objcpp|objective-cpp))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:objcpp|objective-cpp))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -697,7 +698,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:sh|bash|shell))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:sh|bash|shell))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -707,7 +708,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:zsh))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:zsh))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -717,7 +718,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:bat|batch|cmd|dosbatch))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:bat|batch|cmd|dosbatch))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -727,7 +728,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:sql))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:sql))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -737,7 +738,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:lua))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:lua))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -747,7 +748,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:perl|pl))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:perl|pl))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -757,7 +758,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:r))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:r))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -767,7 +768,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:clojure|clj|cljs|edn))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:clojure|clj|cljs|edn))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -777,7 +778,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:groovy|gradle))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:groovy|gradle))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -787,7 +788,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:markdown|md))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:markdown|md))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -797,7 +798,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:rst|restructuredtext))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:rst|restructuredtext))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -807,7 +808,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:latex|tex))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:latex|tex))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -817,7 +818,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:bibtex|bib))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:bibtex|bib))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -827,7 +828,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:diff|patch))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:diff|patch))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -837,7 +838,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:makefile|make))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:makefile|make))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -847,7 +848,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:haskell|hs))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:haskell|hs))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -857,7 +858,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:scala))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:scala))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -867,7 +868,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:erlang|erl))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:erlang|erl))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -877,7 +878,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:ocaml))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:ocaml))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -887,7 +888,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:lisp))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:lisp))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -897,7 +898,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:d))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:d))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -907,7 +908,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:matlab))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:matlab))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -917,7 +918,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:pascal))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:pascal))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -927,7 +928,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:tcl))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:tcl))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -937,7 +938,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:applescript))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:applescript))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -947,7 +948,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:dot|graphviz))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:dot|graphviz))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -957,7 +958,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:regexp|regex))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:regexp|regex))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -967,7 +968,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:erb))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:erb))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -977,7 +978,7 @@ contexts:
       escape: '^(\1\2*)\s*$'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^((`|~)\2{2,})[ \t]*((?i:haml))(?![\w+#./-])(.*)$'
+    - match: '^((`)\2{2,})[ \t]*((?i:haml))(?![\w+#./-])(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -988,7 +989,7 @@ contexts:
       escape_captures:
         1: punctuation.definition.raw.end.carve
     # --- END GENERATED FENCE LANGUAGES ---
-    - match: '^((`|~)\2{2,})\s*([^`~\s]+)?(.*)$'
+    - match: '^((`)\2{2,})\s*([^`~\s]+)?(.*)$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: entity.name.type.language.carve
@@ -1003,7 +1004,7 @@ contexts:
   # --- BEGIN GENERATED CONTAINER FENCES (tools/generate-fence-languages.py) ---
   # Do not edit by hand: change tools/fence-languages.json and run the script.
   code-blocks-on-a-marker-line:
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:carve|crv))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:carve|crv))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1018,7 +1019,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:js|javascript|mjs|cjs|node))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:js|javascript|mjs|cjs|node))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1033,7 +1034,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:jsx))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:jsx))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1048,7 +1049,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:ts|typescript|mts|cts))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:ts|typescript|mts|cts))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1063,7 +1064,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:tsx))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:tsx))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1078,7 +1079,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:json|json5))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:json|json5))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1093,7 +1094,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:jsonc))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:jsonc))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1108,7 +1109,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:yaml|yml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:yaml|yml))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1123,7 +1124,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:toml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:toml))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1138,7 +1139,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:csv))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:csv))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1153,7 +1154,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:tsv))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:tsv))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1168,7 +1169,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:html|htm|xhtml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:html|htm|xhtml))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1183,7 +1184,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:xml|svg|xsd))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:xml|svg|xsd))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1198,7 +1199,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:xsl|xslt))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:xsl|xslt))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1213,7 +1214,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:css))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:css))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1228,7 +1229,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:php))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:php))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1243,7 +1244,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:python|py|py3))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:python|py|py3))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1258,7 +1259,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:ruby|rb))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:ruby|rb))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1273,7 +1274,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:rust|rs))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:rust|rs))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1288,7 +1289,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:go|golang))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:go|golang))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1303,7 +1304,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:java))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:java))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1318,7 +1319,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:c|h))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:c|h))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1333,7 +1334,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:cpp|c\+\+|cxx|cc|hpp))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:cpp|c\+\+|cxx|cc|hpp))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1348,7 +1349,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:cs|csharp|c#))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:cs|csharp|c#))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1363,7 +1364,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:objc|objectivec|objective-c))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:objc|objectivec|objective-c))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1378,7 +1379,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:objcpp|objective-cpp))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:objcpp|objective-cpp))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1393,7 +1394,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:sh|bash|shell))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:sh|bash|shell))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1408,7 +1409,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:zsh))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:zsh))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1423,7 +1424,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:bat|batch|cmd|dosbatch))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:bat|batch|cmd|dosbatch))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1438,7 +1439,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:sql))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:sql))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1453,7 +1454,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:lua))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:lua))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1468,7 +1469,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:perl|pl))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:perl|pl))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1483,7 +1484,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:r))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:r))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1498,7 +1499,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:clojure|clj|cljs|edn))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:clojure|clj|cljs|edn))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1513,7 +1514,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:groovy|gradle))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:groovy|gradle))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1528,7 +1529,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:markdown|md))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:markdown|md))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1543,7 +1544,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:rst|restructuredtext))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:rst|restructuredtext))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1558,7 +1559,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:latex|tex))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:latex|tex))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1573,7 +1574,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:bibtex|bib))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:bibtex|bib))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1588,7 +1589,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:diff|patch))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:diff|patch))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1603,7 +1604,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:makefile|make))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:makefile|make))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1618,7 +1619,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:haskell|hs))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:haskell|hs))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1633,7 +1634,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:scala))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:scala))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1648,7 +1649,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:erlang|erl))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:erlang|erl))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1663,7 +1664,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:ocaml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:ocaml))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1678,7 +1679,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:lisp))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:lisp))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1693,7 +1694,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:d))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:d))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1708,7 +1709,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:matlab))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:matlab))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1723,7 +1724,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:pascal))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:pascal))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1738,7 +1739,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:tcl))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:tcl))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1753,7 +1754,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:applescript))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:applescript))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1768,7 +1769,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:dot|graphviz))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:dot|graphviz))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1783,7 +1784,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:regexp|regex))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:regexp|regex))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1798,7 +1799,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:erb))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:erb))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1813,7 +1814,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*((?i:haml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*((?i:haml))(?![\w+#./-])(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1828,7 +1829,7 @@ contexts:
       escape: '^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*(?!=)([^`~\s]+)?(.*)$'
+    - match: '^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))(\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\})? +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*(?!=)([^`~\s]+)?(.*)$'
       captures:
         2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve
         3: markup.list.numbered.carve punctuation.definition.list.begin.carve
@@ -1848,7 +1849,7 @@ contexts:
           pop: true
 
   code-blocks-at-a-body-column:
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:carve|crv))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:carve|crv))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1858,7 +1859,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:js|javascript|mjs|cjs|node))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:js|javascript|mjs|cjs|node))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1868,7 +1869,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:jsx))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:jsx))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1878,7 +1879,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:ts|typescript|mts|cts))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:ts|typescript|mts|cts))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1888,7 +1889,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:tsx))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:tsx))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1898,7 +1899,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:json|json5))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:json|json5))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1908,7 +1909,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:jsonc))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:jsonc))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1918,7 +1919,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:yaml|yml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:yaml|yml))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1928,7 +1929,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:toml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:toml))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1938,7 +1939,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:csv))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:csv))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1948,7 +1949,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:tsv))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:tsv))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1958,7 +1959,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:html|htm|xhtml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:html|htm|xhtml))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1968,7 +1969,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:xml|svg|xsd))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:xml|svg|xsd))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1978,7 +1979,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:xsl|xslt))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:xsl|xslt))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1988,7 +1989,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:css))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:css))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -1998,7 +1999,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:php))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:php))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2008,7 +2009,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:python|py|py3))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:python|py|py3))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2018,7 +2019,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:ruby|rb))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:ruby|rb))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2028,7 +2029,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:rust|rs))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:rust|rs))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2038,7 +2039,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:go|golang))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:go|golang))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2048,7 +2049,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:java))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:java))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2058,7 +2059,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:c|h))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:c|h))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2068,7 +2069,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:cpp|c\+\+|cxx|cc|hpp))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:cpp|c\+\+|cxx|cc|hpp))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2078,7 +2079,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:cs|csharp|c#))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:cs|csharp|c#))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2088,7 +2089,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:objc|objectivec|objective-c))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:objc|objectivec|objective-c))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2098,7 +2099,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:objcpp|objective-cpp))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:objcpp|objective-cpp))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2108,7 +2109,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:sh|bash|shell))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:sh|bash|shell))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2118,7 +2119,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:zsh))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:zsh))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2128,7 +2129,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:bat|batch|cmd|dosbatch))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:bat|batch|cmd|dosbatch))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2138,7 +2139,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:sql))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:sql))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2148,7 +2149,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:lua))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:lua))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2158,7 +2159,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:perl|pl))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:perl|pl))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2168,7 +2169,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:r))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:r))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2178,7 +2179,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:clojure|clj|cljs|edn))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:clojure|clj|cljs|edn))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2188,7 +2189,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:groovy|gradle))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:groovy|gradle))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2198,7 +2199,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:markdown|md))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:markdown|md))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2208,7 +2209,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:rst|restructuredtext))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:rst|restructuredtext))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2218,7 +2219,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:latex|tex))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:latex|tex))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2228,7 +2229,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:bibtex|bib))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:bibtex|bib))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2238,7 +2239,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:diff|patch))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:diff|patch))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2248,7 +2249,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:makefile|make))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:makefile|make))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2258,7 +2259,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:haskell|hs))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:haskell|hs))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2268,7 +2269,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:scala))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:scala))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2278,7 +2279,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:erlang|erl))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:erlang|erl))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2288,7 +2289,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:ocaml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:ocaml))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2298,7 +2299,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:lisp))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:lisp))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2308,7 +2309,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:d))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:d))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2318,7 +2319,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:matlab))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:matlab))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2328,7 +2329,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:pascal))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:pascal))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2338,7 +2339,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:tcl))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:tcl))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2348,7 +2349,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:applescript))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:applescript))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2358,7 +2359,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:dot|graphviz))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:dot|graphviz))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2368,7 +2369,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:regexp|regex))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:regexp|regex))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2378,7 +2379,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:erb))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:erb))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2388,7 +2389,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*((?i:haml))(?![\w+#./-])(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*((?i:haml))(?![\w+#./-])(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2398,7 +2399,7 @@ contexts:
       escape: '^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)'
       escape_captures:
         1: punctuation.definition.raw.end.carve
-    - match: '^([ \t]+)((`|~)\3{2,})[ \t]*(?!=)([^`~\s]+)?(.*)$'
+    - match: '^([ \t]+)((`)\3{2,})[ \t]*(?!=)([^`~\s]+)?(.*)$'
       captures:
         2: punctuation.definition.raw.begin.carve
         4: entity.name.type.language.carve
@@ -2419,7 +2420,7 @@ contexts:
   # language is embedded. Must be tried before `code-blocks`, which would
   # otherwise read `=html` as a language name.
   raw-blocks:
-    - match: '^((`|~)\2{2,})(=)([^\s`~]+)\s*$'
+    - match: '^((`)\2{2,})(=)([^\s`~]+)\s*$'
       captures:
         1: punctuation.definition.raw.begin.carve
         3: punctuation.definition.raw.format.carve
@@ -2679,16 +2680,9 @@ contexts:
         2: punctuation.definition.attributes.begin.carve
         3: keyword.operator.table.alignment.carve
       push: attribute-block
-    # The glued 0.1.13 prefix (`|=>`, `|<^`) stays readable through 0.1.x.
-    - match: '(\|=)({{cell_alignment}})(?= |\{)'
-      captures:
-        1: keyword.operator.table.header.carve
-        2: keyword.operator.table.alignment.carve
-    - match: '(\|)(?!< *\|)({{cell_alignment}})(?= |\{)'
-      captures:
-        1: punctuation.separator.table.carve
-        2: keyword.operator.table.alignment.carve
-    - match: '\|='
+    # A glued mark is cell text in 0.2, and `|=` needs a space, tab, brace,
+    # pipe or line end after it (U-056).
+    - match: '\|=(?=[ \t{|]|$)'
       scope: keyword.operator.table.header.carve
     - match: '(?<=\|)\s*(\^)\s*(?=\|)'
       captures:
@@ -2696,13 +2690,7 @@ contexts:
     - match: '(?<=\|)\s*(<)\s*(?=\|)'
       captures:
         1: keyword.operator.table.colspan.carve
-    # Separator/alignment cell: the dash run is the delimiter; leading/
-    # trailing alignment colons (`:--`, `--:`, `:-:`) get their own scope.
-    - match: '(?<=\|)\s*(:?)(-+)(:?)\s*(?=\|)'
-      captures:
-        1: keyword.operator.table.alignment.carve
-        2: punctuation.separator.table.delimiter.carve
-        3: keyword.operator.table.alignment.carve
+    # A GFM separator row is an ordinary row in 0.2 (U-055).
     - match: '\|'
       scope: punctuation.separator.table.carve
     - include: inline-comment
@@ -2756,11 +2744,11 @@ contexts:
     # 0 (`cm-quote`): an indented follower is refused (markup-carve/carve#3529). On a later
     # quote line it is text unless a quoted item as deep sits above it, with
     # only blank quote lines that deep between (`quote-item-below-K`).
-    - match: '^(?=[ \t]*(?:> ){3,}\+[ \t]*$)'
+    - match: '^(?=[ \t]*(?:> ){3,}(?!))'
       push: cm-quote-3
-    - match: '^(?=[ \t]*(?:> ){2}\+[ \t]*$)'
+    - match: '^(?=[ \t]*(?:> ){2}(?!))'
       push: cm-quote-2
-    - match: '^(?=[ \t]*> \+[ \t]*$)'
+    - match: '^(?=[ \t]*> (?!))'
       push: cm-quote-1
     - match: '^(?=[ \t]*>(?: |$))'
       push: quote-run
@@ -2768,14 +2756,14 @@ contexts:
   # The lines of one quote, so a `>` line can tell it is not the first.
   quote-run:
     # A `+` at column 0 below a quote line is at the quote's marker column.
-    - match: '^(?=\+[ \t]*$)'
+    - match: '^(?=(?!))'
       set: cm-any
     # A colon line right below a quote is its lazy text, not a description.
     - match: '^(?=[ \t]*: +\S)'
       set: quote-lazy-line
-    - match: '^(?![ \t]*(?:>(?: |$)|(?:> )+\+[ \t]*$))'
+    - match: '^(?![ \t]*(?:>(?: |$)|(?:> )+(?!)))'
       pop: true
-    - match: '^([ \t]*(?:> )+)\+[ \t]*$'
+    - match: '^([ \t]*(?:> )+)(?!)'
       scope: markup.quote.carve
       captures:
         1: punctuation.definition.quote.carve
@@ -2790,7 +2778,7 @@ contexts:
       push: quote-item-below-2
     - match: '^(?=[ \t]*(?:> ){3}(?:[-*]|[0-9]+[.)]|{{alpha_marker}}|\.) +\S)'
       push: quote-item-below-3
-    - match: '^([ \t]*>(?: [ \t]*>)*) [ \t]*((`|~)\3{2,})[^\n]*$'
+    - match: '^([ \t]*>(?: [ \t]*>)*) [ \t]*((`)\3{2,})[^\n]*$'
       scope: markup.quote.carve markup.raw.block.carve
       push:
         - meta_content_scope: markup.quote.carve markup.raw.block.carve
@@ -2817,7 +2805,7 @@ contexts:
   quote-item-below-1:
     - match: '^(?=[ \t]*> (?:[-*]|[0-9]+[.)]|{{alpha_marker}}|\.) +\S|[ \t]*>[ \t]*$)'
       push: quote-line-open
-    - match: '^(?=[ \t]*> \+[ \t]*$)'
+    - match: '^(?=[ \t]*> (?!))'
       set: cm-quoted-1
     - match: '^'
       pop: true
@@ -2825,7 +2813,7 @@ contexts:
   quote-item-below-2:
     - match: '^(?=[ \t]*(?:> ){2}(?:[-*]|[0-9]+[.)]|{{alpha_marker}}|\.) +\S|[ \t]*>(?: >){1}[ \t]*$)'
       push: quote-line-open
-    - match: '^(?=[ \t]*(?:> ){2}\+[ \t]*$)'
+    - match: '^(?=[ \t]*(?:> ){2}(?!))'
       set: cm-quoted-2
     - match: '^'
       pop: true
@@ -2833,7 +2821,7 @@ contexts:
   quote-item-below-3:
     - match: '^(?=[ \t]*(?:> ){3}(?:[-*]|[0-9]+[.)]|{{alpha_marker}}|\.) +\S|[ \t]*>(?: >){2}[ \t]*$)'
       push: quote-line-open
-    - match: '^(?=[ \t]*(?:> ){3}\+[ \t]*$)'
+    - match: '^(?=[ \t]*(?:> ){3}(?!))'
       set: cm-quoted-3
     - match: '^'
       pop: true
@@ -2846,7 +2834,7 @@ contexts:
 
   # The line below a quoted item: `> +` is that item's marker.
   quote-item-next-line:
-    - match: '^(?=[ \t]*> \+[ \t]*$)'
+    - match: '^(?=[ \t]*> (?!))'
       set: cm-quoted-item
     - match: '^'
       pop: true
@@ -2868,10 +2856,10 @@ contexts:
     - meta_scope: markup.quote.carve
     # A chain ending in a quote marker (`> - > +`) refuses a list or a blank
     # line next, quoted or not (spec rows 652, 655).
-    - match: '(?=(?:> )*{{fb_item}}{{fb_any}}*> \+[ \t]*$)'
+    - match: '(?=(?:> )*{{fb_item}}{{fb_any}}*> (?!))'
       branch_point: quote-chain-quote
       branch: [quote-chain-quote-marker, quote-chain-quote-text]
-    - match: '(?=(?:> )*{{fb_item}}{{fb_any}}*\+[ \t]*$)'
+    - match: '(?=(?:> )*{{fb_item}}{{fb_any}}*(?!))'
       set: quote-first-block-chain
     - match: '(>)(?= |$)[ ]?'
       captures:
@@ -2930,7 +2918,7 @@ contexts:
     # item's own column on the line right below it (`item-next-line`). Any
     # other lone `+` is consumed here as text, so it cannot open a paragraph a
     # following item could not interrupt.
-    - match: '^[ \t]*\+[ \t]*$'
+    - match: '^[ \t]*(?!)'
     # A BULLET MAY BE GLUED TO AN ATTRIBUTE BLOCK, and then the required space
     # comes after the block, not after the marker - so `-{#x} item` and
     # `*{.c} item` got no marker colour on a line that IS a list item (#22). The
@@ -2950,11 +2938,11 @@ contexts:
     # the others. The `-` is escaped so it is not read as a range.
     # STACKED OPENERS (`- - +`, `- > +`, `1. - +`, `- - [ ] +`): the item opens
     # on this line, so the `+` is a marker whatever follows.
-    - match: '^(?=[ \t]*{{fb_item}}{{fb_any}}*> \+[ \t]*$)'
+    - match: '^(?=[ \t]*{{fb_item}}{{fb_any}}*> (?!))'
       push: cm-chain-quote
-    - match: '^(?=[ \t]*{{fb_item}}{{fb_any}}+\+[ \t]*$)'
+    - match: '^(?=[ \t]*{{fb_item}}{{fb_any}}+(?!))'
       push: first-block-chain
-    - match: '^([ \t]*)([-*])(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(\[[ xX\-_>?]\] +)?(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
+    - match: '^([ \t]*)([-*])(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(\[[ xX\-_>?]\] +)?(?![ \t]*$)(?:(?!)(\+))?'
       scope: markup.list.unnumbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
@@ -2976,7 +2964,7 @@ contexts:
     # rather than skipped with `\{[^}]*\}` - a quoted value may hold a `}` and
     # may escape its own quote, so a short run rejects `1.{title="a}b"} item`,
     # which is a valid item (markup-carve/carve-grammars#85).
-    - match: '^([ \t]*)([0-9]+[.)]|{{alpha_marker}}|\.)(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
+    - match: '^([ \t]*)([0-9]+[.)]|{{alpha_marker}}|\.)(?:(?= )|(?=\{(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^}"''\n])*\}[ \t]+[^ \t\n])) *(?![ \t]*$)(?:(?!)(\+))?'
       scope: markup.list.numbered.carve
       captures:
         2: punctuation.definition.list.begin.carve
@@ -2986,9 +2974,9 @@ contexts:
       scope: markup.list.definition.term.carve
       captures:
         2: punctuation.definition.list.begin.carve
-    - match: '^(?=[ \t]*: +\+[ \t]*$)'
+    - match: '^(?=[ \t]*: +(?!))'
       push: cm-description
-    - match: '^([ \t]*)(:) +(?![ \t]*$)(?:(\+)(?=[ \t]*$))?'
+    - match: '^([ \t]*)(:) +(?![ \t]*$)(?:(?!)(\+))?'
       scope: markup.list.definition.carve
       captures:
         2: punctuation.definition.list.begin.carve
@@ -2998,14 +2986,14 @@ contexts:
   # The rest of an item's line, then one look at the next line: a `+` at the
   # item's own column is its marker (`\1` is the item's indentation).
   item-next-line:
-    - match: '^(?!\1\+[ \t]*$)'
+    - match: '^(?!\1(?!))'
       pop: true
     - match: '^'
       set: cm-item
     - include: paragraph-inline
 
   description-next-line:
-    - match: '^(?!\1\+[ \t]*$)'
+    - match: '^(?!\1(?!))'
       pop: true
     - match: '^'
       set: cm-any
@@ -3026,7 +3014,7 @@ contexts:
 
   quote-chain-quote-text:
     - include: first-block-openers
-    - match: '\+[ \t]*$'
+    - match: '(?!)'
       pop: 2
 
   quote-first-block-chain:
@@ -3074,7 +3062,7 @@ contexts:
 
   # At an item's column: a block at that column next, not a sibling item.
   cm-item:
-    - match: '^([ \t]*)(?=\+[ \t]*$)'
+    - match: '^([ \t]*)(?=(?!))'
       branch_point: cm-item
       branch: [cm-item-marker, cm-text]
     - match: '^'
@@ -3083,14 +3071,14 @@ contexts:
   cm-item-marker:
     - match: '\+'
       scope: markup.list.continuation.carve punctuation.definition.list.continuation.carve
-    - match: '^(?=\1(?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+    - match: '^(?=\1(?:(?!)|(?![ \t])(?!{{cm_marker}})\S))'
       pop: 2
     - match: '^'
       fail: cm-item
 
   # At a description's, footnote's or quote's column: any block there next.
   cm-any:
-    - match: '^([ \t]*)(?=\+[ \t]*$)'
+    - match: '^([ \t]*)(?=(?!))'
       branch_point: cm-any
       branch: [cm-any-marker, cm-text]
     - match: '^'
@@ -3105,12 +3093,12 @@ contexts:
       fail: cm-any
 
   cm-text:
-    - match: '\+[ \t]*$'
+    - match: '(?!)'
       pop: 2
 
   # `> +` below a quoted item: a quoted block at the item's column next.
   cm-quoted-item:
-    - match: '^(?=[ \t]*> \+[ \t]*$)'
+    - match: '^(?=[ \t]*> (?!))'
       branch_point: cm-quoted-item
       branch: [cm-quoted-item-marker, cm-quoted-text]
     - match: '^'
@@ -3122,7 +3110,7 @@ contexts:
       captures:
         1: punctuation.definition.quote.carve
         2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
-    - match: '^(?=[ \t]*> (?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+    - match: '^(?=[ \t]*> (?:(?!)|(?![ \t])(?!{{cm_marker}})\S))'
       pop: 2
     - match: '^'
       fail: cm-quoted-item
@@ -3130,7 +3118,7 @@ contexts:
   # `> > +` behind a quoted item's K markers: a quoted block next, behind the
   # same K markers at the same column.
   cm-quoted-1:
-    - match: '^([ \t]*)(?=> \+[ \t]*$)'
+    - match: '^([ \t]*)(?=> (?!))'
       branch_point: cm-quoted-1
       branch: [cm-quoted-1-marker, cm-quoted-deep-text]
     - match: '^'
@@ -3142,13 +3130,13 @@ contexts:
       captures:
         1: punctuation.definition.quote.carve
         2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
-    - match: '^(?=\1> (?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+    - match: '^(?=\1> (?:(?!)|(?![ \t])(?!{{cm_marker}})\S))'
       pop: 2
     - match: '^'
       fail: cm-quoted-1
 
   cm-quoted-2:
-    - match: '^([ \t]*)(?=(?:> ){2}\+[ \t]*$)'
+    - match: '^([ \t]*)(?=(?:> ){2}(?!))'
       branch_point: cm-quoted-2
       branch: [cm-quoted-2-marker, cm-quoted-deep-text]
     - match: '^'
@@ -3160,13 +3148,13 @@ contexts:
       captures:
         1: punctuation.definition.quote.carve
         2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
-    - match: '^(?=\1(?:> ){2}(?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+    - match: '^(?=\1(?:> ){2}(?:(?!)|(?![ \t])(?!{{cm_marker}})\S))'
       pop: 2
     - match: '^'
       fail: cm-quoted-2
 
   cm-quoted-3:
-    - match: '^([ \t]*)(?=(?:> ){3}\+[ \t]*$)'
+    - match: '^([ \t]*)(?=(?:> ){3}(?!))'
       branch_point: cm-quoted-3
       branch: [cm-quoted-3-marker, cm-quoted-deep-text]
     - match: '^'
@@ -3178,20 +3166,20 @@ contexts:
       captures:
         1: punctuation.definition.quote.carve
         2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
-    - match: '^(?=\1(?:> ){3}(?:\+[ \t]*$|(?![ \t])(?!{{cm_marker}})\S))'
+    - match: '^(?=\1(?:> ){3}(?:(?!)|(?![ \t])(?!{{cm_marker}})\S))'
       pop: 2
     - match: '^'
       fail: cm-quoted-3
 
   cm-quoted-deep-text:
-    - match: '((?:> )+)\+[ \t]*$'
+    - match: '((?:> )+)(?!)'
       scope: markup.quote.carve
       captures:
         1: punctuation.definition.quote.carve
       pop: 2
 
   cm-quoted-text:
-    - match: '^([ \t]*(?:> )+)\+[ \t]*$'
+    - match: '^([ \t]*(?:> )+)(?!)'
       scope: markup.quote.carve
       captures:
         1: punctuation.definition.quote.carve
@@ -3200,7 +3188,7 @@ contexts:
   # The first line of a quote K deep: flush text next that is not a list,
   # quoted less deep than K (three or more count as three).
   cm-quote-1:
-    - match: '^(?=[ \t]*(?:> )+\+[ \t]*$)'
+    - match: '^(?=[ \t]*(?:> )+(?!))'
       branch_point: cm-quote-1
       branch: [cm-quote-1-marker, cm-quote-text]
     - match: '^'
@@ -3218,7 +3206,7 @@ contexts:
       fail: cm-quote-1
 
   cm-quote-2:
-    - match: '^(?=[ \t]*(?:> )+\+[ \t]*$)'
+    - match: '^(?=[ \t]*(?:> )+(?!))'
       branch_point: cm-quote-2
       branch: [cm-quote-2-marker, cm-quote-text]
     - match: '^'
@@ -3236,7 +3224,7 @@ contexts:
       fail: cm-quote-2
 
   cm-quote-3:
-    - match: '^(?=[ \t]*(?:> )+\+[ \t]*$)'
+    - match: '^(?=[ \t]*(?:> )+(?!))'
       branch_point: cm-quote-3
       branch: [cm-quote-3-marker, cm-quote-text]
     - match: '^'
@@ -3254,7 +3242,7 @@ contexts:
       fail: cm-quote-3
 
   cm-quote-text:
-    - match: '^([ \t]*(?:> )+)\+[ \t]*$'
+    - match: '^([ \t]*(?:> )+)(?!)'
       scope: markup.quote.carve
       captures:
         1: punctuation.definition.quote.carve
@@ -3283,7 +3271,7 @@ contexts:
 
   cm-chain-quote-text:
     - include: first-block-openers
-    - match: '\+[ \t]*$'
+    - match: '(?!)'
       pop: 2
 
   # `: +` below a term: anything but a blank line or a column-0 list next.
@@ -3309,7 +3297,7 @@ contexts:
       pop: 2
 
   cm-description-text:
-    - match: '^([ \t]*)(:) +\+[ \t]*$'
+    - match: '^([ \t]*)(:) +(?!)'
       scope: markup.list.definition.carve
       captures:
         2: punctuation.definition.list.begin.carve
@@ -3340,7 +3328,7 @@ contexts:
       fail: cm-footnote
 
   cm-footnote-text:
-    - match: '^\s*(\[\^)([^\]]+)(\]:)[ \t]+\+[ \t]*$'
+    - match: '^\s*(\[\^)([^\]]+)(\]:)[ \t]+(?!)'
       scope: meta.footnote.definition.carve
       captures:
         1: punctuation.definition.footnote.carve
@@ -3350,7 +3338,7 @@ contexts:
 
   # A `+` at column 0 right below a footnote line attaches the next block.
   footnote-next-line:
-    - match: '^(?=\+[ \t]*$)'
+    - match: '^(?=(?!))'
       set: [footnote-body, cm-any]
     - match: '^'
       set: footnote-body
@@ -3359,7 +3347,7 @@ contexts:
   footnote-body:
     - match: '^(?=[^ \t\n])'
       pop: true
-    - match: '^([ \t]+)(?=> \+[ \t]*$)'
+    - match: '^([ \t]+)(?=> (?!))'
       branch_point: fn-quote
       branch: [fn-quote-marker, fn-quote-text]
     - include: document-blocks
@@ -3378,7 +3366,7 @@ contexts:
       fail: fn-quote
 
   fn-quote-text:
-    - match: '(>) \+[ \t]*$'
+    - match: '(>) (?!)'
       scope: markup.quote.carve
       captures:
         1: punctuation.definition.quote.carve
@@ -3391,9 +3379,9 @@ contexts:
     # accepts the leading `^`, so `[^fn]: text` matched it and every footnote
     # definition in a document was coloured as a link reference whose body was a
     # URL. The body is inline content, not a destination.
-    - match: '^(?=\s*\[\^[^\]]+\]:[ \t]+\+[ \t]*$)'
+    - match: '^(?=\s*\[\^[^\]]+\]:[ \t]+(?!))'
       push: [footnote-body, cm-footnote]
-    - match: '^\s*(\[\^)([^\]]+)(\]:)(?=[ \t])'
+    - match: '^(\[\^)([^\]]+)(\]:)(?=[ \t])'
       captures:
         1: punctuation.definition.footnote.carve
         2: constant.other.footnote.carve
@@ -3402,7 +3390,7 @@ contexts:
         - meta_scope: meta.footnote.definition.carve
         - match: '$'
           set: footnote-next-line
-        - match: '(?<=\]:)([ \t]+)(\+)(?=[ \t]*$)'
+        - match: '(?<=\]:)([ \t]+)(?!)(\+)'
           captures:
             2: markup.list.continuation.carve punctuation.definition.list.continuation.carve
         # The two comment contexts ahead of `inline`, the way `block-quotes`
@@ -3411,7 +3399,7 @@ contexts:
         - include: inline-comment
         - include: trailing-comment
         - include: inline
-    - match: '^\s*(\[[^\]]+\]:)\s+(\S+)'
+    - match: '^(\[[^\]]+\]:)\s+(\S+)'
       scope: meta.link.reference.definition.carve
       captures:
         1: constant.other.reference.link.carve
@@ -3420,7 +3408,7 @@ contexts:
     # grammar as a-z plus A-Z. This required the whole term to be uppercase, so
     # `*[dl]:` and `*[9]:` were shown as paragraph text while every engine
     # treats them as definitions (carve#791).
-    - match: '^\s*(\*)(\[)([A-Za-z0-9]+)(\])(:)\s+(.*)$'
+    - match: '^(\*)(\[)([A-Za-z0-9]+)(\])(:)\s+(.*)$'
       scope: meta.abbreviation.definition.carve
       captures:
         1: punctuation.definition.abbreviation.carve
@@ -3539,15 +3527,7 @@ contexts:
         1: punctuation.definition.highlight.carve
         2: markup.highlight.carve
         3: punctuation.definition.highlight.carve
-    # The `=` of `!=`, `<=` and `>=` neither opens nor closes; `<=>` and `<==`
-    # are arrows, not comparisons (carve#4197).
-    - match: '(?:(?<![\w=!<>])|(?<=\\[!<>])|(?<=<)(?==[=>]))(=)(?=\S)((?>{{opaque}}|[>!]=|<=(?![=>])|(?<=\s)=|[^=\n])+?)(?<=\S)(?:(?:(?<![>!<])|(?<=\\[>!<]))(=)(?![\w=])|(?<=<)(=)(?=[=>]))'
-      scope: markup.highlight.carve
-      captures:
-        1: punctuation.definition.highlight.carve
-        2: markup.highlight.carve
-        5: punctuation.definition.highlight.carve
-        6: punctuation.definition.highlight.carve
+    # A bare `=` pair is text in 0.2 (U-067).
 
   forced-emphasis:
     - match: '(\{\*)(?=\S)([^\n]*?)(\*\})'
@@ -3568,7 +3548,7 @@ contexts:
         1: punctuation.definition.underline.carve
         2: markup.underline.carve
         3: punctuation.definition.underline.carve
-    - match: '(\{~)(?=\S)((?:(?!~>)[^\n])*?)(~\})'
+    - match: '(\{~)(?=\S)([^\n]*?)(~\})'
       scope: markup.strikethrough.carve
       captures:
         1: punctuation.definition.strike.carve
@@ -3755,14 +3735,6 @@ contexts:
         1: punctuation.definition.critic.carve
         2: markup.deleted.carve
         3: punctuation.definition.critic.carve
-    - match: '(\{~)([^~]*)(~>)([^~]*)(~\})'
-      scope: markup.changed.critic.carve
-      captures:
-        1: punctuation.definition.critic.carve
-        2: markup.deleted.carve
-        3: punctuation.definition.critic.carve
-        4: markup.inserted.carve
-        5: punctuation.definition.critic.carve
     - match: '(\{#)([^}]*)(#\})'
       scope: comment.block.critic.carve
       captures:
@@ -3790,18 +3762,6 @@ contexts:
         1: punctuation.definition.italic.carve
         2: markup.italic.carve
         5: punctuation.definition.italic.carve
-    - match: '(?<![\w_])(_)(?=\S)((?>{{opaque}}|[^_\n])+?)(?<=\S)(_)(?![\w_])'
-      scope: markup.underline.text.carve
-      captures:
-        1: punctuation.definition.underline.carve
-        2: markup.underline.text.carve
-        5: punctuation.definition.underline.carve
-    - match: '(?<![\w~])(~)(?=\S)((?>{{opaque}}|[^~\n])+?)(?<=\S)(~)(?![\w~])'
-      scope: markup.strikethrough.carve
-      captures:
-        1: punctuation.definition.strike.carve
-        2: markup.strikethrough.carve
-        5: punctuation.definition.strike.carve
 
   # ----- Superscript / subscript (braced forms only: {^sup^} / {,sub,}) -----
   # Bare ^sup^ / ,sub, no longer exist in Carve; a lone ^ or , is literal text.

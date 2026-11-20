@@ -4,7 +4,7 @@ Carve syntax support for Sublime Text 4 build 4050 or later. The package uses th
 
 ## Features
 
-- Highlighting for `.crv` files and embedded fence languages.
+- Highlighting for `.crv` files and embedded fence languages. The syntax reads Carve 0.2 source.
 - Formatting, import, and navigation commands.
 
 ## Install

@@ -18,7 +18,7 @@
 	//   "/abs/dir"  an explicit absolute directory
 	// Lint Project lints one folder in a single run, so there "project" and
 	// "file_dir" both mean the folder being linted.
-	// A carve CLI older than carve-js 0.1.13 or carve-rs 0.1.11 has no
+	// A carve CLI older than the Carve 0.2 CLI has no
 	// `lint --include-root`; the build then lints without it and says so.
 	"carve_lint_include_root": "project"
 }

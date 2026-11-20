@@ -35,7 +35,7 @@ END = "  # --- END GENERATED CONTAINER FENCES ---"
 # at `\b`: `c\+\+\b` can never match, and `c\b` claimed `c++` and `c#`.
 BOUNDARY = r"(?![\w+#./-])"
 
-DOC_OPENER = r"^((`|~)\2{2,})[ \t]*"
+DOC_OPENER = r"^((`)\2{2,})[ \t]*"
 DOC_CAPTURES = ["1: punctuation.definition.raw.begin.carve"]
 DOC_ESCAPE = r"^(\1\2*)\s*$"
 
@@ -45,7 +45,7 @@ DOC_ESCAPE = r"^(\1\2*)\s*$"
 MARKER_LINE = (
     r"^([ \t]*)(?:([-*])|([0-9]+[.)]|{{alpha_marker}}|\.)|(:))"
     r"""(\{(?:"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|[^}"'\n])*\})?"""
-    r" +(\[[ xX\-_>?]\] +)?((`|~)\8{2,})[ \t]*"
+    r" +(\[[ xX\-_>?]\] +)?((`)\8{2,})[ \t]*"
 )
 MARKER_CAPTURES = [
     "2: markup.list.unnumbered.carve punctuation.definition.list.begin.carve",
@@ -59,7 +59,7 @@ MARKER_CAPTURES = [
 # marker's own indent is the item's boundary and ends an unclosed fence.
 MARKER_ESCAPE = r"^[ \t]+(\7\8*)\s*$|^(?![ \t]*$)(?!\1[ \t])"
 
-BODY = r"^([ \t]+)((`|~)\3{2,})[ \t]*"
+BODY = r"^([ \t]+)((`)\3{2,})[ \t]*"
 # The body sits AT the opener's indent, so the boundary is a line that does
 # not reach it.
 BODY_ESCAPE = r"^[ \t]+(\2\3*)\s*$|^(?![ \t]*$)(?!\1)"
