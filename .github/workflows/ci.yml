@@ -56,6 +56,40 @@ jobs:
         env:
           CARVE_GRAMMARS_REV: 79511c4ba461cb0696e0400132da9eef414147e0
 
+  lint_build:
+    name: Lint build include root
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CARVE_JS_REV: 456e04a9fb0b9e8b4315bade2d4012357235e410
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      # The Carve 0.2 CLI, which has `lint --include-root`, built from carve-js
+      # next2 at a pinned commit, and a 0.1 CLI from before the flag, so both
+      # the include chain and the fallback run against a real carve.
+      - name: Build the Carve 0.2 CLI and install an older one
+        run: |
+          git init --quiet "$RUNNER_TEMP/carve-js"
+          cd "$RUNNER_TEMP/carve-js"
+          git fetch --quiet --depth 1 https://github.com/markup-carve/carve-js "$CARVE_JS_REV"
+          git checkout --quiet FETCH_HEAD
+          npm ci --ignore-scripts
+          npm run build
+          mkdir -p "$RUNNER_TEMP/carve-new"
+          ln -s "$PWD/dist/cli.js" "$RUNNER_TEMP/carve-new/carve"
+          npm install --prefix "$RUNNER_TEMP/carve-old" @markup-carve/carve@0.1.12
+      - name: Run the lint build tests
+        env:
+          CARVE_LINT_NEW: ${{ runner.temp }}/carve-new/carve
+          CARVE_LINT_OLD: ${{ runner.temp }}/carve-old/node_modules/.bin/carve
+        run: python3 -B tests/test_lint_include_root.py -v
+
   validate:
     name: Validate Sublime syntax YAML
     runs-on: ubuntu-latest
