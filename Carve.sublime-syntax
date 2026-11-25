@@ -43,6 +43,12 @@ variables:
   # nested bracket pair. Stopping at a bare `[` keeps a line of unclosed
   # brackets linear.
   lbl: '(?:[^\[\]\n]|\[[^\[\]\n]*\])'
+  # A line holding only an attribute block, which may lead a typed opener.
+  attribute_line: '\{(?=[ \t]*[#.A-Za-z])[^{}\n]*\}'
+  # A link definition's title on a tail line, escapes included.
+  def_title: '(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|\((?:\\.|[^)\\\n])*\))'
+  # A mention or tag name, group 2 (C2-I-092).
+  tag_name: '(?![A-Za-z0-9_.-]*+[\p{L}\p{N}\p{M}])(?=(?:[A-Za-z0-9_-]|\.(?=[A-Za-z0-9_-]))*[A-Za-z])([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?<!-))'
   # Only a contiguous star run is a break in 0.2 (U-044, U-045).
   thematic_run: '\*{3,}'
   # A line that ends a paragraph in 0.2 (C2-B-012, U-001 to U-013): a fence, a
@@ -72,6 +78,9 @@ contexts:
     # A caret before the first block has no host to caption.
     - match: '^(?=[ \t]*\^ +\S)'
       set: initial-caret-prose
+    # Attribute lines on line 1 may lead a typed opener (C2-B-233).
+    - match: '^(?={{attribute_line}}[ \t]*$)'
+      set: [document, document-gap]
     - match: '(?=\S|\s)'
       set: document
 
@@ -80,7 +89,7 @@ contexts:
     - match: '^(?=[ \t]*\^ +\S)'
       set: initial-caret-prose
     - match: '(?=\S|\s)'
-      set: document
+      set: [document, document-gap]
 
   initial-caret-prose:
     - match: '$'
@@ -90,6 +99,8 @@ contexts:
     - include: inline
 
   document:
+    - match: '^[ \t]*\n'
+      push: document-gap
     # An indented `>` line outside a list item or footnote opens no quote: it
     # is paragraph text, and so is a `+` below it (spec row 630-10).
     - match: '^(?=[ \t]+>(?: |$))'
@@ -143,7 +154,7 @@ contexts:
   list-item-gap:
     - match: '^[ \t]*\n'
     - match: '^(?=\S)(?!{{list_item_line}})(?!(?!))'
-      pop: true
+      set: document-gap
     - match: '^(?=[ \t]|{{list_item_line}}|(?!))'
       set: list-item
 
@@ -173,6 +184,7 @@ contexts:
   # A `^ ` line after a paragraph and a blank line has no host to caption.
   after-paragraph:
     - match: '^[ \t]*\n'
+    - include: metadata-gap-blocks
     - match: '^(?=[ \t]*\^ +\S)'
       push: caption-literal-line
     - match: '^(?=[ \t]*\S)'
@@ -181,6 +193,16 @@ contexts:
   # The same after a heading, blank lines between or not.
   caption-literal-after:
     - match: '^[ \t]*\n'
+      set: caption-literal-after-gap
+    - match: '^(?=[ \t]*\^ +\S)'
+      push: caption-literal-line
+    - match: '^(?=[ \t]*\S)'
+      pop: true
+
+  # A typed opener needs the blank line above it (C2-B-232).
+  caption-literal-after-gap:
+    - match: '^[ \t]*\n'
+    - include: metadata-gap-blocks
     - match: '^(?=[ \t]*\^ +\S)'
       push: caption-literal-line
     - match: '^(?=[ \t]*\S)'
@@ -293,6 +315,70 @@ contexts:
     - include: hard-breaks
     - include: smart-typography
 
+  # ----- Later metadata blocks -----
+  # After line 1 a typed opener at column 0 opens a top-level metadata block
+  # when a blank line, or attribute lines that follow one or start on line 1,
+  # stand directly above it (C2-B-232, C2-B-233). Bare `---` stays line-1 only
+  # (C2-B-161). A blank line at document level, and the blank-line contexts
+  # after a paragraph, a heading and a list, read the next lines here; a div,
+  # quote or list body never does, so the opener stays text there.
+  document-gap:
+    - match: '^[ \t]*\n'
+    - include: metadata-gap-blocks
+    - match: '^(?=[ \t]*\S)'
+      pop: true
+
+  metadata-gap-blocks:
+    - include: later-metadata
+    - match: '^(?={{attribute_line}}[ \t]*$)'
+      push: metadata-gap-attributes
+
+  metadata-gap-attributes:
+    - match: '\n'
+      pop: true
+    - include: attributes
+
+  later-metadata:
+    - match: '^(---) ?((?i:toml))[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.toml
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)[ \t]*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '^(---) ?((?i:json))[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.json
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)[ \t]*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '^(---) ?((?i:yaml|yml))[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.yaml
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)[ \t]*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '^(---) ?([A-Za-z0-9]+)[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      push:
+        - meta_scope: meta.frontmatter.carve
+        - match: '^(---)[ \t]*$'
+          captures:
+            1: punctuation.definition.frontmatter.end.carve
+          pop: true
+        - match: '.+'
+          scope: string.unquoted.frontmatter.carve
+
   # ----- Frontmatter -----
   # Carve does not interpret frontmatter - the fence token declares the format
   # and the application parses it - so highlight the body with that format's
@@ -400,20 +486,30 @@ contexts:
         1: punctuation.definition.thematic-break.carve
 
   headings:
-    - match: '^[ \t]*(#{1,6}|={1,6})( +)(?![ \t]*$)'
+    - match: '^([ \t]*)(#{1,6}|={1,6})( +)(?![ \t]*$)'
       scope: markup.heading.carve
       captures:
-        1: punctuation.definition.heading.carve
+        2: punctuation.definition.heading.carve
       push: [caption-literal-after, heading-line]
 
+  # A heading is a label: it holds every line below it indented past its
+  # marker, up to a blank line or an interrupter; a comment-only line is not
+  # seen (C2-B-137, C2-B-154, C2-B-234). `\1` is the marker's indent.
   heading-line:
     - meta_scope: markup.heading.carve
     - meta_content_scope: entity.name.section.carve
-    - match: '$'
-      pop: true
+    - include: label-lines
     - include: line-verbatim
     - include: trailing-comment
     - include: inline
+
+  # The lines below a label's marker line (C2-B-234); `\1` is the indent
+  # before the marker, captured by the rule that pushed the label.
+  label-lines:
+    - match: '^[ \t]*%%(?!%)(?![ \t]*#(?:region|endregion)\b).*$'
+      scope: comment.line.percent.carve
+    - match: '^(?!\1[ \t]+\S)|^(?={{block_interrupt}})'
+      pop: true
 
   line-verbatim:
     - match: '\\.'
@@ -2715,17 +2811,21 @@ contexts:
   # (all render to <figcaption> / <caption>), so a table caption and an image
   # caption share a scope. `^[` (inline note) has no space and is not a caption.
   # The body is full inline markup, so `^ Figure 1: a /styled/ caption` works.
+  # A caption is a label too (C2-B-148, C2-B-234): it continues on lines
+  # indented past its `^`, and a caret line directly below it, or after a
+  # blank line, is text (C2-B-149).
   captions:
-    - match: '^[ \t]*(\^)(?= )(?![ \t]*$)'
+    - match: '^([ \t]*)(\^)(?= )(?![ \t]*$)'
       captures:
-        1: punctuation.definition.caption.carve
-      push:
-        - meta_scope: markup.caption.carve
-        - match: '$'
-          pop: true
-        - include: line-verbatim
-        - include: trailing-comment
-        - include: inline
+        2: punctuation.definition.caption.carve
+      push: [caption-literal-after, caption-body]
+
+  caption-body:
+    - meta_scope: markup.caption.carve
+    - include: label-lines
+    - include: line-verbatim
+    - include: trailing-comment
+    - include: inline
 
   # ----- Block quotes -----
   block-quotes:
@@ -3404,6 +3504,7 @@ contexts:
       captures:
         1: constant.other.reference.link.carve
         2: markup.underline.link.carve
+      push: link-definition-rest
     # `abbreviation_term = (letter | digit)+`, and `letter` is enumerated in the
     # grammar as a-z plus A-Z. This required the whole term to be uppercase, so
     # `*[dl]:` and `*[9]:` were shown as paragraph text while every engine
@@ -3417,6 +3518,56 @@ contexts:
         4: punctuation.definition.abbreviation.carve
         5: punctuation.separator.carve
         6: string.unquoted.abbreviation.carve
+      push: abbreviation-tail
+
+  # A definition continues on lines indented past column 0 (C2-B-083,
+  # C2-B-084): a link definition takes a title and attribute tail line, an
+  # abbreviation more expansion text.
+  link-definition-rest:
+    - match: '\n'
+      set: link-definition-tail
+    # A title on the definition line leaves only an attribute tail.
+    - match: '(?=[ \t]+(?:"|''|\())'
+      set: link-definition-titled
+    - include: inline
+
+  link-definition-titled:
+    - match: '\n'
+      set: link-definition-attribute-tail
+    - include: inline
+
+  link-definition-tail:
+    - meta_scope: meta.link.reference.definition.carve
+    # A title alone on its line may take an attribute line below it.
+    - match: '^(?=[ \t]+{{def_title}}[ \t]*$)'
+      set: link-definition-title-line
+    - match: '^(?![ \t]+(?:{{def_title}}(?:[ \t]+\{[^{}\n]*\})?|\{[^{}\n]*\})[ \t]*$)'
+      pop: true
+    - match: '\n'
+      pop: true
+    - include: inline
+
+  link-definition-title-line:
+    - meta_scope: meta.link.reference.definition.carve
+    - match: '\n'
+      set: link-definition-attribute-tail
+    - include: inline
+
+  link-definition-attribute-tail:
+    - meta_scope: meta.link.reference.definition.carve
+    - match: '^(?![ \t]+\{[^{}\n]*\}[ \t]*$)'
+      pop: true
+    - match: '\n'
+      pop: true
+    - include: inline
+
+  abbreviation-tail:
+    - match: '^(?![ \t]+\S)|^(?={{block_interrupt}}|[ \t]*%%)'
+      pop: true
+    - match: '^[ \t]+(.*)$'
+      scope: meta.abbreviation.definition.carve
+      captures:
+        1: string.unquoted.abbreviation.carve
 
   # ----- Links / references / spans -----
   links:
@@ -3873,13 +4024,16 @@ contexts:
 
   # ----- Mentions / tags / symbols -----
   mentions-tags:
-    # A name holds an ASCII letter, so `@5` and `#123` stay text (carve#4809).
-    - match: '(?<![\w.])(@)(?=[A-Za-z0-9_-]*[A-Za-z])([A-Za-z0-9_][A-Za-z0-9_-]*)'
+    # A name (C2-I-092) is runs of letters, digits, `_` and `-` joined by
+    # single dots, holds an ASCII letter (`@5` and `#123` stay text) and does
+    # not end in a hyphen. A run glued to a Unicode letter, number or mark is
+    # text, so `#größe` and `@josé` hold no form.
+    - match: '(?<![\w.])(@){{tag_name}}'
       scope: constant.other.symbol.mention.carve
       captures:
         1: punctuation.definition.mention.carve
         2: variable.other.mention.carve
-    - match: '(?<!\w)(#)(?=[A-Za-z0-9_-]*[A-Za-z])([A-Za-z0-9_][A-Za-z0-9_-]*)'
+    - match: '(?<!\w)(#){{tag_name}}'
       scope: constant.other.symbol.tag.carve
       captures:
         1: punctuation.definition.tag.carve
