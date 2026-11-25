@@ -54,14 +54,14 @@ jobs:
       - name: The vendored fence-language table still matches carve-grammars
         run: ./tools/check-fence-languages-drift.sh
         env:
-          CARVE_GRAMMARS_REV: 31215996ebba0cad12d958275ba87fad1d99991a
+          CARVE_GRAMMARS_REV: 558680dd08616f3bb30a83d069e114b6ca899cde
 
   lint_build:
     name: Lint build include root
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      CARVE_JS_REV: fb2718493f3bcb70b4a26d05ae2ee084ec978552
+      CARVE_JS_REV: a5a7bbd2c474873b82c3cc01bda2e6948adb3473
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
