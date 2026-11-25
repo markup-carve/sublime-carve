@@ -33,6 +33,17 @@ Paragraph text
 ---
 # <- -meta.frontmatter.carve
 
+= Heading
+---yaml
+# <- -meta.frontmatter.carve
+
+= Heading
+
+---yaml
+# <- punctuation.definition.frontmatter.begin.carve
+k: v
+---
+
 ::: note
 
 ---yaml

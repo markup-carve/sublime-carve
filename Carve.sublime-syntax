@@ -193,6 +193,15 @@ contexts:
   # The same after a heading, blank lines between or not.
   caption-literal-after:
     - match: '^[ \t]*\n'
+      set: caption-literal-after-gap
+    - match: '^(?=[ \t]*\^ +\S)'
+      push: caption-literal-line
+    - match: '^(?=[ \t]*\S)'
+      pop: true
+
+  # A typed opener needs the blank line above it (C2-B-232).
+  caption-literal-after-gap:
+    - match: '^[ \t]*\n'
     - include: metadata-gap-blocks
     - match: '^(?=[ \t]*\^ +\S)'
       push: caption-literal-line
