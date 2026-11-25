@@ -137,3 +137,12 @@ Not indented
 *[Y]: a
   | b |
 # ^^^^^ -meta.abbreviation.definition.carve
+
+[e]: /u
+  "A \"quoted\" title"
+# ^^^^^^^^^^^^^^^^^^^^^ meta.link.reference.definition.carve
+
+[f]: /u
+  "T"
+  {.c}
+# ^^^^ meta.link.reference.definition.carve

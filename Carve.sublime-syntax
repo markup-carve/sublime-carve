@@ -45,6 +45,8 @@ variables:
   lbl: '(?:[^\[\]\n]|\[[^\[\]\n]*\])'
   # A line holding only an attribute block, which may lead a typed opener.
   attribute_line: '\{(?=[ \t]*[#.A-Za-z])[^{}\n]*\}'
+  # A link definition's title on a tail line, escapes included.
+  def_title: '(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|\((?:\\.|[^)\\\n])*\))'
   # A mention or tag name, group 2 (C2-I-092).
   tag_name: '(?![A-Za-z0-9_.-]*+[\p{L}\p{N}\p{M}])(?=(?:[A-Za-z0-9_-]|\.(?=[A-Za-z0-9_-]))*[A-Za-z])([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?<!-))'
   # Only a contiguous star run is a break in 0.2 (U-044, U-045).
@@ -3527,10 +3529,19 @@ contexts:
 
   link-definition-tail:
     - meta_scope: meta.link.reference.definition.carve
-    - match: '^(?![ \t]+(?:(?:"[^"\n]*"|''[^''\n]*''|\([^)\n]*\))(?:[ \t]+\{[^{}\n]*\})?|\{[^{}\n]*\})[ \t]*$)'
+    # A title alone on its line may take an attribute line below it.
+    - match: '^(?=[ \t]+{{def_title}}[ \t]*$)'
+      set: link-definition-title-line
+    - match: '^(?![ \t]+(?:{{def_title}}(?:[ \t]+\{[^{}\n]*\})?|\{[^{}\n]*\})[ \t]*$)'
       pop: true
     - match: '\n'
       pop: true
+    - include: inline
+
+  link-definition-title-line:
+    - meta_scope: meta.link.reference.definition.carve
+    - match: '\n'
+      set: link-definition-attribute-tail
     - include: inline
 
   link-definition-attribute-tail:
