@@ -103,3 +103,37 @@ Not indented
 ^ second
 # <- -markup.caption.carve
 
+# Definition tail lines (C2-B-083, C2-B-084, CC-1900, CC-1901).
+
+[a]: /url
+  "Title"
+# ^^^^^^^ meta.link.reference.definition.carve
+
+*[HTML]: Hyper Text
+  Markup Language
+# ^^^^^^^^^^^^^^^ meta.abbreviation.definition.carve
+
+[b]: /docs/
+  guide.html
+# ^^^^^^^^^^ -meta.link.reference.definition.carve
+
+[a]: /url
+  more text
+# ^^^^^^^^^ -meta.link.reference.definition.carve
+
+[c]: /u "T"
+  "U"
+# ^^^ -meta.link.reference.definition.carve
+
+[d]: /u "T"
+  {.c}
+# ^^^^ meta.link.reference.definition.carve
+
+*[X]: a
+  %% note
+  b
+# ^ -meta.abbreviation.definition.carve
+
+*[Y]: a
+  | b |
+# ^^^^^ -meta.abbreviation.definition.carve

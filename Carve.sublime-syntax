@@ -3493,6 +3493,7 @@ contexts:
       captures:
         1: constant.other.reference.link.carve
         2: markup.underline.link.carve
+      push: link-definition-rest
     # `abbreviation_term = (letter | digit)+`, and `letter` is enumerated in the
     # grammar as a-z plus A-Z. This required the whole term to be uppercase, so
     # `*[dl]:` and `*[9]:` were shown as paragraph text while every engine
@@ -3506,6 +3507,47 @@ contexts:
         4: punctuation.definition.abbreviation.carve
         5: punctuation.separator.carve
         6: string.unquoted.abbreviation.carve
+      push: abbreviation-tail
+
+  # A definition continues on lines indented past column 0 (C2-B-083,
+  # C2-B-084): a link definition takes a title and attribute tail line, an
+  # abbreviation more expansion text.
+  link-definition-rest:
+    - match: '\n'
+      set: link-definition-tail
+    # A title on the definition line leaves only an attribute tail.
+    - match: '(?=[ \t]+(?:"|''|\())'
+      set: link-definition-titled
+    - include: inline
+
+  link-definition-titled:
+    - match: '\n'
+      set: link-definition-attribute-tail
+    - include: inline
+
+  link-definition-tail:
+    - meta_scope: meta.link.reference.definition.carve
+    - match: '^(?![ \t]+(?:(?:"[^"\n]*"|''[^''\n]*''|\([^)\n]*\))(?:[ \t]+\{[^{}\n]*\})?|\{[^{}\n]*\})[ \t]*$)'
+      pop: true
+    - match: '\n'
+      pop: true
+    - include: inline
+
+  link-definition-attribute-tail:
+    - meta_scope: meta.link.reference.definition.carve
+    - match: '^(?![ \t]+\{[^{}\n]*\}[ \t]*$)'
+      pop: true
+    - match: '\n'
+      pop: true
+    - include: inline
+
+  abbreviation-tail:
+    - match: '^(?![ \t]+\S)|^(?={{block_interrupt}}|[ \t]*%%)'
+      pop: true
+    - match: '^[ \t]+(.*)$'
+      scope: meta.abbreviation.definition.carve
+      captures:
+        1: string.unquoted.abbreviation.carve
 
   # ----- Links / references / spans -----
   links:
