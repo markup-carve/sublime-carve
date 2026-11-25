@@ -1,0 +1,29 @@
+# SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+# Mention and tag names (C2-I-092, CC-1634 to CC-1640).
+
+Tag #café and #cafe here, #größe.
+#   ^^^^^ -constant.other.symbol.tag.carve
+#             ^^^^^ constant.other.symbol.tag.carve
+#                         ^^^^^^ -constant.other.symbol.tag.carve
+
+The mention @josé and @jose.
+#           ^^^^^ -constant.other.symbol.mention.carve
+#                     ^^^^^ constant.other.symbol.mention.carve
+
+A #tag- x and #tag-é and #tag.é.
+# ^^^^ constant.other.symbol.tag.carve
+#     ^ -constant.other.symbol.tag.carve
+#             ^^^^^^ -constant.other.symbol.tag.carve
+#                        ^^^^^^ -constant.other.symbol.tag.carve
+
+Dotted @a.b. and #a.b. names.
+#      ^^^^ constant.other.symbol.mention.carve
+#          ^ -constant.other.symbol.mention.carve
+#                ^^^^ constant.other.symbol.tag.carve
+#                    ^ -constant.other.symbol.tag.carve
+
+An emoji ends it: #tag😀 and #1 is text.
+#                 ^^^^ constant.other.symbol.tag.carve
+#                            ^^ -constant.other.symbol.tag.carve
+

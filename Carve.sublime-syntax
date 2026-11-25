@@ -43,6 +43,10 @@ variables:
   # nested bracket pair. Stopping at a bare `[` keeps a line of unclosed
   # brackets linear.
   lbl: '(?:[^\[\]\n]|\[[^\[\]\n]*\])'
+  # A line holding only an attribute block, which may lead a typed opener.
+  attribute_line: '\{(?=[ \t]*[#.A-Za-z])[^{}\n]*\}'
+  # A mention or tag name, group 2 (C2-I-092).
+  tag_name: '(?![A-Za-z0-9_.-]*+[\p{L}\p{N}\p{M}])(?=(?:[A-Za-z0-9_-]|\.(?=[A-Za-z0-9_-]))*[A-Za-z])([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?<!-))'
   # Only a contiguous star run is a break in 0.2 (U-044, U-045).
   thematic_run: '\*{3,}'
   # A line that ends a paragraph in 0.2 (C2-B-012, U-001 to U-013): a fence, a
@@ -3873,13 +3877,16 @@ contexts:
 
   # ----- Mentions / tags / symbols -----
   mentions-tags:
-    # A name holds an ASCII letter, so `@5` and `#123` stay text (carve#4809).
-    - match: '(?<![\w.])(@)(?=[A-Za-z0-9_-]*[A-Za-z])([A-Za-z0-9_][A-Za-z0-9_-]*)'
+    # A name (C2-I-092) is runs of letters, digits, `_` and `-` joined by
+    # single dots, holds an ASCII letter (`@5` and `#123` stay text) and does
+    # not end in a hyphen. A run glued to a Unicode letter, number or mark is
+    # text, so `#größe` and `@josé` hold no form.
+    - match: '(?<![\w.])(@){{tag_name}}'
       scope: constant.other.symbol.mention.carve
       captures:
         1: punctuation.definition.mention.carve
         2: variable.other.mention.carve
-    - match: '(?<!\w)(#)(?=[A-Za-z0-9_-]*[A-Za-z])([A-Za-z0-9_][A-Za-z0-9_-]*)'
+    - match: '(?<!\w)(#){{tag_name}}'
       scope: constant.other.symbol.tag.carve
       captures:
         1: punctuation.definition.tag.carve
