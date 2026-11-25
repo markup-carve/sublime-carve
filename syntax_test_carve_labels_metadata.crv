@@ -66,3 +66,40 @@ An emoji ends it: #tag😀 and #1 is text.
 #                 ^^^^ constant.other.symbol.tag.carve
 #                            ^^ -constant.other.symbol.tag.carve
 
+# Heading continuation (C2-B-154, C2-B-234, CC-699).
+
+= Heading
+  goes on
+# ^^^^^^^ markup.heading.carve
+
+= Heading
+Not indented
+# <- -markup.heading.carve
+
+= Heading
+
+  after a blank line
+# ^^^^^^^^^^^^^^^^^^ -markup.heading.carve
+
+= Heading
+  | a table row |
+# ^^^^^^^^^^^^^^^ -markup.heading.carve
+
+# Caption continuation and a second caret line (C2-B-148, C2-B-149, C2-B-234).
+
+![a](a.png)
+^ The caption
+  goes on here
+# ^^^^^^^^^^^^ markup.caption.carve
+
+![a](a.png)
+^ one
+^ two
+# <- -markup.caption.carve
+# ^^^ -markup.caption.carve
+
+| a | b |
+^ first
+^ second
+# <- -markup.caption.carve
+

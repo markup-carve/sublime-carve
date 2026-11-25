@@ -475,20 +475,30 @@ contexts:
         1: punctuation.definition.thematic-break.carve
 
   headings:
-    - match: '^[ \t]*(#{1,6}|={1,6})( +)(?![ \t]*$)'
+    - match: '^([ \t]*)(#{1,6}|={1,6})( +)(?![ \t]*$)'
       scope: markup.heading.carve
       captures:
-        1: punctuation.definition.heading.carve
+        2: punctuation.definition.heading.carve
       push: [caption-literal-after, heading-line]
 
+  # A heading is a label: it holds every line below it indented past its
+  # marker, up to a blank line or an interrupter; a comment-only line is not
+  # seen (C2-B-137, C2-B-154, C2-B-234). `\1` is the marker's indent.
   heading-line:
     - meta_scope: markup.heading.carve
     - meta_content_scope: entity.name.section.carve
-    - match: '$'
-      pop: true
+    - include: label-lines
     - include: line-verbatim
     - include: trailing-comment
     - include: inline
+
+  # The lines below a label's marker line (C2-B-234); `\1` is the indent
+  # before the marker, captured by the rule that pushed the label.
+  label-lines:
+    - match: '^[ \t]*%%(?!%)(?![ \t]*#(?:region|endregion)\b).*$'
+      scope: comment.line.percent.carve
+    - match: '^(?!\1[ \t]+\S)|^(?={{block_interrupt}})'
+      pop: true
 
   line-verbatim:
     - match: '\\.'
@@ -2790,17 +2800,21 @@ contexts:
   # (all render to <figcaption> / <caption>), so a table caption and an image
   # caption share a scope. `^[` (inline note) has no space and is not a caption.
   # The body is full inline markup, so `^ Figure 1: a /styled/ caption` works.
+  # A caption is a label too (C2-B-148, C2-B-234): it continues on lines
+  # indented past its `^`, and a caret line directly below it, or after a
+  # blank line, is text (C2-B-149).
   captions:
-    - match: '^[ \t]*(\^)(?= )(?![ \t]*$)'
+    - match: '^([ \t]*)(\^)(?= )(?![ \t]*$)'
       captures:
-        1: punctuation.definition.caption.carve
-      push:
-        - meta_scope: markup.caption.carve
-        - match: '$'
-          pop: true
-        - include: line-verbatim
-        - include: trailing-comment
-        - include: inline
+        2: punctuation.definition.caption.carve
+      push: [caption-literal-after, caption-body]
+
+  caption-body:
+    - meta_scope: markup.caption.carve
+    - include: label-lines
+    - include: line-verbatim
+    - include: trailing-comment
+    - include: inline
 
   # ----- Block quotes -----
   block-quotes:
