@@ -76,6 +76,9 @@ contexts:
     # A caret before the first block has no host to caption.
     - match: '^(?=[ \t]*\^ +\S)'
       set: initial-caret-prose
+    # Attribute lines on line 1 may lead a typed opener (C2-B-233).
+    - match: '^(?={{attribute_line}}[ \t]*$)'
+      set: [document, document-gap]
     - match: '(?=\S|\s)'
       set: document
 
@@ -84,7 +87,7 @@ contexts:
     - match: '^(?=[ \t]*\^ +\S)'
       set: initial-caret-prose
     - match: '(?=\S|\s)'
-      set: document
+      set: [document, document-gap]
 
   initial-caret-prose:
     - match: '$'
@@ -94,6 +97,8 @@ contexts:
     - include: inline
 
   document:
+    - match: '^[ \t]*\n'
+      push: document-gap
     # An indented `>` line outside a list item or footnote opens no quote: it
     # is paragraph text, and so is a `+` below it (spec row 630-10).
     - match: '^(?=[ \t]+>(?: |$))'
@@ -147,7 +152,7 @@ contexts:
   list-item-gap:
     - match: '^[ \t]*\n'
     - match: '^(?=\S)(?!{{list_item_line}})(?!(?!))'
-      pop: true
+      set: document-gap
     - match: '^(?=[ \t]|{{list_item_line}}|(?!))'
       set: list-item
 
@@ -177,6 +182,7 @@ contexts:
   # A `^ ` line after a paragraph and a blank line has no host to caption.
   after-paragraph:
     - match: '^[ \t]*\n'
+    - include: metadata-gap-blocks
     - match: '^(?=[ \t]*\^ +\S)'
       push: caption-literal-line
     - match: '^(?=[ \t]*\S)'
@@ -185,6 +191,7 @@ contexts:
   # The same after a heading, blank lines between or not.
   caption-literal-after:
     - match: '^[ \t]*\n'
+    - include: metadata-gap-blocks
     - match: '^(?=[ \t]*\^ +\S)'
       push: caption-literal-line
     - match: '^(?=[ \t]*\S)'
@@ -296,6 +303,70 @@ contexts:
     - include: code-callouts
     - include: hard-breaks
     - include: smart-typography
+
+  # ----- Later metadata blocks -----
+  # After line 1 a typed opener at column 0 opens a top-level metadata block
+  # when a blank line, or attribute lines that follow one or start on line 1,
+  # stand directly above it (C2-B-232, C2-B-233). Bare `---` stays line-1 only
+  # (C2-B-161). A blank line at document level, and the blank-line contexts
+  # after a paragraph, a heading and a list, read the next lines here; a div,
+  # quote or list body never does, so the opener stays text there.
+  document-gap:
+    - match: '^[ \t]*\n'
+    - include: metadata-gap-blocks
+    - match: '^(?=[ \t]*\S)'
+      pop: true
+
+  metadata-gap-blocks:
+    - include: later-metadata
+    - match: '^(?={{attribute_line}}[ \t]*$)'
+      push: metadata-gap-attributes
+
+  metadata-gap-attributes:
+    - match: '\n'
+      pop: true
+    - include: attributes
+
+  later-metadata:
+    - match: '^(---) ?((?i:toml))[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.toml
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)[ \t]*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '^(---) ?((?i:json))[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.json
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)[ \t]*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '^(---) ?((?i:yaml|yml))[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      embed: scope:source.yaml
+      embed_scope: meta.frontmatter.carve
+      escape: '^(---)[ \t]*$'
+      escape_captures:
+        1: punctuation.definition.frontmatter.end.carve
+    - match: '^(---) ?([A-Za-z0-9]+)[ \t]*$'
+      captures:
+        1: punctuation.definition.frontmatter.begin.carve
+        2: entity.name.type.frontmatter.carve
+      push:
+        - meta_scope: meta.frontmatter.carve
+        - match: '^(---)[ \t]*$'
+          captures:
+            1: punctuation.definition.frontmatter.end.carve
+          pop: true
+        - match: '.+'
+          scope: string.unquoted.frontmatter.carve
 
   # ----- Frontmatter -----
   # Carve does not interpret frontmatter - the fence token declares the format

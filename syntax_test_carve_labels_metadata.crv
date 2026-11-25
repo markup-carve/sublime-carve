@@ -1,5 +1,44 @@
 # SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
 
+# Later typed metadata blocks (C2-B-232, C2-B-233, CC-1581 to CC-1593).
+
+Text
+
+---toml
+# <- punctuation.definition.frontmatter.begin.carve
+#  ^^^^ entity.name.type.frontmatter.carve
+a = 1
+# <- meta.frontmatter.carve
+---
+# <- punctuation.definition.frontmatter.end.carve
+
+After
+# <- -meta.frontmatter.carve
+
+{#ch1 scope=section}
+---yaml
+# <- punctuation.definition.frontmatter.begin.carve
+author: A
+---
+# <- punctuation.definition.frontmatter.end.carve
+
+Paragraph text
+---yaml
+# <- -meta.frontmatter.carve
+
+ ---yaml
+# <- -meta.frontmatter.carve
+#^^^^^^^ -meta.frontmatter.carve
+
+---
+# <- -meta.frontmatter.carve
+
+::: note
+
+---yaml
+# <- -meta.frontmatter.carve
+:::
+
 # Mention and tag names (C2-I-092, CC-1634 to CC-1640).
 
 Tag #café and #cafe here, #größe.
