@@ -47,5 +47,7 @@ python3 tools/generate-fence-languages.py
 
 CI runs `tools/generate-fence-languages.py --check`, which fails when the
 syntax is stale against the table, and `tools/check-fence-languages-drift.sh`,
-which fails when the copy differs from carve-grammars `main` (set
-`CARVE_GRAMMARS_DIR` to compare against a local checkout instead).
+which fails when the copy differs from carve-grammars at
+`CARVE_GRAMMARS_REV` (`main` when unset; CI pins the commit the table was
+copied from). Set `CARVE_GRAMMARS_DIR` to compare against a local checkout
+instead.

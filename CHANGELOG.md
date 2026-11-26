@@ -9,6 +9,10 @@ Releases before 0.1.8 are described on the
 
 ## [Unreleased]
 
+### Breaking
+
+- Replace the 0.1 syntax and its test cases with the Carve 0.2 syntax under the usual `Carve` name and `.crv` extension. Remove 0.1 Package Control upgrade messages.
+
 ## [0.1.13] - 2026-11-12
 
 ### Improvements

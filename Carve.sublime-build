@@ -9,7 +9,7 @@
 
 	"target": "carve_lint",
 	"cancel": {"kill": true},
-	"file_regex": "^(.+?):([0-9]+):([0-9]+) (.*)$",
+	"file_regex": "^(.+?):([0-9]+):([0-9]+):? (.*)$",
 	"working_dir": "$file_path",
 
 	"variants": [

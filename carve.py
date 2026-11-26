@@ -267,10 +267,11 @@ class CarveImportCommand(sublime_plugin.WindowCommand):
 
 # Lint reports `file:line:col rule - message`. A finding in an included file
 # names that file relative to the include root and ends with its include chain.
-LINT_FILE_REGEX = r"^(.+?):([0-9]+):([0-9]+) (.*)$"
+# The 0.2 CLI writes `path:line:col: severity rule message`, the 0.1 CLI `path:line:col rule message`.
+LINT_FILE_REGEX = r"^(.+?):([0-9]+):([0-9]+):? (.*)$"
 INCLUDE_ROOT_NOTICE = (
     "Carve: this carve CLI has no `lint --include-root`, so includes are not "
-    "followed (carve-js 0.1.13 or carve-rs 0.1.11 and later have it).\n"
+    "followed (the Carve 0.2 CLI and later have it).\n"
 )
 
 _include_root_support = {}
