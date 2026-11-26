@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, next2]
+    branches: [main]
   pull_request:
 
 # Every job declares timeout-minutes so a hung step fails in minutes
@@ -71,7 +71,7 @@ jobs:
         with:
           node-version: '22'
       # The Carve 0.2 CLI, which has `lint --include-root`, built from carve-js
-      # next2 at a pinned commit, and a 0.1 CLI from before the flag, so both
+      # main at a pinned commit, and a 0.1 CLI from before the flag, so both
       # the include chain and the fallback run against a real carve.
       - name: Build the Carve 0.2 CLI and install an older one
         run: |
