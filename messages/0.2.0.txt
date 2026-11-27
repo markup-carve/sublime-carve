@@ -1,0 +1,9 @@
+Carve 0.2.0
+===========
+
+Breaking
+  - The Carve syntax now reads Carve 0.2 source. Carve 0.1 files can
+    highlight differently; `carve upgrade` rewrites them to 0.2.
+  - The Lint and Import builds need a Carve 0.2 `carve` CLI
+    (npm i -g @markup-carve/carve@^0.2). Import runs
+    `carve import --from FORMAT FILE`.
