@@ -61,6 +61,17 @@ variables:
   # The rest of a braced alignment block: ordinary attribute items, then `}`
   # and the space that ends the cell's marker run.
   cell_alignment_rest: '(?:[ \t]+(?::[\w-]*|[.#]?[\w-]+(?:=(?:"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''|[^\s"''{}]+))?))*[ \t]*\}(?= )'
+  # Snippets (C2-B-236, C2-I-128), after carve-grammars#983. A marker part is
+  # a class, a language, a key=value pair or a bare word; an id refuses it.
+  snippet_name: '[A-Za-z0-9_][A-Za-z0-9_-]*'
+  snippet_value: '(?:"(?:[^"\\\n]|\\.)*"|''(?:[^''\\\n]|\\.)*''|[^\s"''{}|\\]+)'
+  snippet_part: '(?:\.[A-Za-z0-9_-]+|:(?:[A-Za-z0-9]{1,8}(?:-[A-Za-z0-9]{1,8})*)?|[A-Za-z_][A-Za-z0-9_-]*={{snippet_value}}|[A-Za-z][A-Za-z0-9_-]*)'
+  snippet_glued: '(?:\{ *{{snippet_part}}(?: +{{snippet_part}})* *\})*'
+  # Blocks glued after a use, an id included: the use consumes them unscoped.
+  snippet_use_part: '(?:#[A-Za-z0-9_-]+|{{snippet_part}})'
+  snippet_use_glued: '(?:\{ *{{snippet_use_part}}(?: +{{snippet_use_part}})* *\})*'
+  # `\{{` is escaped text.
+  snippet_use: '(?<!^\\)(?<![^\\]\\)\{\{ +\${{snippet_name}} +\}\}'
   opaque: '(?:!?{{link_label}}\({{link_dest}}(?: (?:"(?>\\"|[^"\n])*"|''(?>\\''|[^''\n])*''))?\)|{{url_autolink}}|{{email_autolink}})'
 
 contexts:
@@ -108,6 +119,7 @@ contexts:
     - include: document-blocks
 
   document-blocks:
+    - include: snippet-definition
     # A `:` line with no term open above it is paragraph text; below a term
     # `list-item` is already open and reads it as a description.
     - match: '^(?=[ \t]*: +\S)'
@@ -227,6 +239,7 @@ contexts:
     - include: highlight
     - include: forced-emphasis
     - include: inline-comment
+    - include: snippet-use
     - include: include-directive
     - include: attributes
     - include: raw-inline
@@ -262,6 +275,7 @@ contexts:
     - include: captions
     - include: lists
     - include: definitions
+    - include: attribute-line-above-use
     - match: '^(?=[^ \t\n])(?![ \t]*\{[^\n]*\}[ \t]*$|!\[|\$\$`)'
       push: paragraph
     - include: citations
@@ -274,6 +288,7 @@ contexts:
     - include: highlight
     - include: forced-emphasis
     - include: inline-comment
+    - include: snippet-use
     - include: include-directive
     - include: attributes
     - include: raw-inline
@@ -307,6 +322,7 @@ contexts:
     - include: sup-sub
     - include: highlight
     - include: forced-emphasis
+    - include: snippet-use
     - include: include-directive
     - include: attributes
     - include: emphasis
@@ -330,6 +346,7 @@ contexts:
 
   metadata-gap-blocks:
     - include: later-metadata
+    - include: attribute-line-above-use
     - match: '^(?={{attribute_line}}[ \t]*$)'
       push: metadata-gap-attributes
 
@@ -3739,6 +3756,9 @@ contexts:
     # `{` run to the end of the buffer.
     - match: '^[ \t]*$'
       pop: true
+    - include: attribute-items
+
+  attribute-items:
     # THE LANGUAGE ATTRIBUTE (markup-carve/carve#1114) is the one item that
     # opens with a colon, and it goes FIRST: the key rule below admits a
     # leading colon but requires an `=` after it, so `:fr` would otherwise
@@ -4020,6 +4040,71 @@ contexts:
     # A directive cannot cross a line, so a newline ends the context whatever
     # else is pending.
     - match: $
+      pop: true
+
+  # ----- Snippets (C2-B-236, C2-I-128, C2-B-237) -----
+  # Document level only: a lazy line of an open paragraph stays in
+  # `paragraph`, a list line in `lazy-continuation`. A `:::` body includes
+  # `document`, so a definition there still highlights.
+  snippet-definition:
+    - match: '^(\{\$)({{snippet_name}})(?=(?: +{{snippet_part}})* *\}{{snippet_glued}}: [ \t]*[^ \t\n])'
+      captures:
+        1: punctuation.definition.snippet.begin.carve
+        2: variable.other.snippet.carve
+      scope: meta.snippet.definition.carve
+      push: [snippet-definition-value, snippet-definition-separator, snippet-definition-parts]
+
+  snippet-definition-parts:
+    - meta_content_scope: meta.attributes.carve
+    - match: '(?=\})'
+      pop: true
+    - include: attribute-items
+
+  snippet-definition-separator:
+    - match: '\}'
+      scope: punctuation.definition.snippet.end.carve
+    - match: '\{'
+      scope: punctuation.definition.attributes.begin.carve
+      push: attribute-block
+    - match: ':'
+      scope: punctuation.separator.carve
+      pop: true
+
+  snippet-definition-value:
+    - meta_content_scope: meta.snippet.definition.carve
+    - match: '$'
+      pop: true
+    - include: paragraph-inline
+
+  # A use carries no attributes, so valid blocks glued after it stay text.
+  snippet-use:
+    - match: '(?<!^\\)(?<![^\\]\\)((\{\{) +(\${{snippet_name}}) +(\}\})){{snippet_use_glued}}'
+      captures:
+        1: meta.snippet.use.carve
+        2: punctuation.definition.snippet.begin.carve
+        3: variable.other.snippet.carve
+        4: punctuation.definition.snippet.end.carve
+
+  # An attribute line directly above a block use is not taken by it
+  # (carve#6896): it stays paragraph text. The branch rewinds one line.
+  attribute-line-above-use:
+    - match: '^(?={{attribute_line}}[ \t]*$)'
+      branch_point: attribute-line-above-use
+      branch: [attribute-line-attached, attribute-line-text]
+
+  attribute-line-attached:
+    - match: '\n'
+      set: attribute-line-next
+    - include: attributes
+
+  attribute-line-next:
+    - match: '^(?=[ \t]*{{snippet_use}}{{snippet_use_glued}}[ \t]*$)'
+      fail: attribute-line-above-use
+    - match: '^'
+      pop: true
+
+  attribute-line-text:
+    - match: '\n'
       pop: true
 
   # ----- Mentions / tags / symbols -----
