@@ -9,9 +9,26 @@ Releases before 0.1.8 are described on the
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-27
+
+The syntax reads Carve 0.2.
+
 ### Breaking
 
-- Replace the 0.1 syntax and its test cases with the Carve 0.2 syntax under the usual `Carve` name and `.crv` extension. Remove 0.1 Package Control upgrade messages.
+- Replace the 0.1 syntax and its test cases with the Carve 0.2 syntax under the usual `Carve` name and `.crv` extension. Remove 0.1 Package Control upgrade messages (#96, #98).
+- `+` is text, breaks are star runs only, fences are backticks only, and bare underline, strike and highlight, the substitution, glued alignment and GFM separator rows are no longer highlighted: Carve 0.2 reads them as text (#96).
+
+### Fixes
+
+- An uppercase letter or roman dot marker with one space stays text, so `J. R. R. Tolkien` at the start of a paragraph is no list item (#97).
+- Lint build findings from the Carve 0.2 CLI are clickable again: the build matches its `path:line:col:` output (#101).
+
+### Improvements
+
+- A typed metadata block after line 1 is highlighted when a blank line or attribute lines stand directly above it (#111).
+- Mention and tag names follow the 0.2 word-edge rule, headings and captions continue on their indented lines, and link and abbreviation definitions keep their indented tail lines (#111).
+
+**Full Changelog**: https://github.com/markup-carve/sublime-carve/compare/0.1.13...0.2.0
 
 ## [0.1.13] - 2026-11-12
 
