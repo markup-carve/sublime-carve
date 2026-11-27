@@ -1,0 +1,115 @@
+# SYNTAX TEST "Packages/Carve/Carve.sublime-syntax"
+
+# Snippet definitions and uses (C2-B-236, C2-I-128, C2-B-237), sublime-carve#115.
+
+{$ver}: 0.2.3
+# <- meta.snippet.definition.carve punctuation.definition.snippet.begin.carve
+#^ punctuation.definition.snippet.begin.carve
+# ^^^ variable.other.snippet.carve
+#    ^ punctuation.definition.snippet.end.carve
+#     ^ punctuation.separator.carve
+#^^^^^^^^^^^^ meta.snippet.definition.carve
+#^^^^^^^^^^^^ -meta.attributes.carve
+
+Release {{ $ver }} of the tool, with *strong* after.
+#       ^^^^^^^^^^ meta.snippet.use.carve
+#       ^^ punctuation.definition.snippet.begin.carve
+#          ^^^^ variable.other.snippet.carve
+#               ^^ punctuation.definition.snippet.end.carve
+#       ^^^^^^^^^^ -meta.directive.include.carve
+#                                    ^^^^^^^^ markup.bold.carve
+
+{{ $ver }}
+# <- meta.snippet.use.carve punctuation.definition.snippet.begin.carve
+#^^^^^^^^^ meta.snippet.use.carve
+#^^^^^^^^^ -meta.directive.include.carve
+#  ^^^^ variable.other.snippet.carve
+
+Text after the block use with *strong*.
+#                             ^^^^^^^^ markup.bold.carve
+
+A use alone on its line is a one-line block, so a list can follow it.
+
+{{ $ver }}
+- item
+# <- punctuation.definition.list.begin.carve
+
+{$v .k :en}{.c}: value *b*
+# <- meta.snippet.definition.carve
+#  ^^^^^^^ meta.snippet.definition.carve meta.attributes.carve
+#   ^^ entity.other.attribute-name.class.carve
+#      ^^^ entity.other.attribute-name.language.carve
+#         ^ punctuation.definition.snippet.end.carve
+#          ^^^^ meta.snippet.definition.carve meta.attributes.carve
+#           ^^ entity.other.attribute-name.class.carve
+#              ^ punctuation.separator.carve
+#                      ^^^ meta.snippet.definition.carve markup.bold.carve
+
+An id in the marker defines nothing.
+
+{$v #x}: a
+# <- -meta.snippet.definition.carve
+# ^ -variable.other.snippet.carve
+
+No space before the value defines nothing.
+
+{$v}:x
+# <- -meta.snippet.definition.carve
+# ^ -variable.other.snippet.carve
+
+A definition-shaped lazy line of an open paragraph is text:
+{$v}: a
+# <- -meta.snippet.definition.carve
+# ^ -variable.other.snippet.carve
+
+- item
+{$v}: a
+# <- -meta.snippet.definition.carve
+# ^ -variable.other.snippet.carve
+
+- item
+
+  {$v}: a
+# ^ -meta.snippet.definition.carve
+#   ^ -variable.other.snippet.carve
+
+Glued blocks after a use stay text: A {{ $v }}{.c} b
+#                                     ^^^^^^^^ meta.snippet.use.carve
+#                                             ^^^^ -meta.attributes.carve
+
+No pads {{$v}} make no use.
+#       ^^^^^^ -meta.snippet.use.carve
+#         ^^ -variable.other.snippet.carve
+
+Escaped \{{ $v }} is text.
+#        ^^^^^^^^ -meta.snippet.use.carve
+#           ^^ -variable.other.snippet.carve
+
+{{ "a {{ $v }}.crv" }}
+# <- punctuation.definition.directive.begin.carve
+#      ^^^^^^^^ -meta.snippet.use.carve
+#         ^^ -variable.other.snippet.carve
+
+{{ $a.crv }}
+# <- punctuation.definition.directive.begin.carve
+#  ^^^^^^ string.other.link.include.carve
+#  ^^^^^^ -meta.snippet.use.carve
+
+{{ $v @shift:1 }}
+# <- punctuation.definition.directive.begin.carve
+#  ^^ string.other.link.include.carve
+#     ^^^^^^ variable.parameter.include.carve
+#  ^^ -meta.snippet.use.carve
+
+{{ path.crv }}
+# <- punctuation.definition.directive.begin.carve
+#  ^^^^^^^^ string.other.link.include.carve
+
+An attribute line directly above a block use is not taken by it (carve#6896).
+The line is paragraph text; an assertion line between the two would end the
+shape, so only the use below is asserted here.
+
+{.k :en}
+{{ $v }}
+# <- meta.snippet.use.carve
+#^^^^^^^ meta.snippet.use.carve
